@@ -179,26 +179,43 @@ export function AuthProvider({
 
     void initialiseSession()
 
-    const { data: listener } =
-      supabase.auth.onAuthStateChange(
-        (_event, nextSession) => {
+const { data: listener } =
+  supabase.auth.onAuthStateChange(
+    (event, nextSession) => {
+      if (!active) return
+
+      // getSession() di atas sudah mengurus sesi pertama.
+      if (event === 'INITIAL_SESSION') {
+        return
+      }
+
+      if (event === 'SIGNED_OUT') {
+        setSession(null)
+        setProfile(null)
+        setAuthError(null)
+        return
+      }
+
+      // Token baharu tidak memerlukan halaman dipasang semula.
+      if (event === 'TOKEN_REFRESHED') {
+        setSession(nextSession)
+        return
+      }
+
+      // SIGNED_IN juga boleh berlaku apabila sesi disahkan semula.
+      // Proses sesi tanpa menukar loading kepada true.
+      if (
+        event === 'SIGNED_IN' ||
+        event === 'USER_UPDATED'
+      ) {
+        window.setTimeout(() => {
           if (!active) return
-
-          setLoading(true)
-
-          window.setTimeout(() => {
-            if (!active) return
-
-            void processSession(nextSession)
-              .finally(() => {
-                if (active) {
-                  setLoading(false)
-                }
-              })
-          }, 0)
-        },
-      )
-
+          void processSession(nextSession)
+        }, 0)
+      }
+    },
+  )
+    
     return () => {
       active = false
       listener.subscription.unsubscribe()
