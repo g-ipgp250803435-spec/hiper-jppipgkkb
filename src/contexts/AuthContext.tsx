@@ -40,20 +40,62 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [authError, setAuthError] = useState<string | null>(null)
 
   const loadProfile = useCallback(async (userId: string) => {
-    const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle()
-    if (error) throw error
-    setProfile((data as Profile | null) ?? null)
-  }, [])
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', userId)
+    .maybeSingle()
+
+  if (error) throw error
+
+  const nextProfile = (data as Profile | null) ?? null
+  setProfile(nextProfile)
+
+  return nextProfile
+}, [])
 
   const processSession = useCallback(
-    async (nextSession: Session | null) => {
-      setSession(nextSession)
-      setAuthError(null)
+  async (nextSession: Session | null) => {
+    setSession(nextSession)
+    setAuthError(null)
 
-      if (!nextSession?.user) {
+    if (!nextSession?.user) {
+      setProfile(null)
+      return
+    }
+
+    try {
+      const nextProfile = await loadProfile(nextSession.user.id)
+
+      const allowedDomain = emailDomainAllowed(
+        nextSession.user.email,
+      )
+
+      const appointedAdmin =
+        nextProfile?.role === 'admin'
+
+      if (!allowedDomain && !appointedAdmin) {
         setProfile(null)
+
+        setAuthError(
+          `Akaun ${
+            nextSession.user.email || ''
+          } tidak dibenarkan mengakses portal ini.`,
+        )
+
+        await supabase.auth.signOut()
         return
       }
+    } catch (error) {
+      setAuthError(
+        error instanceof Error
+          ? error.message
+          : 'Profil tidak dapat dimuatkan.',
+      )
+    }
+  },
+  [loadProfile],
+)
 
       if (!emailDomainAllowed(nextSession.user.email)) {
         setProfile(null)
@@ -108,10 +150,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
         queryParams: {
-          access_type: 'offline',
-          prompt: 'select_account',
-          ...(config.allowedEmailDomains[0] ? { hd: config.allowedEmailDomains[0] } : {}),
-        },
+  access_type: 'offline',
+  prompt: 'select_account',
+},
       },
     })
     if (error) setAuthError(error.message)
