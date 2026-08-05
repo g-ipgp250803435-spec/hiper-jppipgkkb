@@ -39,7 +39,12 @@ export default function LoginPage() {
             <span className="google-mark">G</span>
             {loading ? t('Memuatkan…', 'Loading…') : t('Teruskan dengan Google', 'Continue with Google')}
           </Button>
-          <small>{t('Akaun Google peribadi akan ditolak oleh sistem.', 'Personal Google accounts will be rejected by the system.')}</small>
+          <small>
+  {t(
+    'Akses dibenarkan untuk akaun DELIMa dan akaun pentadbir yang dilantik.',
+    'Access is limited to DELIMa accounts and appointed administrator accounts.',
+  )}
+</small>
         </Card>
       </div>
     </section>
