@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="PBAK One">
+  <rect width="120" height="120" rx="26" fill="#3a0b1e"/>
+  <path d="M29 83V37h32c17 0 28 8 28 23S78 83 61 83H46v15H29Zm17-15h14c8 0 12-3 12-9s-4-9-12-9H46v18Z" fill="#c9a24f"/>
+  <circle cx="88" cy="87" r="12" fill="#f4ead0"/>
+  <path d="M88 80v14M81 87h14" stroke="#3a0b1e" stroke-width="4" stroke-linecap="round"/>
+</svg>
