@@ -40,7 +40,7 @@ const emailDomainAllowed = (
   if (!domain) return false
 
   const allowedDomains =
-    config.allowedEmailDomains.map((allowedDomain) =>
+    config.allowedEmailDomains.map((allowedDomain: string) =>
       allowedDomain.trim().toLowerCase(),
     )
 
