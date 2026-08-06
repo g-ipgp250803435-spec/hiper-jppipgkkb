@@ -986,45 +986,206 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 
 .admin-tabs { top: var(--nav-v3-header-offset); }
 
-@media (max-width: 1280px) and (min-width: 1240px) {
-  .nav-v3-desktop a { padding-inline: 8px; font-size: .78rem; }
-  .nav-v3-account-name { display: none; }
+/* =========================================================
+   HiPER Navigation — Desktop, Laptop and Tablet Breakpoints
+   ========================================================= */
+
+/* 1. Large desktop layout (Approximately 1500px and above) */
+@media (min-width: 1500px) {
+  :root {
+    --nav-v3-header-offset: 82px;
+  }
+
+  .nav-v3-inner {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    column-gap: 32px;
+    min-height: 82px;
+    padding-inline: 24px;
+    box-sizing: border-box;
+  }
+
+  .nav-v3-brand {
+    justify-self: start;
+  }
+
+  .nav-v3-desktop {
+    justify-self: center;
+    min-width: 0;
+    margin-left: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px;
+    border: 1px solid color-mix(in srgb, var(--line) 88%, transparent);
+    border-radius: 15px;
+    background: color-mix(in srgb, var(--surface-2) 58%, var(--surface));
+  }
+
+  .nav-v3-desktop a {
+    min-height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 9px 14px;
+    border-radius: 11px;
+    color: var(--muted);
+    font-size: .81rem;
+    font-weight: 760;
+    line-height: 1.1;
+    white-space: nowrap;
+  }
+
+  .nav-v3-actions {
+    justify-self: end;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .nav-v3-account-name {
+    display: inline-block;
+    max-width: 140px;
+  }
 }
 
-/* Tablet and compact desktop: full navigation stays visible in a clean second row. */
-@media (max-width: 1239px) and (min-width: 821px) {
-  :root { --nav-v3-header-offset: 132px; }
+/* 2. Standard laptop and compact desktop layout (Approximately 1100px to 1499px) */
+@media (min-width: 1100px) and (max-width: 1499px) {
+  :root {
+    --nav-v3-header-offset: 132px;
+  }
 
   .nav-v3-inner {
     min-height: auto;
+    display: flex;
     flex-wrap: wrap;
+    align-items: center;
     padding-block: 10px 11px;
-    row-gap: 9px;
+    row-gap: 12px;
+    column-gap: 16px;
   }
 
-  .nav-v3-brand { margin-right: auto; }
-  .nav-v3-actions { margin-left: auto; }
+  .nav-v3-brand {
+    order: 1;
+    margin-right: auto;
+  }
+
+  .nav-v3-actions {
+    order: 2;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  .nav-v3-desktop {
+    order: 3;
+    width: auto;
+    max-width: calc(100% - 32px);
+    margin-inline: auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 6px;
+    padding: 4px;
+    border: 1px solid color-mix(in srgb, var(--line) 88%, transparent);
+    border-radius: 15px;
+    background: color-mix(in srgb, var(--surface-2) 58%, var(--surface));
+    box-sizing: border-box;
+  }
+
+  .nav-v3-desktop a {
+    min-height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 9px 12px;
+    border-radius: 11px;
+    color: var(--muted);
+    font-size: .8rem;
+    font-weight: 760;
+    line-height: 1.1;
+    white-space: nowrap;
+  }
+
+  .nav-v3-account-name {
+    display: none;
+  }
+}
+
+/* 3. Tablet and small laptop layout (Widths from 821px to approximately 1099px) */
+@media (min-width: 821px) and (max-width: 1099px) {
+  :root {
+    --nav-v3-header-offset: 172px;
+  }
+
+  .nav-v3-inner {
+    min-height: auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    padding-block: 10px 11px;
+    row-gap: 12px;
+    column-gap: 16px;
+  }
+
+  .nav-v3-brand {
+    order: 1;
+    margin-right: auto;
+  }
+
+  .nav-v3-actions {
+    order: 2;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
 
   .nav-v3-desktop {
     order: 3;
     width: 100%;
-    margin: 0;
+    max-width: calc(100% - 32px);
+    margin-inline: auto;
     display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: minmax(0, 1fr);
-    gap: 3px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    padding: 6px;
+    border: 1px solid color-mix(in srgb, var(--line) 88%, transparent);
+    border-radius: 15px;
+    background: color-mix(in srgb, var(--surface-2) 58%, var(--surface));
+    box-sizing: border-box;
+  }
+
+  .nav-v3-desktop:has(a:first-child:nth-last-child(8)) {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .nav-v3-desktop:has(a:first-child:nth-last-child(7)) {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .nav-v3-desktop:has(a:first-child:nth-last-child(6)) {
+    grid-template-columns: repeat(3, 1fr);
   }
 
   .nav-v3-desktop a {
-    width: 100%;
-    min-width: 0;
-    padding-inline: 6px;
-    font-size: .77rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    min-height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 9px 8px;
+    border-radius: 11px;
+    color: var(--muted);
+    font-size: .78rem;
+    font-weight: 760;
+    line-height: 1.1;
+    white-space: nowrap;
+    text-align: center;
   }
 
-  .nav-v3-account-name { display: none; }
+  .nav-v3-account-name {
+    display: none;
+  }
 }
 
 /* Mobile: a dedicated drawer, not a repurposed desktop navigation bar. */
@@ -1260,74 +1421,4 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .nav-v3-desktop a,
   .nav-v3-mobile-links a,
   .nav-v3-language-track > span { transition: none; }
-}
-
-/* =========================================================
-   HiPER Navigation V3.1 — desktop collision fix
-   Keep mobile drawer unchanged. Laptop/compact desktop uses
-   a dedicated second navigation row so account links never
-   collide with language/theme/account controls.
-   ========================================================= */
-
-/* Give the one-row layout more breathing room on large screens. */
-@media (min-width: 1461px) {
-  .nav-v3-inner {
-    width: min(1500px, calc(100% - 40px));
-  }
-
-  .nav-v3-desktop {
-    flex: 1 1 auto;
-  }
-
-  .nav-v3-actions {
-    margin-left: 0;
-  }
-}
-
-/* Laptop and compact desktop: controls stay on row one,
-   while all navigation links sit safely on row two. */
-@media (min-width: 821px) and (max-width: 1460px) {
-  :root {
-    --nav-v3-header-offset: 132px;
-  }
-
-  .nav-v3-inner {
-    min-height: auto;
-    flex-wrap: wrap;
-    padding-block: 10px 11px;
-    column-gap: 14px;
-    row-gap: 9px;
-  }
-
-  .nav-v3-brand {
-    margin-right: auto;
-  }
-
-  .nav-v3-actions {
-    margin-left: auto;
-  }
-
-  .nav-v3-desktop {
-    order: 3;
-    width: 100%;
-    margin: 0;
-    display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: minmax(0, 1fr);
-    gap: 3px;
-    overflow: hidden;
-  }
-
-  .nav-v3-desktop a {
-    width: 100%;
-    min-width: 0;
-    padding-inline: 7px;
-    overflow: hidden;
-    font-size: .77rem;
-    text-overflow: ellipsis;
-  }
-
-  .nav-v3-account-name {
-    display: none;
-  }
 }
