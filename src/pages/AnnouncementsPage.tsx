@@ -1,8 +1,4 @@
 import { useEffect, useState } from 'react'
-import {
-  useEffect,
-  useState,
-} from 'react'
 import { PageHeader, Card, EmptyState, LoadingBlock } from '../components/UI'
 import { useUi } from '../contexts/UiContext'
 import { supabase } from '../lib/supabase'
