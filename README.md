@@ -1,6 +1,8 @@
-# PBAK One
+# HiPER
 
 Portal bersepadu Pejabat Bendahari Agung Kehormat, JPP IPG Kampus Kota Bharu.
+
+**Nama rasmi:** HiPER — Portal Rasmi PBAK, JPP IPG Kampus Kota Bharu.
 
 ## Modul
 
@@ -43,6 +45,8 @@ npm run dev
 - `docs/PANDUAN-LENGKAP.md` — panduan pemasangan
 - `docs/SENARAI-SEMAK-UJIAN.md` — ujian sebelum pelancaran
 - `docs/ARAHAN-JULES.md` — contoh arahan selamat untuk Jules
+- `docs/IDENTITI-HIPER.md` — piawaian nama rasmi
+- `docs/SEBELUM-NAIK-TARAF.md` — checklist stabilisasi
 
 ## Keselamatan
 
