@@ -1,72 +1,62 @@
-# Senarai Semak Ujian PBAK One
+# Senarai Semak Ujian HiPER
 
-Tandakan setiap item sebelum pelancaran.
+Tandakan item berkaitan pada Vercel Preview sebelum merge.
 
-## Log masuk
+## Build dan akses
 
+- [ ] Vercel Preview berstatus `Ready`.
+- [ ] Tiada ralat console yang menghalang penggunaan.
 - [ ] Akaun DELIMa boleh log masuk.
-- [ ] Akaun Google peribadi ditolak.
-- [ ] Akaun siswa guru tidak nampak menu Admin.
-- [ ] Akaun admin nampak menu Admin.
-- [ ] Log keluar berfungsi.
+- [ ] Akaun pengguna biasa tidak nampak menu Admin.
+- [ ] Akaun admin boleh membuka `/admin`.
+- [ ] Log keluar berfungsi pada desktop dan telefon.
 
-## iKES
+## Navigation dan paparan
 
-- [ ] iKES Care menerima RM30.
-- [ ] iKES Care menerima RM50.
-- [ ] iKES Care menolak amaun lain.
-- [ ] iKES Go-Home menolak amaun melebihi RM100.
-- [ ] iKES Go-Home memerlukan resit tiket.
-- [ ] Permohonan muncul di Portal Saya.
-- [ ] Admin boleh meluluskan dan menolak.
-- [ ] Nota admin muncul kepada pemohon.
-- [ ] Tarikh bayaran balik muncul kepada pemohon.
+- [ ] Navigation desktop kemas dan tidak bertindih.
+- [ ] Menu telefon boleh dibuka dan ditutup.
+- [ ] Butang Log Masuk DELIMa atau Log Keluar kelihatan dalam menu telefon.
+- [ ] Toggle BM/EN berfungsi.
+- [ ] Light mode dan dark mode boleh dibaca.
+- [ ] Tiada horizontal overflow pada skrin kecil.
 
-## e-Aset
+## Pengumuman
 
-- [ ] Katalog aset dipaparkan.
-- [ ] Permohonan boleh dihantar.
-- [ ] Tarikh pulang sebelum tarikh pinjam ditolak.
-- [ ] Permohonan muncul di Portal Saya.
-- [ ] Admin boleh meluluskan dan menolak.
-- [ ] Admin boleh merekod tarikh aset dipulangkan.
+- [ ] Halaman utama memaparkan poster, tarikh dan tajuk sahaja.
+- [ ] Halaman Pengumuman memaparkan kandungan penuh.
+- [ ] Multiple lines/perenggan dikekalkan.
+- [ ] Admin boleh tambah dan edit pengumuman.
+- [ ] Poster lama kekal apabila tiada poster ganti dimuat naik.
+
+## iKES dan e-Aset
+
+- [ ] Permohonan iKES boleh dihantar dan muncul dalam Portal Saya.
+- [ ] Admin boleh menukar status dan nota iKES.
+- [ ] Permohonan e-Aset boleh dihantar.
+- [ ] Kelulusan e-Aset mengurangkan stok dengan betul.
+- [ ] Perubahan daripada `approved` memulangkan stok dengan betul.
+- [ ] Admin boleh edit aset dan validasi stok berfungsi.
 
 ## Tabung Jumaat
 
-- [ ] Nama bank rasmi betul.
-- [ ] Nama akaun rasmi betul.
-- [ ] Nombor akaun rasmi betul.
-- [ ] Kod QR rasmi betul.
-- [ ] Bukti pembayaran boleh dimuat naik.
-- [ ] Admin boleh membuka bukti pembayaran.
+- [ ] Derma pengguna boleh dihantar.
+- [ ] Admin boleh membuka bukti bayaran yang dibenarkan.
 - [ ] Admin boleh mengesahkan atau menolak rekod.
-- [ ] Hanya derma disahkan dikira dalam jumlah kutipan.
-- [ ] Rekod agihan awam dipaparkan.
-- [ ] Rekod agihan tersembunyi tidak dipaparkan.
+- [ ] Admin boleh menambah rekod kutipan manual.
+- [ ] Rekod kutipan manual berakhir dengan status `verified`.
+- [ ] Jumlah kutipan awam berubah selepas refresh.
+- [ ] Rekod agihan awam/tersembunyi berfungsi seperti sedia ada.
 
-## Kandungan
+## Organisasi
 
-- [ ] Poster pengumuman dipaparkan.
-- [ ] BM dan English dipaparkan dengan betul.
-- [ ] Carta organisasi lengkap.
-- [ ] Gambar ahli organisasi dipaparkan.
-- [ ] Aset tidak aktif tidak dipaparkan kepada pengguna.
-
-## Paparan
-
-- [ ] Desktop Chrome.
-- [ ] Desktop Edge.
-- [ ] Android Chrome.
-- [ ] iPhone Safari.
-- [ ] Dark mode.
-- [ ] Light mode.
-- [ ] Pertukaran BM/EN.
-- [ ] Menu telefon boleh dibuka dan ditutup.
+- [ ] Halaman Kenali Pejabat dipaparkan.
+- [ ] Admin boleh tambah dan edit ahli.
+- [ ] Gambar lama kekal apabila tiada gambar ganti dimuat naik.
+- [ ] Susunan ahli mengikut `sort_order`.
 
 ## Keselamatan
 
 - [ ] `.env` tidak berada dalam GitHub.
-- [ ] `service_role` key tidak berada dalam GitHub atau Vercel.
-- [ ] Siswa A tidak boleh melihat permohonan Siswa B.
-- [ ] Siswa biasa tidak boleh membuka `/admin`.
-- [ ] Fail bukti tidak mempunyai public URL kekal.
+- [ ] Tiada `service_role` key, Google client secret, token atau database password dalam repository.
+- [ ] Pengguna hanya boleh melihat rekod sendiri.
+- [ ] Fail bukti kekal private.

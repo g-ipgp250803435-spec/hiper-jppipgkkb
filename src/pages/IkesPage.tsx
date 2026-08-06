@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { Button, Card, Field, Notice, PageHeader } from '../components/UI'
+import { Icon } from '../components/Icons'
 import { useAuth } from '../contexts/AuthContext'
 import { useUi } from '../contexts/UiContext'
 import { isSupabaseConfigured } from '../lib/config'
@@ -123,7 +124,7 @@ export default function IkesPage() {
           <Card className="form-card" title={t('Borang permohonan', 'Application form')}>
             {!user ? (
               <div className="locked-panel">
-                <span>🔒</span>
+                <span><Icon name="lock" size={34} /></span>
                 <h3>{t('Log masuk diperlukan', 'Sign in required')}</h3>
                 <p>{t('Gunakan akaun DELIMa untuk membuat dan menyemak permohonan.', 'Use your DELIMa account to submit and review applications.')}</p>
                 <Link className="button button-primary" to="/login">{t('Log masuk DELIMa', 'DELIMa sign in')}</Link>

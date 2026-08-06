@@ -1,35 +1,15 @@
-# Arahan Selamat untuk Jules AI
+# Arahan Selamat untuk Jules AI — HiPER
 
-Gunakan satu perubahan kecil bagi setiap arahan. Semak preview sebelum merge.
+Gunakan Jules hanya untuk satu perubahan kecil pada satu masa. Hadkan fail yang boleh diubah, minta `npm run build`, semak diff dan uji Vercel Preview sebelum merge.
 
-## Tukar teks
+## Contoh arahan selamat
 
 ```text
-Dalam projek PBAK One, tukar teks BM pada hero halaman utama daripada "Satu portal untuk kebajikan siswa guru." kepada "Kebajikan siswa guru, dipermudah." Jangan ubah fungsi lain.
+Dalam projek Hab Perbendaharaan Digital (HiPER), baiki overflow pada halaman Tabung Jumaat untuk skrin 375px. Ubah hanya fail halaman tersebut dan src/styles.css. Jangan ubah database, authentication, dependencies atau halaman lain. Jalankan npm run build.
 ```
 
-## Tukar warna kecil
-
 ```text
-Dalam src/styles.css, jadikan warna gold utama sedikit lebih cerah. Kekalkan tema dark maroon dan jangan ubah susun atur.
-```
-
-## Tambah medan kecil
-
-```text
-Tambah medan "Program/Pengkhususan" pada borang iKES, jadual Supabase dan paparan admin. Sediakan juga SQL migration berasingan. Jangan ubah medan sedia ada.
-```
-
-## Baiki paparan telefon
-
-```text
-Semak paparan halaman Tabung Jumaat pada skrin 375px. Baiki overflow sahaja. Jangan ubah desktop layout atau fungsi database.
-```
-
-## Tambah pengumuman kategori
-
-```text
-Tambah kategori pada pengumuman: Elaun, Jualan, Kebajikan dan Umum. Kemas kini TypeScript, borang admin, paparan pengguna dan sediakan SQL migration. Kekalkan data lama serasi.
+Tambah kategori pada pengumuman dengan migration berasingan. Senaraikan schema, RLS, fail kod dan pelan rollback sebelum mengubah apa-apa. Jangan jalankan migration Production.
 ```
 
 ## Arahan yang perlu dielakkan
@@ -40,4 +20,4 @@ Jangan gunakan arahan terlalu umum seperti:
 Baiki seluruh website dan jadikan lebih professional.
 ```
 
-Jangan minta Jules menukar Supabase RLS tanpa menyemak SQL yang dicadangkan.
+Jangan benarkan Jules mengubah `package.json`, lock file, migration, RLS atau environment configuration kecuali perkara itu memang skop tugasan dan telah disemak terlebih dahulu.

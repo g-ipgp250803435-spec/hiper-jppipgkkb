@@ -40,7 +40,7 @@ export default function LoginPage() {
     <section className="section auth-section">
       <div className="container auth-grid">
         <div className="auth-copy">
-          <p className="eyebrow">PBAK ONE</p>
+          <p className="eyebrow">HiPER</p>
 
           <h1>
             {t(
@@ -84,7 +84,7 @@ export default function LoginPage() {
           <img
             src="/logo-mark.svg"
             className="login-logo"
-            alt="PBAK One"
+            alt="HiPER"
           />
 
           <h2>

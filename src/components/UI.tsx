@@ -2,6 +2,7 @@ import type { ButtonHTMLAttributes, ReactNode } from 'react'
 import { useUi } from '../contexts/UiContext'
 import { getStatusLabel } from '../lib/helpers'
 import type { RequestStatus } from '../lib/types'
+import { Icon, type IconName } from './Icons'
 
 export function PageHeader({
   eyebrow,
@@ -16,7 +17,7 @@ export function PageHeader({
 }) {
   return (
     <div className="page-header">
-      <div>
+      <div className="page-header-copy">
         {eyebrow && <p className="eyebrow">{eyebrow}</p>}
         <h1>{title}</h1>
         {description && <p className="page-description">{description}</p>}
@@ -65,6 +66,30 @@ export function Button({
   )
 }
 
+export function IconButton({
+  icon,
+  label,
+  variant = 'ghost',
+  className = '',
+  ...props
+}: Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'> & {
+  icon: IconName
+  label: string
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger'
+}) {
+  return (
+    <button
+      type="button"
+      className={`button button-${variant} icon-button ${className}`.trim()}
+      aria-label={label}
+      title={label}
+      {...props}
+    >
+      <Icon name={icon} size={18} />
+    </button>
+  )
+}
+
 export function StatusBadge({ status }: { status: RequestStatus | 'verified' }) {
   const { language } = useUi()
   return <span className={`status status-${status}`}>{getStatusLabel(status, language)}</span>
@@ -82,7 +107,7 @@ export function LoadingBlock({ label = 'Memuatkan…' }: { label?: string }) {
 export function EmptyState({ title, description }: { title: string; description?: string }) {
   return (
     <div className="empty-state">
-      <span className="empty-icon">◇</span>
+      <span className="empty-icon"><Icon name="empty" size={34} /></span>
       <h3>{title}</h3>
       {description && <p>{description}</p>}
     </div>
@@ -121,10 +146,13 @@ export function Field({
   )
 }
 
-export function StatCard({ label, value, note }: { label: string; value: string; note?: string }) {
+export function StatCard({ label, value, note, icon }: { label: string; value: string; note?: string; icon?: IconName }) {
   return (
     <div className="stat-card">
-      <span>{label}</span>
+      <div className="stat-card-label">
+        {icon && <span className="stat-card-icon"><Icon name={icon} size={18} /></span>}
+        <span>{label}</span>
+      </div>
       <strong>{value}</strong>
       {note && <small>{note}</small>}
     </div>

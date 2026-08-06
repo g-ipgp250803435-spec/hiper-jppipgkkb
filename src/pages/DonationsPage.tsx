@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { Button, Card, EmptyState, Field, LoadingBlock, Notice, PageHeader, StatCard } from '../components/UI'
+import { Icon } from '../components/Icons'
 import { useAuth } from '../contexts/AuthContext'
 import { useUi } from '../contexts/UiContext'
 import { isSupabaseConfigured } from '../lib/config'
@@ -155,7 +156,7 @@ export default function DonationsPage() {
           <Card className="form-card" title={t('Rekodkan sumbangan anda', 'Record your contribution')}>
             {!user ? (
               <div className="locked-panel">
-                <span>🔒</span>
+                <span><Icon name="lock" size={34} /></span>
                 <h3>{t('Log masuk untuk menghantar bukti', 'Sign in to submit proof')}</h3>
                 <p>{t('Anda masih boleh membuat pindahan menggunakan butiran rasmi di sebelah.', 'You may still transfer using the official details shown alongside.')}</p>
                 <Link className="button button-primary" to="/login">{t('Log masuk DELIMa', 'DELIMa sign in')}</Link>
