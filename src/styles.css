@@ -711,7 +711,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   transition: transform .22s ease, background .22s ease;
 }
 .language-switch[aria-checked='true'] .language-switch-track > span { transform: translateX(12px); background: var(--gold); }
-.tool-button, .menu-toggle { display: inline-grid; place-items: center; }
+.tool-button { display: inline-grid; place-items: center; }
+.menu-toggle { display: none; place-items: center; }
 .desktop-account-menu .button { white-space: nowrap; }
 .nav-backdrop { display: none; }
 
@@ -826,6 +827,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 
 @media (max-width: 1080px) {
   body.nav-open { overflow: hidden; }
+  body.nav-open .site-header { z-index: 70; }
   .header-inner { min-height: 72px; }
   .menu-toggle { display: inline-grid; margin-left: 0; order: 4; }
   .main-nav {
@@ -849,7 +851,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     opacity: 0;
     visibility: hidden;
     transition: transform .25s ease, opacity .25s ease, visibility .25s ease;
-    z-index: 60;
+    z-index: 2;
   }
   .main-nav.is-open { display: flex; transform: translateX(0); opacity: 1; visibility: visible; }
   .mobile-nav-heading { display: flex; align-items: center; justify-content: space-between; padding: 5px 4px 18px; border-bottom: 1px solid var(--line); font-weight: 850; }

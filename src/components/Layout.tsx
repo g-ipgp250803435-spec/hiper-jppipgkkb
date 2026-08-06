@@ -28,7 +28,23 @@ export function Layout({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     document.body.classList.toggle('nav-open', menuOpen)
-    return () => document.body.classList.remove('nav-open')
+
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMenuOpen(false)
+    }
+
+    const closeOnDesktop = () => {
+      if (window.innerWidth > 1080) setMenuOpen(false)
+    }
+
+    window.addEventListener('keydown', closeOnEscape)
+    window.addEventListener('resize', closeOnDesktop)
+
+    return () => {
+      document.body.classList.remove('nav-open')
+      window.removeEventListener('keydown', closeOnEscape)
+      window.removeEventListener('resize', closeOnDesktop)
+    }
   }, [menuOpen])
 
   const handleSignOut = async () => {
@@ -54,7 +70,7 @@ export function Layout({ children }: { children: ReactNode }) {
           <nav id="main-navigation" className={`main-nav ${menuOpen ? 'is-open' : ''}`} aria-label={t('Navigasi utama', 'Main navigation')}>
             <div className="mobile-nav-heading">
               <span>{t('Menu HiPER', 'HiPER menu')}</span>
-              <button className="mobile-nav-close" onClick={closeMenu} aria-label={t('Tutup menu', 'Close menu')}>
+              <button type="button" className="mobile-nav-close" onClick={closeMenu} aria-label={t('Tutup menu', 'Close menu')}>
                 <Icon name="close" size={20} />
               </button>
             </div>
@@ -106,6 +122,7 @@ export function Layout({ children }: { children: ReactNode }) {
 
           <div className="header-tools">
             <button
+              type="button"
               className="language-switch"
               onClick={() => setLanguage(language === 'bm' ? 'en' : 'bm')}
               aria-label={t('Tukar bahasa ke English', 'Switch language to Bahasa Melayu')}
@@ -116,7 +133,7 @@ export function Layout({ children }: { children: ReactNode }) {
               <span className="language-switch-track" aria-hidden="true"><span /></span>
               <span className={language === 'en' ? 'active' : ''}>EN</span>
             </button>
-            <button className="tool-button" onClick={toggleTheme} aria-label={t('Tukar tema', 'Switch theme')}>
+            <button type="button" className="tool-button" onClick={toggleTheme} aria-label={t('Tukar tema', 'Switch theme')}>
               <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={18} />
             </button>
             {user ? (
@@ -136,6 +153,7 @@ export function Layout({ children }: { children: ReactNode }) {
           </div>
 
           <button
+            type="button"
             className="menu-toggle"
             onClick={() => setMenuOpen((current) => !current)}
             aria-label={menuOpen ? t('Tutup menu', 'Close menu') : t('Buka menu', 'Open menu')}
@@ -147,7 +165,7 @@ export function Layout({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      {menuOpen && <button className="nav-backdrop" onClick={closeMenu} aria-label={t('Tutup menu', 'Close menu')} />}
+      {menuOpen && <button type="button" className="nav-backdrop" onClick={closeMenu} aria-label={t('Tutup menu', 'Close menu')} />}
 
       {!isSupabaseConfigured && (
         <div className="container demo-notice-wrap">
