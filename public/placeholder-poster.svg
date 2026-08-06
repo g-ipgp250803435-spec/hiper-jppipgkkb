@@ -8,7 +8,7 @@
   <rect width="800" height="1000" fill="url(#g)"/>
   <circle cx="650" cy="180" r="130" fill="#c9a24f" opacity=".18"/>
   <circle cx="140" cy="820" r="180" fill="#c9a24f" opacity=".12"/>
-  <text x="70" y="150" fill="#c9a24f" font-family="Arial, sans-serif" font-size="58" font-weight="700">PBAK ONE</text>
+  <text x="70" y="150" fill="#c9a24f" font-family="Arial, sans-serif" font-size="58" font-weight="700">HiPER</text>
   <text x="70" y="245" fill="#fff" font-family="Arial, sans-serif" font-size="42" font-weight="700">Poster Hebahan</text>
   <text x="70" y="310" fill="#f4ead0" font-family="Arial, sans-serif" font-size="25">Gantikan melalui Panel Pentadbir</text>
   <rect x="70" y="380" width="660" height="4" fill="#c9a24f"/>

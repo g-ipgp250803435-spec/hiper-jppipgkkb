@@ -1,5 +1,5 @@
 export const config = {
-  siteName: import.meta.env.VITE_SITE_NAME || 'PBAK One',
+  siteName: import.meta.env.VITE_SITE_NAME || 'HiPER',
   institutionName: import.meta.env.VITE_INSTITUTION_NAME || 'IPG Kampus Kota Bharu',
   supabaseUrl: import.meta.env.VITE_SUPABASE_URL || '',
   supabaseAnonKey: import.meta.env.VITE_SUPABASE_ANON_KEY || '',

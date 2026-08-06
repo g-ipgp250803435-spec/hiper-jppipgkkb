@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { Button, Card, EmptyState, Field, LoadingBlock, Notice, PageHeader } from '../components/UI'
+import { Icon } from '../components/Icons'
 import { useAuth } from '../contexts/AuthContext'
 import { useUi } from '../contexts/UiContext'
 import { isSupabaseConfigured } from '../lib/config'
@@ -101,7 +102,7 @@ export default function AssetsPage() {
                 {assets.map((asset) => (
                   <Card className="asset-card" key={asset.id}>
                     <div className="asset-image">
-                      {asset.image_url ? <img src={asset.image_url} alt="" /> : <span>▣</span>}
+                      {asset.image_url ? <img src={asset.image_url} alt="" /> : <span><Icon name="box" size={34} /></span>}
                     </div>
                     <h3>{language === 'bm' ? asset.name_bm : asset.name_en || asset.name_bm}</h3>
                     <p>{language === 'bm' ? asset.description_bm : asset.description_en || asset.description_bm}</p>
@@ -117,7 +118,7 @@ export default function AssetsPage() {
           <Card className="form-card" title={t('Borang pinjaman', 'Borrowing form')}>
             {!user ? (
               <div className="locked-panel">
-                <span>🔒</span><h3>{t('Log masuk diperlukan', 'Sign in required')}</h3>
+                <span><Icon name="lock" size={34} /></span><h3>{t('Log masuk diperlukan', 'Sign in required')}</h3>
                 <Link className="button button-primary" to="/login">{t('Log masuk DELIMa', 'DELIMa sign in')}</Link>
               </div>
             ) : (

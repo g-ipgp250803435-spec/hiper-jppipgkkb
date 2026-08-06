@@ -1,56 +1,70 @@
-# HiPER
+# Hab Perbendaharaan Digital (HiPER)
 
-Portal bersepadu Pejabat Bendahari Agung Kehormat, JPP IPG Kampus Kota Bharu.
+Portal rasmi Pejabat Bendahari Agung Kehormat (PBAK), JPP IPG Kampus Kota Bharu.
 
-**Nama rasmi:** HiPER — Portal Rasmi PBAK, JPP IPG Kampus Kota Bharu.
-
-## Modul
+## Modul utama
 
 - iKES Care dan iKES Go-Home
-- e-Aset
-- Tabung Jumaat dan rekod agihan
+- e-Aset dan katalog aset
+- Tabung Jumaat, kutipan serta rekod agihan
 - Pengumuman dengan poster
 - Portal semakan siswa guru
 - Carta organisasi PBAK
-- Panel pentadbir
-- Log masuk Google/DELIMa
+- Dashboard pentadbir
+- Log masuk Google DELIMa
 - Bahasa BM/EN
-- Light mode/dark mode
-- Paparan desktop dan telefon
+- Light mode dan dark mode
+- Paparan desktop, tablet dan telefon
+
+## Naik taraf dalam versi ini
+
+- Navigation bar premium dan responsif
+- Butang Log Masuk DELIMa/Log Keluar dalam menu telefon
+- Toggle switch bahasa BM/EN
+- Ikon SVG dalaman menggantikan emoji
+- Kad pengumuman halaman utama yang lebih ringkas
+- Paparan kandungan pengumuman berbilang baris
+- Admin boleh edit pengumuman
+- Admin boleh edit aset
+- Admin boleh edit ahli organisasi
+- Admin boleh tambah rekod kutipan manual menggunakan jadual `donations`
+- Spacing dan paparan dashboard diperhalus
+
+Rujuk [`CHANGELOG-NAIK-TARAF-2026-08-06.md`](CHANGELOG-NAIK-TARAF-2026-08-06.md) untuk senarai penuh.
 
 ## Teknologi
 
-- React + Vite + TypeScript
+- React 19 + Vite 7 + TypeScript
 - Supabase Database, Auth dan Storage
 - Google OAuth
-- GitHub
-- Vercel
+- GitHub dan Vercel
 
-## Mula di sini
-
-Buka fail [`docs/PANDUAN-LENGKAP.md`](docs/PANDUAN-LENGKAP.md) dan ikut langkah 1 hingga 12.
-
-## Arahan tempatan pilihan
+## Menjalankan projek
 
 ```bash
 npm install
 npm run dev
 ```
 
+Untuk production build:
+
+```bash
+npm run build
+```
+
 ## Fail penting
 
-- `supabase/schema.sql` — jadual, RLS, fungsi dan storage
-- `.env.example` — pemboleh ubah persekitaran
-- `vercel.json` — sokongan routing SPA di Vercel
-- `docs/PANDUAN-LENGKAP.md` — panduan pemasangan
-- `docs/SENARAI-SEMAK-UJIAN.md` — ujian sebelum pelancaran
-- `docs/ARAHAN-JULES.md` — contoh arahan selamat untuk Jules
-- `docs/IDENTITI-HIPER.md` — piawaian nama rasmi
-- `docs/SEBELUM-NAIK-TARAF.md` — checklist stabilisasi
+- `src/` — kod aplikasi aktif
+- `supabase/migrations/` — sejarah migration database Production
+- `supabase/schema.sql` — rujukan schema, bukan untuk dijalankan semula secara membuta tuli
+- `.env.example` — template environment variables
+- `vercel.json` — routing SPA Vercel
+- `IMPORT-GITHUB.md` — langkah import paling mudah
+- `KONTEKS-PROJEK-CHATGPT-LATEST.md` — dokumen kesinambungan projek
 
 ## Keselamatan
 
-- Jangan masukkan `service_role` key dalam GitHub atau Vercel.
-- Gunakan `anon` key sahaja pada `VITE_SUPABASE_ANON_KEY`.
-- Polisi RLS dalam `supabase/schema.sql` mesti dijalankan.
-- Tukar akaun admin melalui SQL selepas akaun tersebut log masuk kali pertama.
+- Jangan muat naik `.env`, Google client secret, database password atau token ke GitHub.
+- Gunakan Supabase anon key sahaja pada frontend.
+- Jangan ubah Production database tanpa migration baharu dan ujian dry run.
+- Versi ini tidak memerlukan migration database baharu.
