@@ -1261,3 +1261,73 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .nav-v3-mobile-links a,
   .nav-v3-language-track > span { transition: none; }
 }
+
+/* =========================================================
+   HiPER Navigation V3.1 — desktop collision fix
+   Keep mobile drawer unchanged. Laptop/compact desktop uses
+   a dedicated second navigation row so account links never
+   collide with language/theme/account controls.
+   ========================================================= */
+
+/* Give the one-row layout more breathing room on large screens. */
+@media (min-width: 1461px) {
+  .nav-v3-inner {
+    width: min(1500px, calc(100% - 40px));
+  }
+
+  .nav-v3-desktop {
+    flex: 1 1 auto;
+  }
+
+  .nav-v3-actions {
+    margin-left: 0;
+  }
+}
+
+/* Laptop and compact desktop: controls stay on row one,
+   while all navigation links sit safely on row two. */
+@media (min-width: 821px) and (max-width: 1460px) {
+  :root {
+    --nav-v3-header-offset: 132px;
+  }
+
+  .nav-v3-inner {
+    min-height: auto;
+    flex-wrap: wrap;
+    padding-block: 10px 11px;
+    column-gap: 14px;
+    row-gap: 9px;
+  }
+
+  .nav-v3-brand {
+    margin-right: auto;
+  }
+
+  .nav-v3-actions {
+    margin-left: auto;
+  }
+
+  .nav-v3-desktop {
+    order: 3;
+    width: 100%;
+    margin: 0;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    gap: 3px;
+    overflow: hidden;
+  }
+
+  .nav-v3-desktop a {
+    width: 100%;
+    min-width: 0;
+    padding-inline: 7px;
+    overflow: hidden;
+    font-size: .77rem;
+    text-overflow: ellipsis;
+  }
+
+  .nav-v3-account-name {
+    display: none;
+  }
+}
