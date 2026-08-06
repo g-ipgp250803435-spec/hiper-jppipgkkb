@@ -4,12 +4,14 @@ import {
 } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useUi } from '../contexts/UiContext'
+import { useSiteSettings } from '../contexts/SiteSettingsContext'
 import {
   Button,
   Card,
   Notice,
 } from '../components/UI'
 import { config } from '../lib/config'
+import { localise } from '../lib/siteSettings'
 
 export default function LoginPage() {
   const {
@@ -19,7 +21,8 @@ export default function LoginPage() {
     loading,
   } = useAuth()
 
-  const { t } = useUi()
+  const { language, t } = useUi()
+  const { settings } = useSiteSettings()
   const location = useLocation()
 
   const from =
@@ -40,21 +43,11 @@ export default function LoginPage() {
     <section className="section auth-section">
       <div className="container auth-grid">
         <div className="auth-copy">
-          <p className="eyebrow">HiPER</p>
+          <p className="eyebrow">{localise(settings.pages.login.eyebrow, language)}</p>
 
-          <h1>
-            {t(
-              'Akses khas warga IPGKKB',
-              'Exclusive access for the IPGKKB community',
-            )}
-          </h1>
+          <h1>{localise(settings.pages.login.title, language)}</h1>
 
-          <p>
-            {t(
-              'Gunakan akaun DELIMa atau akaun pentadbir yang telah dilantik untuk mengakses portal.',
-              'Use your DELIMa account or an appointed administrator account to access the portal.',
-            )}
-          </p>
+          <p>{localise(settings.pages.login.description, language)}</p>
 
           <ul className="check-list">
             <li>
@@ -82,7 +75,7 @@ export default function LoginPage() {
 
         <Card className="login-card">
           <img
-            src="/logo-mark.svg"
+            src={settings.branding.logoUrl || '/hiper-logo.png'}
             className="login-logo"
             alt="HiPER"
           />

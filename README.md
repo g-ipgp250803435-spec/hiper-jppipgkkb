@@ -2,69 +2,67 @@
 
 Portal rasmi Pejabat Bendahari Agung Kehormat (PBAK), JPP IPG Kampus Kota Bharu.
 
-## Modul utama
+## Premium V2
 
-- iKES Care dan iKES Go-Home
-- e-Aset dan katalog aset
-- Tabung Jumaat, kutipan serta rekod agihan
-- Pengumuman dengan poster
-- Portal semakan siswa guru
-- Carta organisasi PBAK
-- Dashboard pentadbir
-- Log masuk Google DELIMa
-- Bahasa BM/EN
-- Light mode dan dark mode
-- Paparan desktop, tablet dan telefon
+Pakej ini membina semula pengalaman HiPER berasaskan rujukan visual website lama: susun atur dua baris, tona krim/rose lembut, dark maroon, dark gold, kad berbingkai halus, ruang putih yang luas dan hierarki kandungan yang kemas.
 
-## Naik taraf dalam versi ini
+### Ciri utama
 
-- Navigation bar premium dan responsif
-- Butang Log Masuk DELIMa/Log Keluar dalam menu telefon
-- Toggle switch bahasa BM/EN
-- Ikon SVG dalaman menggantikan emoji
-- Kad pengumuman halaman utama yang lebih ringkas
-- Paparan kandungan pengumuman berbilang baris
-- Admin boleh edit pengumuman
-- Admin boleh edit aset
-- Admin boleh edit ahli organisasi
-- Admin boleh tambah rekod kutipan manual menggunakan jadual `donations`
-- Spacing dan paparan dashboard diperhalus
-
-Rujuk [`CHANGELOG-NAIK-TARAF-2026-08-06.md`](CHANGELOG-NAIK-TARAF-2026-08-06.md) untuk senarai penuh.
+- Navigasi desktop dua baris tanpa pertindihan dan drawer telefon khusus.
+- BM/English dan light/dark mode.
+- Homepage premium dengan hero, kad perkhidmatan, ringkasan dana dan pengumuman ringkas.
+- CRUD pentadbir untuk pengumuman, aset, ahli organisasi, kutipan dan agihan.
+- Rich-text pengumuman: bold, italic, bullets dan numbering, dengan sanitasi paparan.
+- CMS pentadbir untuk logo, favicon, nama portal, header, navigasi, homepage, tajuk halaman dan footer.
+- Carta organisasi parent/child sebenar dengan perlindungan kitaran hierarchy.
+- Edge Function notifikasi e-mel admin untuk permohonan iKES dan e-Aset.
+- RLS dan Storage policy khusus admin untuk CMS/media.
 
 ## Teknologi
 
-- React 19 + Vite 7 + TypeScript
-- Supabase Database, Auth dan Storage
-- Google OAuth
-- GitHub dan Vercel
+- React 19
+- TypeScript
+- Vite 7
+- React Router
+- Supabase Database, Auth, Storage, Edge Functions dan Database Webhooks
 
-## Menjalankan projek
+## Mula
 
 ```bash
+cp .env.example .env
 npm install
 npm run dev
 ```
 
-Untuk production build:
+Isi `.env` menggunakan Project URL dan anon/publishable key Supabase. Jangan masukkan service-role key atau secret e-mel ke frontend.
 
-```bash
-npm run build
-```
+## Deployment
 
-## Fail penting
+1. Import semua kandungan folder ini ke GitHub.
+2. Sambungkan repository kepada Vercel.
+3. Masukkan environment variables frontend dalam Vercel.
+4. Jalankan migration Supabase.
+5. Deploy Edge Function dan sediakan dua Database Webhooks.
+6. Uji Vercel Preview sebelum Production.
 
-- `src/` — kod aplikasi aktif
-- `supabase/migrations/` — sejarah migration database Production
-- `supabase/schema.sql` — rujukan schema, bukan untuk dijalankan semula secara membuta tuli
-- `.env.example` — template environment variables
-- `vercel.json` — routing SPA Vercel
-- `IMPORT-GITHUB.md` — langkah import paling mudah
-- `KONTEKS-PROJEK-CHATGPT-LATEST.md` — dokumen kesinambungan projek
+Panduan terperinci:
+
+- `docs/SETUP-SUPABASE-PREMIUM-V2.md`
+- `docs/SETUP-VERCEL-GOOGLE.md`
+- `IMPORT-GITHUB.md`
+- `SENARAI-SEMAK-UJIAN-PREMIUM-V2.md`
+- `AUDIT-KOD-PREMIUM-V2.md`
+- `VALIDATION-REPORT-PREMIUM-V2.md`
+- `docs/REKA-BENTUK-HIPER-PREMIUM-V2.md`
 
 ## Keselamatan
 
-- Jangan muat naik `.env`, Google client secret, database password atau token ke GitHub.
-- Gunakan Supabase anon key sahaja pada frontend.
-- Jangan ubah Production database tanpa migration baharu dan ujian dry run.
-- Versi ini tidak memerlukan migration database baharu.
+Jangan commit atau kongsi:
+
+- Supabase service-role key
+- database password
+- Google OAuth client secret
+- Resend API key
+- webhook secret
+- access/refresh token
+- fail `.env`

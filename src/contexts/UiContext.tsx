@@ -13,21 +13,22 @@ const UiContext = createContext<UiContextValue | null>(null)
 
 export function UiProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<Language>(() => {
-    return (localStorage.getItem('pbak-language') as Language) || 'bm'
+    const saved = localStorage.getItem('hiper-language') || localStorage.getItem('pbak-language')
+    return saved === 'en' ? 'en' : 'bm'
   })
   const [theme, setTheme] = useState<Theme>(() => {
-    const saved = localStorage.getItem('pbak-theme') as Theme | null
-    if (saved) return saved
+    const saved = localStorage.getItem('hiper-theme') || localStorage.getItem('pbak-theme')
+    if (saved === 'light' || saved === 'dark') return saved
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
   })
 
   useEffect(() => {
-    localStorage.setItem('pbak-language', language)
+    localStorage.setItem('hiper-language', language)
     document.documentElement.lang = language === 'bm' ? 'ms' : 'en'
   }, [language])
 
   useEffect(() => {
-    localStorage.setItem('pbak-theme', theme)
+    localStorage.setItem('hiper-theme', theme)
     document.documentElement.dataset.theme = theme
   }, [theme])
 
