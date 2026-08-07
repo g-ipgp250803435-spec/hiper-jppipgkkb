@@ -12,22 +12,26 @@ export const formatMoney = (value: number | string | null | undefined) => {
 
 export const formatDate = (value: string | null | undefined, language: Language = 'bm') => {
   if (!value) return '—'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '—'
   return new Intl.DateTimeFormat(language === 'bm' ? 'ms-MY' : 'en-MY', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
-  }).format(new Date(value))
+  }).format(date)
 }
 
 export const formatDateTime = (value: string | null | undefined, language: Language = 'bm') => {
   if (!value) return '—'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '—'
   return new Intl.DateTimeFormat(language === 'bm' ? 'ms-MY' : 'en-MY', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-  }).format(new Date(value))
+  }).format(date)
 }
 
 export const getStatusLabel = (status: RequestStatus | DonationStatus, language: Language) => {
@@ -52,12 +56,26 @@ export const safeFileName = (name: string) =>
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '')
 
+const PUBLIC_MEDIA_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml', 'image/x-icon', 'image/vnd.microsoft.icon'])
+const PRIVATE_FILE_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp', 'application/pdf'])
+
+function validateUpload(file: File, allowedTypes: Set<string>, maxBytes: number, label: string) {
+  if (!allowedTypes.has(file.type)) throw new Error(`${label}: jenis fail tidak dibenarkan.`)
+  if (file.size <= 0 || file.size > maxBytes) throw new Error(`${label}: saiz fail melebihi had ${Math.round(maxBytes / 1024 / 1024)}MB.`)
+}
+
+function safeExtension(file: File) {
+  const extension = file.name.split('.').pop()?.toLowerCase().replace(/[^a-z0-9]/g, '')
+  return extension || (file.type === 'application/pdf' ? 'pdf' : 'file')
+}
+
 export const uploadPublicFile = async (
   supabaseClient: SupabaseClient,
   file: File,
   folder: string,
 ) => {
-  const extension = file.name.split('.').pop() || 'file'
+  validateUpload(file, PUBLIC_MEDIA_TYPES, 5 * 1024 * 1024, 'Media awam')
+  const extension = safeExtension(file)
   const path = `${folder}/${Date.now()}-${crypto.randomUUID()}.${extension}`
   const { error } = await supabaseClient.storage.from('public-media').upload(path, file, {
     upsert: false,
@@ -74,7 +92,8 @@ export const uploadPrivateFile = async (
   file: File,
   folder: string,
 ) => {
-  const extension = file.name.split('.').pop() || 'file'
+  validateUpload(file, PRIVATE_FILE_TYPES, 10 * 1024 * 1024, 'Dokumen permohonan')
+  const extension = safeExtension(file)
   const path = `${userId}/${folder}/${Date.now()}-${crypto.randomUUID()}.${extension}`
   const { error } = await supabaseClient.storage.from('application-files').upload(path, file, {
     upsert: false,

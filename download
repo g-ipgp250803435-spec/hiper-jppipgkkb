@@ -1,9 +1,8 @@
-node_modules/
-dist/
-.env
-.env.*
-!.env.example
-.vercel/
-*.log
-.DS_Store
-Thumbs.db
+# Supabase
+.branches
+.temp
+
+# dotenvx
+.env.keys
+.env.local
+.env.*.local

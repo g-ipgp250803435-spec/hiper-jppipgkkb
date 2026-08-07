@@ -1,10 +1,13 @@
 import { Link } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { useUi } from '../contexts/UiContext'
+import { useSiteSettings } from '../contexts/SiteSettingsContext'
 import { supabase } from '../lib/supabase'
 import { isSupabaseConfigured } from '../lib/config'
+import { localise } from '../lib/siteSettings'
 import type { Announcement, FundSummary } from '../lib/types'
-import { Card, PageHeader, StatCard } from '../components/UI'
+import { Card, PageHeader } from '../components/UI'
+import { Icon } from '../components/Icons'
 import { formatDate, formatMoney } from '../lib/helpers'
 
 const sampleAnnouncements: Announcement[] = [
@@ -24,6 +27,7 @@ const sampleAnnouncements: Announcement[] = [
 
 export default function HomePage() {
   const { language, t } = useUi()
+  const { settings } = useSiteSettings()
   const [announcements, setAnnouncements] = useState<Announcement[]>(sampleAnnouncements)
   const [fund, setFund] = useState<FundSummary>({ total_verified: 0, total_disbursed: 0, balance: 0 })
 
@@ -39,130 +43,134 @@ export default function HomePage() {
         .limit(3),
       supabase.rpc('get_public_fund_summary'),
     ]).then(([announcementResult, fundResult]) => {
-      if (announcementResult.data?.length) setAnnouncements(announcementResult.data as Announcement[])
+      setAnnouncements((announcementResult.data as Announcement[]) || [])
       const summary = Array.isArray(fundResult.data) ? fundResult.data[0] : fundResult.data
       if (summary) setFund(summary as FundSummary)
     })
   }, [])
 
-  const services = [
-    {
-      icon: '♡',
-      title: 'iKES',
-      description: t('Pinjaman kebajikan tanpa faedah untuk keperluan segera dan perjalanan pulang.', 'Interest-free welfare assistance for urgent needs and travel home.'),
-      href: '/ikes',
-    },
-    {
-      icon: '▣',
-      title: 'e-Aset',
-      description: t('Mohon pinjaman aset JPP dan semak tarikh pemulangan.', 'Request JPP assets and monitor return dates.'),
-      href: '/e-aset',
-    },
-    {
-      icon: '◇',
-      title: t('Tabung Jumaat', 'Friday Fund'),
-      description: t('Salurkan sumbangan dan lihat rekod kutipan serta agihan.', 'Donate and view collection and distribution records.'),
-      href: '/tabung-jumaat',
-    },
-    {
-      icon: '◉',
-      title: t('Pengumuman', 'Announcements'),
-      description: t('Dapatkan hebahan terkini berkaitan elaun, jualan dan kebajikan.', 'Get the latest allowance, sales and welfare updates.'),
-      href: '/pengumuman',
-    },
-  ]
+  const services = settings.home.services
+
 
   return (
     <>
-      <section className="hero">
-        <div className="container hero-grid">
-          <div className="hero-copy">
-            <p className="eyebrow">PEJABAT BENDAHARI AGUNG KEHORMAT</p>
-            <h1>{t('Satu portal untuk kebajikan siswa guru.', 'One portal for student teacher welfare.')}</h1>
-            <p>
-              {t(
-                'Mohon bantuan, pinjam aset, salurkan sumbangan dan semak pengumuman PBAK dengan lebih tersusun.',
-                'Request assistance, borrow assets, contribute and check PBAK announcements in one organised place.',
-              )}
-            </p>
+      <section className="premium-hero">
+        <div className="container premium-hero-grid">
+          <div className="premium-hero-copy">
+            <p className="eyebrow">{localise(settings.home.eyebrow, language)}</p>
+            <h1>{localise(settings.home.title, language)}</h1>
+            <p className="hero-description">{localise(settings.home.description, language)}</p>
             <div className="hero-actions">
-              <Link className="button button-primary" to="/login">
-                {t('Log masuk dengan DELIMa', 'Sign in with DELIMa')}
+              <Link className="button button-primary button-large" to={settings.home.primaryCtaUrl || '/e-aset'}>
+                {localise(settings.home.primaryCtaLabel, language)} <Icon name="chevron-right" size={18} />
               </Link>
-              <Link className="button button-secondary" to="/pengumuman">
-                {t('Lihat pengumuman', 'View announcements')}
+              <Link className="button button-secondary button-large" to={settings.home.secondaryCtaUrl || '/ikes'}>
+                {localise(settings.home.secondaryCtaLabel, language)}
               </Link>
             </div>
-            <div className="trust-row">
-              <span>✓ {t('Akses terkawal', 'Controlled access')}</span>
-              <span>✓ {t('Mesra telefon', 'Mobile friendly')}</span>
-              <span>✓ BM / EN</span>
+            <div className="premium-trust-row">
+              <span><Icon name="check" size={16} /> {localise(settings.home.trustOne, language)}</span>
+              <span><Icon name="shield" size={16} /> {localise(settings.home.trustTwo, language)}</span>
+              <span><Icon name="chart" size={16} /> {localise(settings.home.trustThree, language)}</span>
             </div>
           </div>
-          <div className="hero-panel">
-            <div className="hero-orbit orbit-one" />
-            <div className="hero-orbit orbit-two" />
-            <img src="/logo-mark.svg" alt="HiPER" />
-            <strong>HiPER</strong>
-            <span>{t('Kebajikan · Ketelusan · Perkhidmatan', 'Welfare · Transparency · Service')}</span>
+          <div className="premium-hero-mark" aria-hidden="true">
+            <span className="hero-ring hero-ring-one" />
+            <span className="hero-ring hero-ring-two" />
+            <img src={settings.home.heroImageUrl || settings.branding.logoUrl || '/hiper-logo.png'} alt="" />
           </div>
         </div>
       </section>
 
-      <section className="section">
+      <section className="section premium-services-section">
         <div className="container">
           <PageHeader
-            eyebrow={t('PERKHIDMATAN UTAMA', 'CORE SERVICES')}
-            title={t('Semua keperluan dalam satu tempat', 'Everything you need in one place')}
+            eyebrow={localise(settings.home.servicesEyebrow, language)}
+            title={localise(settings.home.servicesTitle, language)}
+            description={localise(settings.home.servicesDescription, language)}
           />
-          <div className="service-grid">
+          <div className="premium-service-grid">
             {services.map((service) => (
-              <Link to={service.href} className="service-card" key={service.href}>
-                <span className="service-icon">{service.icon}</span>
-                <h2>{service.title}</h2>
-                <p>{service.description}</p>
-                <span className="text-link">{t('Buka perkhidmatan', 'Open service')} →</span>
+              <Link to={service.href} className="premium-service-card" key={service.href}>
+                <span className="premium-service-icon"><Icon name={service.icon} size={24} /></span>
+                <span className="premium-service-eyebrow">{localise(service.eyebrow, language)}</span>
+                <h2>{localise(service.title, language)}</h2>
+                <p>{localise(service.description, language)}</p>
+                <span className="premium-card-link">{t('Buka perkhidmatan', 'Open service')} <Icon name="chevron-right" size={17} /></span>
               </Link>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="section section-muted">
+      <section className="section fund-showcase-section">
         <div className="container">
-          <PageHeader eyebrow={t('KETELUSAN', 'TRANSPARENCY')} title={t('Ringkasan Tabung Jumaat', 'Friday Fund summary')} />
-          <div className="stats-grid">
-            <StatCard label={t('Jumlah disahkan', 'Verified total')} value={formatMoney(fund.total_verified)} />
-            <StatCard label={t('Jumlah diagihkan', 'Total distributed')} value={formatMoney(fund.total_disbursed)} />
-            <StatCard label={t('Baki semasa', 'Current balance')} value={formatMoney(fund.balance)} />
+          <PageHeader
+            eyebrow={localise(settings.home.transparencyEyebrow, language)}
+            title={localise(settings.home.transparencyTitle, language)}
+          />
+          <div className="fund-showcase-grid">
+            <div className="fund-feature-card">
+              <span>{t('BAKI SEMASA', 'CURRENT BALANCE')}</span>
+              <strong>{formatMoney(fund.balance)}</strong>
+              <p>{t('Dikemas kini daripada kutipan disahkan dan rekod agihan.', 'Updated from verified collections and distribution records.')}</p>
+              <div className="fund-progress"><span style={{ width: fund.total_verified > 0 ? `${Math.min(100, Math.max(8, (fund.balance / fund.total_verified) * 100))}%` : '0%' }} /></div>
+              <small>{t('Rekod kewangan dipaparkan secara telus', 'Financial records are displayed transparently')}</small>
+            </div>
+            <div className="fund-metric-card">
+              <Icon name="chart" size={22} />
+              <span>{t('KUTIPAN · DISAHKAN', 'COLLECTIONS · VERIFIED')}</span>
+              <strong>{formatMoney(fund.total_verified)}</strong>
+            </div>
+            <div className="fund-metric-card">
+              <Icon name="wallet" size={22} />
+              <span>{t('AGIHAN · DIREKODKAN', 'DISTRIBUTIONS · RECORDED')}</span>
+              <strong>{formatMoney(fund.total_disbursed)}</strong>
+            </div>
+            <div className="fund-metric-card">
+              <Icon name="shield" size={22} />
+              <span>{t('STATUS REKOD', 'RECORD STATUS')}</span>
+              <strong className="fund-status-value">{t('TELUS', 'TRANSPARENT')}</strong>
+            </div>
           </div>
           <div className="section-action">
             <Link className="button button-secondary" to="/tabung-jumaat">
-              {t('Lihat butiran tabung', 'View fund details')}
+              {t('Lihat ketelusan awam', 'View public transparency')} <Icon name="chevron-right" size={17} />
             </Link>
           </div>
         </div>
       </section>
 
-      <section className="section">
+      <section className="section premium-announcements-section">
         <div className="container">
           <PageHeader
-            eyebrow={t('HEBAHAN TERKINI', 'LATEST UPDATES')}
-            title={t('Pengumuman PBAK', 'PBAK announcements')}
-            actions={<Link className="text-link" to="/pengumuman">{t('Lihat semua', 'View all')} →</Link>}
+            eyebrow={localise(settings.home.announcementsEyebrow, language)}
+            title={localise(settings.home.announcementsTitle, language)}
+            actions={
+              <Link className="premium-text-link" to="/pengumuman">
+                {t('Lihat semua', 'View all')} <Icon name="chevron-right" size={17} />
+              </Link>
+            }
           />
-          <div className="announcement-grid compact-grid">
-            {announcements.map((item) => (
-              <Card key={item.id} className="announcement-card">
-                <img src={item.poster_url || '/placeholder-poster.svg'} alt="" />
-                <div className="announcement-body">
-                  <span className="meta">{formatDate(item.created_at, language)}</span>
-                  <h2>{language === 'bm' ? item.title_bm : item.title_en || item.title_bm}</h2>
-                  <p>{language === 'bm' ? item.content_bm : item.content_en || item.content_bm}</p>
-                </div>
-              </Card>
-            ))}
-          </div>
+          {announcements.length === 0 ? (
+            <Card><p>{t('Belum ada pengumuman diterbitkan.', 'No announcements have been published yet.')}</p></Card>
+          ) : (
+            <div className="premium-announcement-grid">
+              {announcements.map((item) => (
+                <Link to="/pengumuman" key={item.id} className="premium-announcement-card">
+                  <div className="premium-announcement-poster">
+                    <img src={item.poster_url || '/placeholder-poster.svg'} alt={language === 'bm' ? item.title_bm : item.title_en || item.title_bm} />
+                    {item.pinned && <span><Icon name="pin" size={13} /> {t('Penting', 'Pinned')}</span>}
+                  </div>
+                  <div className="premium-announcement-copy">
+                    <span><Icon name="calendar" size={14} /> {formatDate(item.created_at, language)}</span>
+                    <h2>{language === 'bm' ? item.title_bm : item.title_en || item.title_bm}</h2>
+                    <b>{t('Baca pengumuman', 'Read announcement')} <Icon name="chevron-right" size={16} /></b>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </section>
     </>

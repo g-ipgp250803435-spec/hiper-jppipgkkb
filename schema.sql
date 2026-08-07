@@ -1,4 +1,4 @@
--- HiPER — Supabase database, security and storage setup
+-- PBAK One — Supabase database, security and storage setup
 -- Jalankan keseluruhan fail ini sekali dalam Supabase > SQL Editor.
 
 create extension if not exists pgcrypto;
@@ -535,8 +535,8 @@ for delete to authenticated using (
 -- Sample content. Delete or edit through the admin panel later.
 insert into public.announcements (title_bm, title_en, content_bm, content_en, published, pinned)
 select
-  'Selamat Datang ke HiPER',
-  'Welcome to HiPER',
+  'Selamat Datang ke PBAK One',
+  'Welcome to PBAK One',
   'Portal bersepadu kebajikan dan perkhidmatan Pejabat Bendahari Agung Kehormat.',
   'The integrated welfare and services portal of the Office of the Honorary Treasurer General.',
   true,

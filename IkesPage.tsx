@@ -1,14 +1,18 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { Button, Card, Field, Notice, PageHeader } from '../components/UI'
+import { Icon } from '../components/Icons'
 import { useAuth } from '../contexts/AuthContext'
 import { useUi } from '../contexts/UiContext'
+import { useSiteSettings } from '../contexts/SiteSettingsContext'
 import { isSupabaseConfigured } from '../lib/config'
+import { localise } from '../lib/siteSettings'
 import { uploadPrivateFile } from '../lib/helpers'
 import { supabase } from '../lib/supabase'
 
 export default function IkesPage() {
-  const { t } = useUi()
+  const { language, t } = useUi()
+  const { settings } = useSiteSettings()
   const { user, profile, refreshProfile } = useAuth()
   const [type, setType] = useState<'care' | 'go_home'>('care')
   const [amount, setAmount] = useState('30')
@@ -100,9 +104,9 @@ export default function IkesPage() {
     <section className="section">
       <div className="container">
         <PageHeader
-          eyebrow={t('INISIATIF KEBAJIKAN SISWA', 'STUDENT WELFARE INITIATIVE')}
-          title="iKES"
-          description={t('Pinjaman kebajikan tanpa faedah bagi keperluan segera siswa guru.', 'Interest-free welfare assistance for student teachers’ immediate needs.')}
+          eyebrow={localise(settings.pages.ikes.eyebrow, language)}
+          title={localise(settings.pages.ikes.title, language)}
+          description={localise(settings.pages.ikes.description, language)}
         />
 
         <div className="two-column-layout">
@@ -123,7 +127,7 @@ export default function IkesPage() {
           <Card className="form-card" title={t('Borang permohonan', 'Application form')}>
             {!user ? (
               <div className="locked-panel">
-                <span>🔒</span>
+                <span><Icon name="lock" size={34} /></span>
                 <h3>{t('Log masuk diperlukan', 'Sign in required')}</h3>
                 <p>{t('Gunakan akaun DELIMa untuk membuat dan menyemak permohonan.', 'Use your DELIMa account to submit and review applications.')}</p>
                 <Link className="button button-primary" to="/login">{t('Log masuk DELIMa', 'DELIMa sign in')}</Link>
