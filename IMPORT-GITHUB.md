@@ -1,22 +1,23 @@
-# Cara Import Fail Ini ke GitHub
+# Import ke GitHub — Cara Paling Mudah
 
-ZIP ini mengandungi root projek Vite yang lengkap.
-
-## Kaedah paling mudah
+## Disyorkan
 
 1. Ekstrak ZIP.
-2. Buka repository `hiper-jppipgkkb` di GitHub.
-3. Gunakan Codespaces atau GitHub Desktop.
-4. Gantikan kandungan projek dengan semua fail daripada folder ini.
-5. Jangan muat naik fail `.env` atau sebarang secret.
-6. Commit dan push ke branch baharu, contohnya `feature/hiper-premium-upgrade`.
-7. Tunggu Vercel Preview berstatus `Ready`.
-8. Uji halaman utama, menu telefon dan semua fungsi edit admin sebelum merge ke `main`.
+2. Buka folder `hiper-jppipgkkb`.
+3. Pastikan kandungannya termasuk `src`, `public`, `supabase`, `package.json` dan fail konfigurasi.
+4. Upload semua kandungan folder itu ke repository `hiper-jppipgkkb`.
+5. Jangan upload folder pembungkus tambahan sehingga struktur menjadi `repo/hiper-jppipgkkb/src`.
+6. Jangan upload `.env`, `node_modules`, `dist` atau fail `*.tsbuildinfo`.
+7. Commit ke branch baharu, contoh:
 
-## Environment variables yang diperlukan di Vercel
+```text
+feature/premium-v2-complete
+```
 
-Rujuk `.env.example`. Gunakan nilai sedia ada dalam Vercel; jangan masukkan secret ke GitHub.
+8. Tunggu Vercel Preview.
+9. Jalankan migration dan setup backend mengikut `docs/SETUP-SUPABASE-PREMIUM-V2.md`.
+10. Uji Preview sebelum merge ke `main`.
 
-## Database
+## Jika sudah terlanjur upload ke main
 
-Naik taraf ini menggunakan schema sedia ada. Jangan jalankan `supabase db push` untuk ZIP ini kerana tiada migration baharu.
+Jangan padam database atau force-push. Tunggu deployment, uji, kemudian gunakan commit baru untuk pembetulan. GitHub history masih menjadi rollback point.

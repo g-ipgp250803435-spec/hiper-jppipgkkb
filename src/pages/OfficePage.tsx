@@ -1,29 +1,39 @@
 import { useEffect, useState } from 'react'
-import { Card, EmptyState, LoadingBlock, PageHeader } from '../components/UI'
+import { EmptyState, LoadingBlock, PageHeader } from '../components/UI'
+import { OrganizationTree } from '../components/OrganizationTree'
 import { useUi } from '../contexts/UiContext'
+import { useSiteSettings } from '../contexts/SiteSettingsContext'
 import { isSupabaseConfigured } from '../lib/config'
+import { localise } from '../lib/siteSettings'
 import { supabase } from '../lib/supabase'
 import type { OrganizationMember } from '../lib/types'
 
 const sampleMembers: OrganizationMember[] = [
   {
-    id: 'sample-1',
-    sort_order: 1,
-    name: 'Nama Pegawai',
-    position_bm: 'Bendahari Agung Kehormat',
-    position_en: 'Honorary Treasurer General',
-    unit_bm: 'Pentadbiran',
-    unit_en: 'Administration',
-    class_name: 'Kelas',
-    duties_bm: 'Gantikan maklumat ini melalui panel pentadbir.',
-    duties_en: 'Replace this information through the admin panel.',
-    photo_url: null,
-    active: true,
+    id: 'lead-1', parent_id: null, node_type: 'leadership', sort_order: 1, name: 'Bendahari Agung Kehormat',
+    position_bm: 'Bendahari Agung Kehormat', position_en: 'Honorary Treasurer General', unit_bm: null, unit_en: null,
+    class_name: null, duties_bm: 'Memimpin dan menyelaras keseluruhan operasi PBAK.', duties_en: 'Leads and coordinates all PBAK operations.', photo_url: null, active: true,
+  },
+  {
+    id: 'lead-2', parent_id: 'lead-1', node_type: 'leadership', sort_order: 1, name: 'Naib Bendahari Agung Kehormat',
+    position_bm: 'Naib Bendahari Agung Kehormat', position_en: 'Deputy Honorary Treasurer General', unit_bm: null, unit_en: null,
+    class_name: null, duties_bm: 'Menyokong tadbir urus dan pemantauan unit.', duties_en: 'Supports governance and unit oversight.', photo_url: null, active: true,
+  },
+  {
+    id: 'unit-1', parent_id: 'lead-2', node_type: 'unit', sort_order: 1, name: 'Unit Kebajikan',
+    position_bm: 'Unit', position_en: 'Unit', unit_bm: 'Kebajikan', unit_en: 'Welfare', class_name: null,
+    duties_bm: 'Mengurus inisiatif iKES dan kebajikan siswa guru.', duties_en: 'Manages iKES and student teacher welfare initiatives.', photo_url: null, active: true,
+  },
+  {
+    id: 'member-1', parent_id: 'unit-1', node_type: 'member', sort_order: 1, name: 'Ahli Unit Kebajikan',
+    position_bm: 'Ahli', position_en: 'Member', unit_bm: 'Unit Kebajikan', unit_en: 'Welfare Unit', class_name: 'PISMP',
+    duties_bm: 'Membantu pengurusan permohonan dan program.', duties_en: 'Supports application and programme management.', photo_url: null, active: true,
   },
 ]
 
 export default function OfficePage() {
   const { language, t } = useUi()
+  const { settings } = useSiteSettings()
   const [members, setMembers] = useState<OrganizationMember[]>(sampleMembers)
   const [loading, setLoading] = useState(isSupabaseConfigured)
 
@@ -41,36 +51,19 @@ export default function OfficePage() {
   }, [])
 
   return (
-    <section className="section">
+    <section className="section page-intro-section office-page-section">
       <div className="container">
         <PageHeader
-          eyebrow={t('KENALI KAMI', 'MEET THE TEAM')}
-          title={t('Pejabat Bendahari Agung Kehormat', 'Office of the Honorary Treasurer General')}
-          description={t('Carta organisasi, unit dan bidang tugas warga PBAK.', 'Organisation, units and responsibilities of the PBAK team.')}
+          eyebrow={localise(settings.pages.office.eyebrow, language)}
+          title={localise(settings.pages.office.title, language)}
+          description={localise(settings.pages.office.description, language)}
         />
         {loading ? (
           <LoadingBlock />
         ) : members.length === 0 ? (
           <EmptyState title={t('Carta organisasi belum ditambah', 'Organisation chart has not been added')} />
         ) : (
-          <div className="people-grid">
-            {members.map((member) => (
-              <Card className="person-card" key={member.id}>
-                <div className="person-photo">
-                  {member.photo_url ? <img src={member.photo_url} alt={member.name} /> : <span>{member.name.charAt(0)}</span>}
-                </div>
-                <h2>{member.name}</h2>
-                <strong>{language === 'bm' ? member.position_bm : member.position_en || member.position_bm}</strong>
-                <div className="person-meta">
-                  {member.unit_bm && <span>{language === 'bm' ? member.unit_bm : member.unit_en || member.unit_bm}</span>}
-                  {member.class_name && <span>{member.class_name}</span>}
-                </div>
-                {(member.duties_bm || member.duties_en) && (
-                  <p>{language === 'bm' ? member.duties_bm : member.duties_en || member.duties_bm}</p>
-                )}
-              </Card>
-            ))}
-          </div>
+          <OrganizationTree members={members} language={language} />
         )}
       </div>
     </section>

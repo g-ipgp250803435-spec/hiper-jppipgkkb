@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Button, Card, EmptyState, Field, LoadingBlock, Notice, PageHeader, StatCard, StatusBadge } from '../components/UI'
 import { Icon } from '../components/Icons'
+import { RichTextEditor, richTextToPlainText } from '../components/RichText'
+import SiteSettingsEditor from '../components/admin/SiteSettingsEditor'
 import { useAuth } from '../contexts/AuthContext'
 import { useUi } from '../contexts/UiContext'
 import { isSupabaseConfigured } from '../lib/config'
@@ -18,11 +20,11 @@ import type {
   RequestStatus,
 } from '../lib/types'
 
-type AdminTab = 'overview' | 'ikes' | 'assets-requests' | 'donations' | 'announcements' | 'catalogue' | 'organization' | 'fund'
+type AdminTab = 'overview' | 'ikes' | 'assets-requests' | 'donations' | 'announcements' | 'catalogue' | 'organization' | 'fund' | 'site'
 
 const initialAnnouncement = { title_bm: '', title_en: '', content_bm: '', content_en: '', published: true, pinned: false, poster_url: null as string | null }
-const initialAsset = { name_bm: '', name_en: '', description_bm: '', description_en: '', stock_total: 1, stock_available: 1, active: true, image_url: null as string | null }
-const initialMember = { name: '', position_bm: '', position_en: '', unit_bm: '', unit_en: '', class_name: '', duties_bm: '', duties_en: '', sort_order: 1, active: true, photo_url: null as string | null }
+const initialAsset = { asset_code: '', category_bm: 'Aset', category_en: 'Asset', sort_order: 1, name_bm: '', name_en: '', description_bm: '', description_en: '', stock_total: 1, stock_available: 1, active: true, image_url: null as string | null }
+const initialMember = { parent_id: '', node_type: 'member' as OrganizationMember['node_type'], name: '', position_bm: '', position_en: '', unit_bm: '', unit_en: '', class_name: '', duties_bm: '', duties_en: '', sort_order: 1, active: true, photo_url: null as string | null }
 const initialDisbursement = { title_bm: '', title_en: '', description_bm: '', description_en: '', amount: '', disbursed_at: new Date().toISOString().slice(0, 10), is_public: true }
 const initialCollection = { donor_name: '', amount: '', collected_at: new Date().toISOString().slice(0, 10), reference_no: '', message: '' }
 
@@ -114,6 +116,10 @@ export default function AdminPage() {
           updated_at: new Date().toISOString(),
           asset_items: {
             id: 'mock-item-1',
+            asset_code: 'AST-001',
+            category_bm: 'Audio',
+            category_en: 'Audio',
+            sort_order: 1,
             name_bm: 'Sistem PA Mudah Alih',
             name_en: 'Portable PA System',
             description_bm: 'Set PA mudah alih lengkap',
@@ -157,6 +163,10 @@ export default function AdminPage() {
       setCatalogue([
         {
           id: 'mock-item-1',
+          asset_code: 'AST-001',
+          category_bm: 'Audio',
+          category_en: 'Audio',
+          sort_order: 1,
           name_bm: 'Sistem PA Mudah Alih',
           name_en: 'Portable PA System',
           description_bm: 'Set PA mudah alih lengkap',
@@ -170,6 +180,8 @@ export default function AdminPage() {
       setMembers([
         {
           id: 'mock-member-1',
+          parent_id: null,
+          node_type: 'leadership',
           sort_order: 1,
           name: 'Encik Ahmad Bin Ali',
           position_bm: 'Pengerusi PBAK',
@@ -457,6 +469,10 @@ export default function AdminPage() {
 
   const startAssetEdit = (item: AssetItem) => {
     setAssetForm({
+      asset_code: item.asset_code || '',
+      category_bm: item.category_bm || 'Aset',
+      category_en: item.category_en || 'Asset',
+      sort_order: item.sort_order || 1,
       name_bm: item.name_bm,
       name_en: item.name_en || '',
       description_bm: item.description_bm || '',
@@ -481,6 +497,10 @@ export default function AdminPage() {
       let imageUrl = assetForm.image_url
       if (assetImage) imageUrl = await uploadPublicFile(supabase, assetImage, 'assets')
       const payload = {
+        asset_code: assetForm.asset_code || null,
+        category_bm: assetForm.category_bm || null,
+        category_en: assetForm.category_en || null,
+        sort_order: Number(assetForm.sort_order),
         name_bm: assetForm.name_bm,
         name_en: assetForm.name_en || null,
         description_bm: assetForm.description_bm || null,
@@ -507,6 +527,8 @@ export default function AdminPage() {
 
   const startMemberEdit = (item: OrganizationMember) => {
     setMemberForm({
+      parent_id: item.parent_id || '',
+      node_type: item.node_type,
       name: item.name,
       position_bm: item.position_bm,
       position_en: item.position_en || '',
@@ -530,6 +552,8 @@ export default function AdminPage() {
       let photoUrl = memberForm.photo_url
       if (memberPhoto) photoUrl = await uploadPublicFile(supabase, memberPhoto, 'organization')
       const payload = {
+        parent_id: memberForm.parent_id || null,
+        node_type: memberForm.node_type,
         name: memberForm.name,
         position_bm: memberForm.position_bm,
         position_en: memberForm.position_en || null,
@@ -563,9 +587,9 @@ export default function AdminPage() {
       return
     }
     await runAction(async () => {
-      // Polisi RLS sedia ada membenarkan insert derma pengguna sebagai `pending` sahaja.
-      // Admin kemudian mengesahkan rekod yang sama melalui polisi update admin.
-      const { data: inserted, error: insertError } = await supabase.from('donations').insert({
+      // Migration Premium V2 adds an admin-only INSERT policy so a manual
+      // cash collection is created as verified in one atomic operation.
+      const { error: insertError } = await supabase.from('donations').insert({
         user_id: user.id,
         donor_name: collectionForm.donor_name || null,
         amount,
@@ -573,16 +597,10 @@ export default function AdminPage() {
         proof_path: null,
         reference_no: collectionForm.reference_no || null,
         message: collectionForm.message || null,
-        status: 'pending',
+        status: 'verified',
         created_at: new Date(`${collectionForm.collected_at}T12:00:00`).toISOString(),
-      }).select('id').single()
+      })
       if (insertError) throw insertError
-
-      const { error: verifyError } = await supabase
-        .from('donations')
-        .update({ status: 'verified' })
-        .eq('id', inserted.id)
-      if (verifyError) throw verifyError
 
       setCollectionForm(initialCollection)
     }, 'Rekod kutipan ditambah dan disahkan.')
@@ -631,6 +649,7 @@ export default function AdminPage() {
     { id: 'catalogue', label: t('Katalog Aset', 'Asset Catalogue') },
     { id: 'organization', label: t('Organisasi', 'Organisation') },
     { id: 'fund', label: t('Tabung', 'Fund') },
+    { id: 'site', label: t('Identiti & Kandungan', 'Identity & Content') },
   ]
 
   return (
@@ -1271,13 +1290,13 @@ export default function AdminPage() {
                   <input value={announcementForm.title_en} onChange={(event) => setAnnouncementForm({ ...announcementForm, title_en: event.target.value })} />
                 </Field>
                 <div className="full-span">
-                  <Field label="Kandungan BM" required hint={t('Tekan Enter untuk perenggan atau baris baharu.', 'Press Enter for a new paragraph or line.')}>
-                    <textarea rows={7} value={announcementForm.content_bm} onChange={(event) => setAnnouncementForm({ ...announcementForm, content_bm: event.target.value })} required />
+                  <Field label="Kandungan BM" required hint={t('Gunakan toolbar untuk bold, italic, bullets dan numbering.', 'Use the toolbar for bold, italic, bullets and numbering.')}>
+                    <RichTextEditor value={announcementForm.content_bm} onChange={(value) => setAnnouncementForm({ ...announcementForm, content_bm: value })} ariaLabel="Kandungan pengumuman Bahasa Melayu" />
                   </Field>
                 </div>
                 <div className="full-span">
-                  <Field label="English content" hint={t('Tekan Enter untuk perenggan atau baris baharu.', 'Press Enter for a new paragraph or line.')}>
-                    <textarea rows={7} value={announcementForm.content_en} onChange={(event) => setAnnouncementForm({ ...announcementForm, content_en: event.target.value })} />
+                  <Field label="English content" hint={t('Gunakan toolbar untuk bold, italic, bullets dan numbering.', 'Use the toolbar for bold, italic, bullets and numbering.')}>
+                    <RichTextEditor value={announcementForm.content_en} onChange={(value) => setAnnouncementForm({ ...announcementForm, content_en: value })} ariaLabel="English announcement content" />
                   </Field>
                 </div>
                 <div className="full-span">
@@ -1327,7 +1346,7 @@ export default function AdminPage() {
                       <div className="management-copy">
                         <strong>{language === 'bm' ? item.title_bm : item.title_en || item.title_bm}</strong>
                         <small>{item.published ? t('Diterbitkan', 'Published') : t('Draf', 'Draft')} · {formatDate(item.created_at, language)}</small>
-                        <p className="management-excerpt">{language === 'bm' ? item.content_bm : item.content_en || item.content_bm}</p>
+                        <p className="management-excerpt">{richTextToPlainText(language === 'bm' ? item.content_bm : item.content_en || item.content_bm)}</p>
                       </div>
                       <div className="management-actions">
                         <Button variant="secondary" className="compact" onClick={() => startAnnouncementEdit(item)}>
@@ -1353,6 +1372,18 @@ export default function AdminPage() {
               action={editingAssetId ? <span className="editor-mode-badge"><Icon name="edit" size={15} /> {t('Mod edit', 'Edit mode')}</span> : undefined}
             >
               <form className="form-grid" onSubmit={saveAsset}>
+                <Field label={t('Kod aset', 'Asset code')} hint={t('Contoh: AST-001', 'Example: AST-001')}>
+                  <input value={assetForm.asset_code} onChange={(event) => setAssetForm({ ...assetForm, asset_code: event.target.value.toUpperCase() })} />
+                </Field>
+                <Field label={t('Susunan paparan', 'Display order')} required>
+                  <input type="number" min="0" value={assetForm.sort_order} onChange={(event) => setAssetForm({ ...assetForm, sort_order: Number(event.target.value) })} required />
+                </Field>
+                <Field label="Kategori BM">
+                  <input value={assetForm.category_bm} onChange={(event) => setAssetForm({ ...assetForm, category_bm: event.target.value })} />
+                </Field>
+                <Field label="English category">
+                  <input value={assetForm.category_en} onChange={(event) => setAssetForm({ ...assetForm, category_en: event.target.value })} />
+                </Field>
                 <Field label="Nama BM" required>
                   <input value={assetForm.name_bm} onChange={(event) => setAssetForm({ ...assetForm, name_bm: event.target.value })} required />
                 </Field>
@@ -1443,11 +1474,33 @@ export default function AdminPage() {
               action={editingMemberId ? <span className="editor-mode-badge"><Icon name="edit" size={15} /> {t('Mod edit', 'Edit mode')}</span> : undefined}
             >
               <form className="form-grid" onSubmit={saveMember}>
-                <Field label={t('Nama penuh', 'Full name')} required>
+                <Field label={t('Nama / nama unit', 'Name / unit name')} required>
                   <input value={memberForm.name} onChange={(event) => setMemberForm({ ...memberForm, name: event.target.value })} required />
                 </Field>
+                <Field label={t('Jenis nod', 'Node type')} required>
+                  <select value={memberForm.node_type} onChange={(event) => setMemberForm({ ...memberForm, node_type: event.target.value as 'leadership' | 'unit' | 'member', parent_id: '' })}>
+                    <option value="leadership">{t('Kepimpinan', 'Leadership')}</option>
+                    <option value="unit">{t('Unit', 'Unit')}</option>
+                    <option value="member">{t('Ahli', 'Member')}</option>
+                  </select>
+                </Field>
+                <Field label={t('Induk dalam hierarki', 'Parent in hierarchy')} hint={t('Kosongkan untuk peringkat tertinggi.', 'Leave blank for a top-level node.')}>
+                  <select value={memberForm.parent_id} onChange={(event) => setMemberForm({ ...memberForm, parent_id: event.target.value })}>
+                    <option value="">{t('Tiada induk', 'No parent')}</option>
+                    {members
+                      .filter((member) => member.id !== editingMemberId)
+                      .filter((member) => {
+                        if (memberForm.node_type === 'leadership') return member.node_type === 'leadership'
+                        if (memberForm.node_type === 'unit') return member.node_type === 'leadership'
+                        return member.node_type === 'unit'
+                      })
+                      .map((member) => (
+                        <option key={member.id} value={member.id}>{member.name} — {member.position_bm}</option>
+                      ))}
+                  </select>
+                </Field>
                 <Field label={t('Susunan', 'Order')} required>
-                  <input type="number" min="1" value={memberForm.sort_order} onChange={(event) => setMemberForm({ ...memberForm, sort_order: Number(event.target.value) })} required />
+                  <input type="number" min="0" value={memberForm.sort_order} onChange={(event) => setMemberForm({ ...memberForm, sort_order: Number(event.target.value) })} required />
                 </Field>
                 <Field label="Jawatan BM" required>
                   <input value={memberForm.position_bm} onChange={(event) => setMemberForm({ ...memberForm, position_bm: event.target.value })} required />
@@ -1530,6 +1583,10 @@ export default function AdminPage() {
               )}
             </Card>
           </div>
+        )}
+
+        {tab === 'site' && (
+          <SiteSettingsEditor />
         )}
 
         {tab === 'fund'  && (

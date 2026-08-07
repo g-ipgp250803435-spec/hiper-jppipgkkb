@@ -29,6 +29,21 @@ export type IconName =
   | 'alert'
   | 'activity'
   | 'dashboard'
+  | 'bold'
+  | 'italic'
+  | 'list'
+  | 'list-ordered'
+  | 'undo'
+  | 'redo'
+  | 'settings'
+  | 'building'
+  | 'mail'
+  | 'external-link'
+  | 'copy'
+  | 'wallet'
+  | 'briefcase'
+  | 'shield'
+  | 'chart'
 
 const paths: Record<IconName, ReactNode> = {
   menu: <><path d="M4 7h16M4 12h16M4 17h16" /></>,
@@ -59,6 +74,21 @@ const paths: Record<IconName, ReactNode> = {
   alert: <><path d="M12 3 2.5 20h19Z" /><path d="M12 9v4M12 17h.01" /></>,
   activity: <><path d="M3 12h4l2-7 4 14 2-7h6" /></>,
   dashboard: <><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></>,
+  bold: <><path d="M7 5h6a4 4 0 0 1 0 8H7z" /><path d="M7 13h7a4 4 0 0 1 0 8H7z" /></>,
+  italic: <><path d="M10 4h8M6 20h8M14 4 10 20" /></>,
+  list: <><path d="M9 6h12M9 12h12M9 18h12" /><path d="M4 6h.01M4 12h.01M4 18h.01" /></>,
+  'list-ordered': <><path d="M10 6h11M10 12h11M10 18h11" /><path d="M4 5h1v3M4 8h2M4 11h2l-2 3h2M4 17c1.5-1 3 1 1 2 2-1 .5 3-1 1" /></>,
+  undo: <><path d="M9 7 4 12l5 5" /><path d="M20 17a8 8 0 0 0-11-7l-5 2" /></>,
+  redo: <><path d="m15 7 5 5-5 5" /><path d="M4 17a8 8 0 0 1 11-7l5 2" /></>,
+  settings: <><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21h-4v-.1A1.7 1.7 0 0 0 8.6 19a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H3v-4h.1A1.7 1.7 0 0 0 5 8.6a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V3h4v.1A1.7 1.7 0 0 0 15.4 5a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9c.16.39.45.72.82.94.26.15.56.23.86.23H21v4h-.1a1.7 1.7 0 0 0-1.5.83Z" /></>,
+  building: <><path d="M3 21h18M5 21V8l7-4 7 4v13M9 21v-4h6v4M9 10h.01M12 10h.01M15 10h.01M9 13h.01M12 13h.01M15 13h.01" /></>,
+  mail: <><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" /></>,
+  'external-link': <><path d="M14 3h7v7M10 14 21 3" /><path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5" /></>,
+  copy: <><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></>,
+  wallet: <><path d="M20 7V5a2 2 0 0 0-2-2H5a3 3 0 0 0 0 6h16v10a2 2 0 0 1-2 2H5a3 3 0 0 1-3-3V6" /><path d="M16 13h5" /></>,
+  briefcase: <><rect x="3" y="7" width="18" height="13" rx="2" /><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 12h18M10 12v2h4v-2" /></>,
+  shield: <><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" /><path d="m9 12 2 2 4-4" /></>,
+  chart: <><path d="M4 20V10M10 20V4M16 20v-7M22 20V8M2 20h22" /></>,
 }
 
 export function Icon({ name, size = 20, className = '', ...props }: SVGProps<SVGSVGElement> & { name: IconName; size?: number }) {
