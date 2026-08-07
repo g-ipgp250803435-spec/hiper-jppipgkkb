@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useSiteSettings } from '../../contexts/SiteSettingsContext'
 import { useUi } from '../../contexts/UiContext'
-import { uploadPublicFile } from '../../lib/helpers'
+import { getErrorMessage, isPremiumSchemaMissingError, uploadPublicFile } from '../../lib/helpers'
 import { supabase } from '../../lib/supabase'
 import type { LocalisedText, SiteSettings } from '../../lib/types'
 import { Button, Card, Field, Notice } from '../UI'
@@ -40,7 +40,7 @@ function LocalisedFields({
 export function SiteSettingsEditor() {
   const { t } = useUi()
   const { user } = useAuth()
-  const { settings, refreshSettings } = useSiteSettings()
+  const { settings, refreshSettings, error: settingsLoadError } = useSiteSettings()
   const [draft, setDraft] = useState<SiteSettings>(settings)
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [faviconFile, setFaviconFile] = useState<File | null>(null)
@@ -80,7 +80,17 @@ export function SiteSettingsEditor() {
       await refreshSettings()
       setNotice({ type: 'success', text: t('Identiti dan kandungan website berjaya dikemas kini.', 'Website identity and content updated successfully.') })
     } catch (error) {
-      setNotice({ type: 'danger', text: error instanceof Error ? error.message : t('Tetapan gagal disimpan.', 'Settings could not be saved.') })
+      const fallback = t('Tetapan gagal disimpan.', 'Settings could not be saved.')
+      const message = getErrorMessage(error, fallback)
+      setNotice({
+        type: 'danger',
+        text: isPremiumSchemaMissingError(error)
+          ? t(
+              `Pangkalan data HiPER Premium belum lengkap. Jalankan fail SUPABASE-ONE-TIME-REPAIR.sql di Supabase SQL Editor. Butiran: ${message}`,
+              `The HiPER Premium database upgrade is incomplete. Run SUPABASE-ONE-TIME-REPAIR.sql in the Supabase SQL Editor. Details: ${message}`
+            )
+          : message,
+      })
     } finally {
       setBusy(false)
     }
@@ -88,6 +98,14 @@ export function SiteSettingsEditor() {
 
   return (
     <form className="cms-settings-form" onSubmit={save}>
+      {settingsLoadError && (
+        <Notice type="warning">
+          {t(
+            'Tetapan CMS sedang menggunakan nilai lalai kerana pangkalan data Premium belum tersedia sepenuhnya. Jalankan SUPABASE-ONE-TIME-REPAIR.sql sekali sahaja di Supabase SQL Editor.',
+            'CMS settings are using safe defaults because the Premium database upgrade is not fully available. Run SUPABASE-ONE-TIME-REPAIR.sql once in the Supabase SQL Editor.'
+          )}
+        </Notice>
+      )}
       {notice && <Notice type={notice.type}>{notice.text}</Notice>}
 
       <Card title={t('Identiti jenama', 'Brand identity')}>

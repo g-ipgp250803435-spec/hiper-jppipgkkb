@@ -113,3 +113,42 @@ export const openPrivateFile = async (
   if (error) throw error
   window.open(data.signedUrl, '_blank', 'noopener,noreferrer')
 }
+
+export const getErrorMessage = (
+  error: unknown,
+  fallback = 'Tindakan tidak dapat diselesaikan.',
+) => {
+  if (error instanceof Error && error.message.trim()) return error.message
+
+  if (error && typeof error === 'object') {
+    const record = error as Record<string, unknown>
+    const message = typeof record.message === 'string' ? record.message.trim() : ''
+    const details = typeof record.details === 'string' ? record.details.trim() : ''
+    const hint = typeof record.hint === 'string' ? record.hint.trim() : ''
+    const code = typeof record.code === 'string' ? record.code.trim() : ''
+
+    const parts = [message, details, hint].filter(Boolean)
+    if (parts.length > 0) return `${parts.join(' — ')}${code ? ` (${code})` : ''}`
+  }
+
+  return fallback
+}
+
+export const isPremiumSchemaMissingError = (error: unknown) => {
+  if (!error || typeof error !== 'object') return false
+  const record = error as Record<string, unknown>
+  const code = typeof record.code === 'string' ? record.code : ''
+  const message = typeof record.message === 'string' ? record.message.toLowerCase() : ''
+
+  return (
+    code === '42P01' ||
+    code === '42703' ||
+    code === 'PGRST204' ||
+    message.includes('site_settings') ||
+    message.includes('parent_id') ||
+    message.includes('node_type') ||
+    message.includes('asset_code') ||
+    message.includes('category_bm') ||
+    message.includes('sort_order')
+  )
+}

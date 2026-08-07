@@ -6,7 +6,7 @@ import SiteSettingsEditor from '../components/admin/SiteSettingsEditor'
 import { useAuth } from '../contexts/AuthContext'
 import { useUi } from '../contexts/UiContext'
 import { isSupabaseConfigured } from '../lib/config'
-import { formatDate, formatMoney, openPrivateFile, uploadPublicFile } from '../lib/helpers'
+import { formatDate, formatMoney, getErrorMessage, isPremiumSchemaMissingError, openPrivateFile, uploadPublicFile } from '../lib/helpers'
 import { supabase } from '../lib/supabase'
 import type {
   Announcement,
@@ -57,6 +57,7 @@ export default function AdminPage() {
   const [editingAssetId, setEditingAssetId] = useState<string | null>(null)
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null)
   const [collectionForm, setCollectionForm] = useState(initialCollection)
+  const [premiumDbReady, setPremiumDbReady] = useState<boolean | null>(null)
 
   const loadAll = async () => {
     setLoading(true)
@@ -255,6 +256,19 @@ export default function AdminPage() {
 
   useEffect(() => {
     void loadAll()
+
+    if (!isSupabaseConfigured) {
+      setPremiumDbReady(true)
+      return
+    }
+
+    void Promise.all([
+      supabase.from('site_settings').select('id').eq('id', 1).maybeSingle(),
+      supabase.from('asset_items').select('id, asset_code, sort_order').limit(1),
+      supabase.from('organization_members').select('id, parent_id, node_type').limit(1),
+    ]).then((results) => {
+      setPremiumDbReady(!results.some((result) => result.error))
+    })
   }, [])
 
   const counts = useMemo(() => {
@@ -381,7 +395,17 @@ export default function AdminPage() {
       setNotice({ type: 'success', text: successText })
       await loadAll()
     } catch (error) {
-      setNotice({ type: 'danger', text: error instanceof Error ? error.message : 'Tindakan gagal.' })
+      const fallback = t('Tindakan gagal.', 'Action failed.')
+      const message = getErrorMessage(error, fallback)
+      setNotice({
+        type: 'danger',
+        text: isPremiumSchemaMissingError(error)
+          ? t(
+              `Pangkalan data HiPER Premium belum lengkap. Jalankan fail SUPABASE-ONE-TIME-REPAIR.sql di Supabase SQL Editor. Butiran: ${message}`,
+              `The HiPER Premium database upgrade is incomplete. Run SUPABASE-ONE-TIME-REPAIR.sql in the Supabase SQL Editor. Details: ${message}`
+            )
+          : message,
+      })
     } finally {
       setBusy(false)
     }
@@ -669,6 +693,14 @@ export default function AdminPage() {
             </Button>
           }
         />
+        {premiumDbReady === false && (
+          <Notice type="warning">
+            {t(
+              'Pangkalan data HiPER Premium belum lengkap. Fungsi CMS, edit aset, carta hierarki dan kutipan manual memerlukan SUPABASE-ONE-TIME-REPAIR.sql dijalankan sekali di Supabase SQL Editor.',
+              'The HiPER Premium database upgrade is incomplete. CMS, asset editing, hierarchy and manual collection features require SUPABASE-ONE-TIME-REPAIR.sql to be run once in the Supabase SQL Editor.'
+            )}
+          </Notice>
+        )}
         {notice && <Notice type={notice.type}>{notice.text}</Notice>}
         <div className="admin-tabs">
           {tabs.map((item) => <Button key={item.id} variant={tab === item.id ? 'primary' : 'ghost'} onClick={() => setTab(item.id)}>{item.label}</Button>)}
