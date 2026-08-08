@@ -1,16 +1,3 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import App from './App'
-import { UiProvider } from './contexts/UiContext'
-import { AuthProvider } from './contexts/AuthContext'
-import './styles.css'
-
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <UiProvider>
-      <AuthProvider>
-        <App />
-      </AuthProvider>
-    </UiProvider>
-  </StrictMode>,
-)
+// Compatibility wrapper. Canonical source lives under src/.
+// Compatibility entrypoint. The production entry is /src/main.tsx.
+import './src/main'
