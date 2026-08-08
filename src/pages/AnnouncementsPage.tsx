@@ -34,13 +34,15 @@ export default function AnnouncementsPage() {
 
   useEffect(() => {
     if (!isSupabaseConfigured) return
-    void supabase
-      .from('announcements')
-      .select('*')
-      .eq('published', true)
-      .order('pinned', { ascending: false })
-      .order('created_at', { ascending: false })
-      .then(({ data, error }) => {
+    const fetchAnnouncements = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('announcements')
+          .select('*')
+          .eq('published', true)
+          .order('pinned', { ascending: false })
+          .order('created_at', { ascending: false })
+
         if (error) {
           setLoadError(error.message)
           setItems([])
@@ -48,13 +50,14 @@ export default function AnnouncementsPage() {
           setLoadError(null)
           setItems((data as Announcement[]) || [])
         }
-        setLoading(false)
-      })
-      .catch((error) => {
+      } catch (error) {
         setLoadError(error instanceof Error ? error.message : t('Pengumuman gagal dimuatkan.', 'Announcements could not be loaded.'))
         setItems([])
+      } finally {
         setLoading(false)
-      })
+      }
+    }
+    void fetchAnnouncements()
   }, [])
 
   return (

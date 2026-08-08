@@ -69,27 +69,54 @@ export default function AssetsPage() {
 
   useEffect(() => {
     if (!isSupabaseConfigured) return
-    void supabase.from('asset_items').select('*').eq('active', true).order('sort_order', { ascending: true }).order('name_bm').then(({ data, error }) => {
-      if (error) {
-        // Older database versions do not have sort_order on asset_items.
-        void supabase.from('asset_items').select('*').eq('active', true).order('name_bm').then(({ data: fallbackData, error: fallbackError }) => {
-          if (fallbackError) setMessage({ type: 'danger', text: fallbackError.message })
-          const rows = fallbackError ? [] : (fallbackData as AssetItem[]) || []
-          setAssets(rows)
-          setAssetId(rows[0]?.id || '')
-          setLoading(false)
-        }).catch((requestError) => {
-          setMessage({ type: 'danger', text: requestError instanceof Error ? requestError.message : t('Katalog aset gagal dimuatkan.', 'Asset catalogue could not be loaded.') })
-          setAssets([])
-          setLoading(false)
+    const fetchAssets = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('asset_items')
+          .select('*')
+          .eq('active', true)
+          .order('sort_order', { ascending: true })
+          .order('name_bm')
+
+        if (error) {
+          // Older database versions do not have sort_order on asset_items.
+          try {
+            const { data: fallbackData, error: fallbackError } = await supabase
+              .from('asset_items')
+              .select('*')
+              .eq('active', true)
+              .order('name_bm')
+
+            if (fallbackError) {
+              setMessage({ type: 'danger', text: fallbackError.message })
+            }
+            const rows = fallbackError ? [] : (fallbackData as AssetItem[]) || []
+            setAssets(rows)
+            setAssetId(rows[0]?.id || '')
+          } catch (requestError) {
+            setMessage({
+              type: 'danger',
+              text: requestError instanceof Error ? requestError.message : t('Katalog aset gagal dimuatkan.', 'Asset catalogue could not be loaded.')
+            })
+            setAssets([])
+          }
+          return
+        }
+
+        const rows = (data as AssetItem[]) || []
+        setAssets(rows)
+        setAssetId(rows[0]?.id || '')
+      } catch (error) {
+        setMessage({
+          type: 'danger',
+          text: error instanceof Error ? error.message : t('Katalog aset gagal dimuatkan.', 'Asset catalogue could not be loaded.')
         })
-        return
+        setAssets([])
+      } finally {
+        setLoading(false)
       }
-      const rows = (data as AssetItem[]) || []
-      setAssets(rows)
-      setAssetId(rows[0]?.id || '')
-      setLoading(false)
-    })
+    }
+    void fetchAssets()
   }, [])
 
   useEffect(() => {

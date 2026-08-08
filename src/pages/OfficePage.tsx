@@ -40,12 +40,14 @@ export default function OfficePage() {
 
   useEffect(() => {
     if (!isSupabaseConfigured) return
-    void supabase
-      .from('organization_members')
-      .select('*')
-      .eq('active', true)
-      .order('sort_order')
-      .then(({ data, error }) => {
+    const fetchMembers = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('organization_members')
+          .select('*')
+          .eq('active', true)
+          .order('sort_order')
+
         if (error) {
           setLoadError(error.message)
           setMembers([])
@@ -53,13 +55,14 @@ export default function OfficePage() {
           setLoadError(null)
           setMembers((data as OrganizationMember[]) || [])
         }
-        setLoading(false)
-      })
-      .catch((error) => {
+      } catch (error) {
         setLoadError(error instanceof Error ? error.message : t('Carta organisasi gagal dimuatkan.', 'Organisation chart could not be loaded.'))
         setMembers([])
+      } finally {
         setLoading(false)
-      })
+      }
+    }
+    void fetchMembers()
   }, [])
 
   return (
