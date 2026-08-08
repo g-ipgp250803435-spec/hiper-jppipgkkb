@@ -28,7 +28,7 @@ const sampleAnnouncements: Announcement[] = [
 export default function HomePage() {
   const { language, t } = useUi()
   const { settings } = useSiteSettings()
-  const [announcements, setAnnouncements] = useState<Announcement[]>(sampleAnnouncements)
+  const [announcements, setAnnouncements] = useState<Announcement[]>(isSupabaseConfigured ? [] : sampleAnnouncements)
   const [fund, setFund] = useState<FundSummary>({ total_verified: 0, total_disbursed: 0, balance: 0 })
 
   useEffect(() => {
@@ -43,9 +43,21 @@ export default function HomePage() {
         .limit(3),
       supabase.rpc('get_public_fund_summary'),
     ]).then(([announcementResult, fundResult]) => {
-      setAnnouncements((announcementResult.data as Announcement[]) || [])
+      if (announcementResult.error) {
+        console.warn('HiPER announcements could not be loaded:', announcementResult.error.message)
+        setAnnouncements([])
+      } else {
+        setAnnouncements((announcementResult.data as Announcement[]) || [])
+      }
+      if (fundResult.error) {
+        console.warn('HiPER fund summary could not be loaded:', fundResult.error.message)
+        return
+      }
       const summary = Array.isArray(fundResult.data) ? fundResult.data[0] : fundResult.data
       if (summary) setFund(summary as FundSummary)
+    }).catch((error) => {
+      console.warn('HiPER homepage data request failed:', error)
+      setAnnouncements([])
     })
   }, [])
 

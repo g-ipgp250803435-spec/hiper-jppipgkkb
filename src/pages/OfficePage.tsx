@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { EmptyState, LoadingBlock, PageHeader } from '../components/UI'
+import { EmptyState, LoadingBlock, Notice, PageHeader } from '../components/UI'
 import { OrganizationTree } from '../components/OrganizationTree'
 import { useUi } from '../contexts/UiContext'
 import { useSiteSettings } from '../contexts/SiteSettingsContext'
@@ -34,8 +34,9 @@ const sampleMembers: OrganizationMember[] = [
 export default function OfficePage() {
   const { language, t } = useUi()
   const { settings } = useSiteSettings()
-  const [members, setMembers] = useState<OrganizationMember[]>(sampleMembers)
+  const [members, setMembers] = useState<OrganizationMember[]>(isSupabaseConfigured ? [] : sampleMembers)
   const [loading, setLoading] = useState(isSupabaseConfigured)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!isSupabaseConfigured) return
@@ -44,8 +45,19 @@ export default function OfficePage() {
       .select('*')
       .eq('active', true)
       .order('sort_order')
-      .then(({ data }) => {
-        setMembers((data as OrganizationMember[]) || [])
+      .then(({ data, error }) => {
+        if (error) {
+          setLoadError(error.message)
+          setMembers([])
+        } else {
+          setLoadError(null)
+          setMembers((data as OrganizationMember[]) || [])
+        }
+        setLoading(false)
+      })
+      .catch((error) => {
+        setLoadError(error instanceof Error ? error.message : t('Carta organisasi gagal dimuatkan.', 'Organisation chart could not be loaded.'))
+        setMembers([])
         setLoading(false)
       })
   }, [])
@@ -58,6 +70,7 @@ export default function OfficePage() {
           title={localise(settings.pages.office.title, language)}
           description={localise(settings.pages.office.description, language)}
         />
+        {loadError && <Notice type="danger">{loadError}</Notice>}
         {loading ? (
           <LoadingBlock />
         ) : members.length === 0 ? (

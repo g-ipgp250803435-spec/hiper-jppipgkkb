@@ -5,7 +5,7 @@ interface TreeNode extends OrganizationMember {
   children: TreeNode[]
 }
 
-function buildExplicitTree(members: OrganizationMember[]) {
+function buildExplicitTree(members: OrganizationMember[]): TreeNode[] {
   const nodes = new Map<string, TreeNode>()
   members.forEach((member) => nodes.set(member.id, { ...member, children: [] }))
 
@@ -27,7 +27,7 @@ function normalise(value?: string | null) {
   return (value || '').trim().toLocaleLowerCase('ms-MY')
 }
 
-function buildLegacyHierarchy(members: OrganizationMember[]) {
+function buildLegacyHierarchy(members: OrganizationMember[]): TreeNode[] {
   const sorted = [...members].sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name))
   const treasurer = sorted.find((member) => {
     const position = normalise(member.position_bm)
@@ -52,7 +52,7 @@ function buildLegacyHierarchy(members: OrganizationMember[]) {
     return {
       id: `virtual-unit-${key.replace(/[^a-z0-9]+/g, '-') || index + 1}`,
       parent_id: null,
-      node_type: 'unit',
+      node_type: 'unit' as const,
       sort_order: Math.min(...group.map((member) => member.sort_order || 1)),
       name: unitName,
       position_bm: 'Unit',
@@ -64,26 +64,26 @@ function buildLegacyHierarchy(members: OrganizationMember[]) {
       duties_en: null,
       photo_url: null,
       active: true,
-      children: group.map((member) => ({ ...member, node_type: 'member', children: [] })),
+      children: group.map((member): TreeNode => ({ ...member, node_type: 'member', children: [] })),
     }
   })
 
   if (deputy) {
     const deputyNode: TreeNode = { ...deputy, node_type: 'leadership', children: unitNodes }
     if (treasurer) {
-      return [{ ...treasurer, node_type: 'leadership', children: [deputyNode] }]
+      return [{ ...treasurer, node_type: 'leadership' as const, children: [deputyNode] }]
     }
     return [deputyNode]
   }
 
   if (treasurer) {
-    return [{ ...treasurer, node_type: 'leadership', children: unitNodes }]
+    return [{ ...treasurer, node_type: 'leadership' as const, children: unitNodes }]
   }
 
-  return unitNodes.length > 0 ? unitNodes : sorted.map((member) => ({ ...member, children: [] }))
+  return unitNodes.length > 0 ? unitNodes : sorted.map((member): TreeNode => ({ ...member, children: [] }))
 }
 
-function buildTree(members: OrganizationMember[]) {
+function buildTree(members: OrganizationMember[]): TreeNode[] {
   const hasExplicitHierarchy = members.some((member) => Boolean(member.parent_id) || member.node_type === 'unit')
   return hasExplicitHierarchy ? buildExplicitTree(members) : buildLegacyHierarchy(members)
 }

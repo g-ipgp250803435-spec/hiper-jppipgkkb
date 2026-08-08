@@ -49,6 +49,10 @@ export default function DonationsPage() {
       supabase.from('donation_settings').select('*').eq('id', 1).maybeSingle(),
       supabase.from('fund_disbursements').select('*').eq('is_public', true).order('disbursed_at', { ascending: false }),
     ])
+    const loadError = summaryResult.error || settingsResult.error || disbursementResult.error
+    if (loadError) {
+      setNotice({ type: 'danger', text: loadError.message })
+    }
     const summaryData = Array.isArray(summaryResult.data) ? summaryResult.data[0] : summaryResult.data
     if (summaryData) setSummary(summaryData as FundSummary)
     if (settingsResult.data) setSettings(settingsResult.data as DonationSettings)

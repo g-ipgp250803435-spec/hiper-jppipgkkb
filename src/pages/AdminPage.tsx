@@ -513,8 +513,19 @@ export default function AdminPage() {
 
   const saveAsset = async (event: FormEvent) => {
     event.preventDefault()
-    if (assetForm.stock_available > assetForm.stock_total) {
+    const totalStock = Number(assetForm.stock_total)
+    const availableStock = Number(assetForm.stock_available)
+    const sortOrder = Number(assetForm.sort_order)
+    if (!Number.isFinite(totalStock) || !Number.isFinite(availableStock) || totalStock < 0 || availableStock < 0) {
+      setNotice({ type: 'danger', text: t('Nilai stok mestilah nombor sifar atau lebih.', 'Stock values must be numbers equal to or greater than zero.') })
+      return
+    }
+    if (availableStock > totalStock) {
       setNotice({ type: 'danger', text: t('Stok tersedia tidak boleh melebihi jumlah stok.', 'Available stock cannot exceed total stock.') })
+      return
+    }
+    if (!Number.isInteger(sortOrder) || sortOrder < 0) {
+      setNotice({ type: 'danger', text: t('Susunan aset mestilah nombor bulat sifar atau lebih.', 'Asset sort order must be a whole number equal to or greater than zero.') })
       return
     }
     await runAction(async () => {
@@ -524,13 +535,13 @@ export default function AdminPage() {
         asset_code: assetForm.asset_code || null,
         category_bm: assetForm.category_bm || null,
         category_en: assetForm.category_en || null,
-        sort_order: Number(assetForm.sort_order),
+        sort_order: sortOrder,
         name_bm: assetForm.name_bm,
         name_en: assetForm.name_en || null,
         description_bm: assetForm.description_bm || null,
         description_en: assetForm.description_en || null,
-        stock_total: Number(assetForm.stock_total),
-        stock_available: Number(assetForm.stock_available),
+        stock_total: totalStock,
+        stock_available: availableStock,
         active: assetForm.active,
         image_url: imageUrl,
       }
@@ -632,10 +643,15 @@ export default function AdminPage() {
 
   const addDisbursement = async (event: FormEvent) => {
     event.preventDefault()
+    const amount = Number(disbursementForm.amount)
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setNotice({ type: 'danger', text: t('Amaun agihan mestilah melebihi RM0.', 'Distribution amount must be greater than RM0.') })
+      return
+    }
     await runAction(async () => {
       const { error } = await supabase.from('fund_disbursements').insert({
         ...disbursementForm,
-        amount: Number(disbursementForm.amount),
+        amount,
       })
       if (error) throw error
       setDisbursementForm(initialDisbursement)

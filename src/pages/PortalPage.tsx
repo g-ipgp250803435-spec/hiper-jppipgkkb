@@ -40,6 +40,9 @@ export default function PortalPage() {
       setAssets((assetResult.data as AssetApplication[]) || [])
       setDonations((donationResult.data as Donation[]) || [])
       setLoading(false)
+    }).catch((requestError) => {
+      setError(requestError instanceof Error ? requestError.message : 'Data gagal dimuatkan.')
+      setLoading(false)
     })
   }, [user])
 

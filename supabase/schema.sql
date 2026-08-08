@@ -1,3 +1,4 @@
+-- LEGACY SCHEMA SNAPSHOT: do not run this whole file on Production. Use supabase/migrations/ instead.
 -- PBAK One — Supabase database, security and storage setup
 -- Jalankan keseluruhan fail ini sekali dalam Supabase > SQL Editor.
 

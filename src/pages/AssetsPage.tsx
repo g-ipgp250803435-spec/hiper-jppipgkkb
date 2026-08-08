@@ -72,10 +72,15 @@ export default function AssetsPage() {
     void supabase.from('asset_items').select('*').eq('active', true).order('sort_order', { ascending: true }).order('name_bm').then(({ data, error }) => {
       if (error) {
         // Older database versions do not have sort_order on asset_items.
-        void supabase.from('asset_items').select('*').eq('active', true).order('name_bm').then(({ data: fallbackData }) => {
-          const rows = (fallbackData as AssetItem[]) || []
+        void supabase.from('asset_items').select('*').eq('active', true).order('name_bm').then(({ data: fallbackData, error: fallbackError }) => {
+          if (fallbackError) setMessage({ type: 'danger', text: fallbackError.message })
+          const rows = fallbackError ? [] : (fallbackData as AssetItem[]) || []
           setAssets(rows)
           setAssetId(rows[0]?.id || '')
+          setLoading(false)
+        }).catch((requestError) => {
+          setMessage({ type: 'danger', text: requestError instanceof Error ? requestError.message : t('Katalog aset gagal dimuatkan.', 'Asset catalogue could not be loaded.') })
+          setAssets([])
           setLoading(false)
         })
         return

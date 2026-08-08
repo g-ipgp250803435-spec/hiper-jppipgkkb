@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { PageHeader, Card, EmptyState, LoadingBlock } from '../components/UI'
+import { PageHeader, Card, EmptyState, LoadingBlock, Notice } from '../components/UI'
 import { Icon } from '../components/Icons'
 import { RichTextContent } from '../components/RichText'
 import { useUi } from '../contexts/UiContext'
@@ -28,8 +28,9 @@ const sample: Announcement[] = [
 export default function AnnouncementsPage() {
   const { language, t } = useUi()
   const { settings } = useSiteSettings()
-  const [items, setItems] = useState<Announcement[]>(sample)
+  const [items, setItems] = useState<Announcement[]>(isSupabaseConfigured ? [] : sample)
   const [loading, setLoading] = useState(isSupabaseConfigured)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!isSupabaseConfigured) return
@@ -39,8 +40,19 @@ export default function AnnouncementsPage() {
       .eq('published', true)
       .order('pinned', { ascending: false })
       .order('created_at', { ascending: false })
-      .then(({ data }) => {
-        setItems((data as Announcement[]) || [])
+      .then(({ data, error }) => {
+        if (error) {
+          setLoadError(error.message)
+          setItems([])
+        } else {
+          setLoadError(null)
+          setItems((data as Announcement[]) || [])
+        }
+        setLoading(false)
+      })
+      .catch((error) => {
+        setLoadError(error instanceof Error ? error.message : t('Pengumuman gagal dimuatkan.', 'Announcements could not be loaded.'))
+        setItems([])
         setLoading(false)
       })
   }, [])
@@ -53,6 +65,7 @@ export default function AnnouncementsPage() {
           title={localise(settings.pages.announcements.title, language)}
           description={localise(settings.pages.announcements.description, language)}
         />
+        {loadError && <Notice type="danger">{loadError}</Notice>}
         {loading ? (
           <LoadingBlock />
         ) : items.length === 0 ? (
