@@ -371,6 +371,10 @@ drop policy if exists "Admins update iKES" on public.ikes_applications;
 create policy "Admins update iKES" on public.ikes_applications
 for update to authenticated using (public.is_admin()) with check (public.is_admin());
 
+drop policy if exists "Admins delete iKES" on public.ikes_applications;
+create policy "Admins delete iKES" on public.ikes_applications
+for delete to authenticated using (public.is_admin());
+
 drop policy if exists "Public read active assets" on public.asset_items;
 create policy "Public read active assets" on public.asset_items
 for select to anon, authenticated using (active = true or public.is_admin());
@@ -391,6 +395,10 @@ drop policy if exists "Admins update asset requests" on public.asset_application
 create policy "Admins update asset requests" on public.asset_applications
 for update to authenticated using (public.is_admin()) with check (public.is_admin());
 
+drop policy if exists "Admins delete asset requests" on public.asset_applications;
+create policy "Admins delete asset requests" on public.asset_applications
+for delete to authenticated using (public.is_admin());
+
 drop policy if exists "Users submit donations" on public.donations;
 create policy "Users submit donations" on public.donations
 for insert to authenticated with check (user_id = auth.uid() and public.is_allowed_user());
@@ -402,6 +410,10 @@ for select to authenticated using ((user_id = auth.uid() and public.is_allowed_u
 drop policy if exists "Admins update donations" on public.donations;
 create policy "Admins update donations" on public.donations
 for update to authenticated using (public.is_admin()) with check (public.is_admin());
+
+drop policy if exists "Admins delete donations" on public.donations;
+create policy "Admins delete donations" on public.donations
+for delete to authenticated using (public.is_admin());
 
 drop policy if exists "Public read public disbursements" on public.fund_disbursements;
 create policy "Public read public disbursements" on public.fund_disbursements

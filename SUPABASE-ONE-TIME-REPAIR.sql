@@ -213,6 +213,13 @@ create policy "Admins update iKES"
   using (public.is_admin())
   with check (public.is_admin());
 
+drop policy if exists "Admins delete iKES" on public.ikes_applications;
+create policy "Admins delete iKES"
+  on public.ikes_applications
+  for delete
+  to authenticated
+  using (public.is_admin());
+
 drop policy if exists "Admins update asset requests" on public.asset_applications;
 create policy "Admins update asset requests"
   on public.asset_applications
@@ -221,6 +228,13 @@ create policy "Admins update asset requests"
   using (public.is_admin())
   with check (public.is_admin());
 
+drop policy if exists "Admins delete asset requests" on public.asset_applications;
+create policy "Admins delete asset requests"
+  on public.asset_applications
+  for delete
+  to authenticated
+  using (public.is_admin());
+
 drop policy if exists "Admins update donations" on public.donations;
 create policy "Admins update donations"
   on public.donations
@@ -228,6 +242,13 @@ create policy "Admins update donations"
   to authenticated
   using (public.is_admin())
   with check (public.is_admin());
+
+drop policy if exists "Admins delete donations" on public.donations;
+create policy "Admins delete donations"
+  on public.donations
+  for delete
+  to authenticated
+  using (public.is_admin());
 
 drop policy if exists "Admins insert donations" on public.donations;
 create policy "Admins insert donations"
@@ -242,9 +263,9 @@ grant select, insert, update, delete on public.asset_items to authenticated;
 grant select, insert, update, delete on public.organization_members to authenticated;
 grant select, insert, update, delete on public.fund_disbursements to authenticated;
 grant select, insert, update, delete on public.donation_settings to authenticated;
-grant select, update on public.ikes_applications to authenticated;
-grant select, update on public.asset_applications to authenticated;
-grant select, insert, update on public.donations to authenticated;
+grant select, update, delete on public.ikes_applications to authenticated;
+grant select, update, delete on public.asset_applications to authenticated;
+grant select, insert, update, delete on public.donations to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- Notification audit table required by the optional email Edge Function.

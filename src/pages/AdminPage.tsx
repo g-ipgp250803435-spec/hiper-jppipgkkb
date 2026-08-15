@@ -675,6 +675,10 @@ export default function AdminPage() {
   const deleteRow = async (table: string, id: string, label: string) => {
     if (!window.confirm(`Padam ${label}?`)) return
     await runAction(async () => {
+      if (table === 'announcements' && editingAnnouncementId === id) resetAnnouncementEditor()
+      if (table === 'asset_items' && editingAssetId === id) resetAssetEditor()
+      if (table === 'organization_members' && editingMemberId === id) resetMemberEditor()
+
       if (!isSupabaseConfigured) {
         if (table === 'ikes_applications') setIkes((rows) => rows.filter((r) => r.id !== id))
         else if (table === 'asset_applications') setAssetRequests((rows) => rows.filter((r) => r.id !== id))
@@ -685,8 +689,17 @@ export default function AdminPage() {
         else if (table === 'fund_disbursements') setDisbursements((rows) => rows.filter((r) => r.id !== id))
         return
       }
+
       const { error } = await supabase.from(table).delete().eq('id', id)
       if (error) throw error
+
+      if (table === 'ikes_applications') setIkes((rows) => rows.filter((r) => r.id !== id))
+      else if (table === 'asset_applications') setAssetRequests((rows) => rows.filter((r) => r.id !== id))
+      else if (table === 'donations') setDonations((rows) => rows.filter((r) => r.id !== id))
+      else if (table === 'announcements') setAnnouncements((rows) => rows.filter((r) => r.id !== id))
+      else if (table === 'asset_items') setCatalogue((rows) => rows.filter((r) => r.id !== id))
+      else if (table === 'organization_members') setMembers((rows) => rows.filter((r) => r.id !== id))
+      else if (table === 'fund_disbursements') setDisbursements((rows) => rows.filter((r) => r.id !== id))
     }, `${label} dipadam.`)
   }
 
@@ -1702,7 +1715,7 @@ export default function AdminPage() {
               <div className="full-span"><Field label="Penerangan BM"><textarea rows={3} value={disbursementForm.description_bm} onChange={(e) => setDisbursementForm({ ...disbursementForm, description_bm: e.target.value })} /></Field></div><div className="full-span"><Field label="English description"><textarea rows={3} value={disbursementForm.description_en} onChange={(e) => setDisbursementForm({ ...disbursementForm, description_en: e.target.value })} /></Field></div>
               <label className="checkbox-field full-span"><input type="checkbox" checked={disbursementForm.is_public} onChange={(e) => setDisbursementForm({ ...disbursementForm, is_public: e.target.checked })} /> {t('Paparkan kepada umum', 'Display publicly')}</label>
               <div className="full-span form-actions"><Button disabled={busy} type="submit">{t('Tambah rekod', 'Add record')}</Button></div>
-            </form></Card><Card title={t('Rekod agihan', 'Distribution records')}><div className="management-list">{disbursements.map((item) => <div className="management-item" key={item.id}><div><strong>{item.title_bm} · {formatMoney(item.amount)}</strong><small>{formatDate(item.disbursed_at, language)} · {item.is_public ? t('Awam', 'Public') : t('Tersembunyi', 'Hidden')}</small></div><Button variant="danger" onClick={() => void deleteRow('fund_disbursements', item.id, 'Rekod agihan')}>{t('Padam', 'Delete')}</Button></div>)}</div></Card></div>
+            </form></Card><Card title={t('Rekod agihan', 'Distribution records')}><div className="management-list">{disbursements.map((item) => <div className="management-item" key={item.id}><div><strong>{item.title_bm} · {formatMoney(item.amount)}</strong><small>{formatDate(item.disbursed_at, language)} · {item.is_public ? t('Awam', 'Public') : t('Tersembunyi', 'Hidden')}</small></div><Button variant="danger" onClick={() => void deleteRow('fund_disbursements', item.id, t('rekod agihan', 'distribution record'))}>{t('Padam', 'Delete')}</Button></div>)}</div></Card></div>
           </div>
         )}
       </div>
