@@ -393,7 +393,9 @@ export default function AdminPage() {
     try {
       await action()
       setNotice({ type: 'success', text: successText })
-      await loadAll()
+      if (isSupabaseConfigured) {
+        await loadAll()
+      }
     } catch (error) {
       const fallback = t('Tindakan gagal.', 'Action failed.')
       const message = getErrorMessage(error, fallback)
@@ -673,6 +675,16 @@ export default function AdminPage() {
   const deleteRow = async (table: string, id: string, label: string) => {
     if (!window.confirm(`Padam ${label}?`)) return
     await runAction(async () => {
+      if (!isSupabaseConfigured) {
+        if (table === 'ikes_applications') setIkes((rows) => rows.filter((r) => r.id !== id))
+        else if (table === 'asset_applications') setAssetRequests((rows) => rows.filter((r) => r.id !== id))
+        else if (table === 'donations') setDonations((rows) => rows.filter((r) => r.id !== id))
+        else if (table === 'announcements') setAnnouncements((rows) => rows.filter((r) => r.id !== id))
+        else if (table === 'asset_items') setCatalogue((rows) => rows.filter((r) => r.id !== id))
+        else if (table === 'organization_members') setMembers((rows) => rows.filter((r) => r.id !== id))
+        else if (table === 'fund_disbursements') setDisbursements((rows) => rows.filter((r) => r.id !== id))
+        return
+      }
       const { error } = await supabase.from(table).delete().eq('id', id)
       if (error) throw error
     }, `${label} dipadam.`)
@@ -917,7 +929,7 @@ export default function AdminPage() {
                       <tr key={item.id}>
                         <td>
                           <strong>{item.applicant_name}</strong>
-                          <small>
+                          <small style={{ display: 'block', marginTop: '4px', lineHeight: '1.4' }}>
                             {item.class_name}
                             <br />
                             {item.phone}
@@ -929,14 +941,17 @@ export default function AdminPage() {
                           <strong>
                             {item.ikes_type === 'care' ? 'iKES Care' : 'iKES Go-Home'} · {formatMoney(item.amount)}
                           </strong>
-                          <p>{item.reason}</p>
+                          <p className="admin-record-details">{item.reason}</p>
                           {item.ticket_path && (
-                            <Button
-                              variant="ghost"
-                              onClick={() => void openPrivateFile(supabase, item.ticket_path!)}
-                            >
-                              {t('Buka resit', 'Open receipt')}
-                            </Button>
+                            <div style={{ marginTop: '8px' }}>
+                              <Button
+                                variant="ghost"
+                                className="compact"
+                                onClick={() => void openPrivateFile(supabase, item.ticket_path!)}
+                              >
+                                {t('Buka resit', 'Open receipt')}
+                              </Button>
+                            </div>
                           )}
                         </td>
                         <td>
@@ -1001,9 +1016,20 @@ export default function AdminPage() {
                           </label>
                         </td>
                         <td>
-                          <Button disabled={busy} onClick={() => void updateIkes(item)}>
-                            {t('Simpan', 'Save')}
-                          </Button>
+                          <div className="admin-action-buttons">
+                            <Button disabled={busy} onClick={() => void updateIkes(item)}>
+                              <Icon name="save" size={17} />
+                              {t('Simpan', 'Save')}
+                            </Button>
+                            <Button
+                              variant="danger"
+                              disabled={busy}
+                              onClick={() => void deleteRow('ikes_applications', item.id, t('permohonan iKES', 'iKES application'))}
+                            >
+                              <Icon name="trash" size={17} />
+                              {t('Padam', 'Delete')}
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -1092,7 +1118,7 @@ export default function AdminPage() {
                       <tr key={item.id}>
                         <td>
                           <strong>{item.applicant_name}</strong>
-                          <small>
+                          <small style={{ display: 'block', marginTop: '4px', lineHeight: '1.4' }}>
                             {item.class_name}
                             <br />
                             {item.phone}
@@ -1102,7 +1128,7 @@ export default function AdminPage() {
                           <strong>
                             {language === 'bm' ? item.asset_items?.name_bm : item.asset_items?.name_en || item.asset_items?.name_bm} × {item.quantity}
                           </strong>
-                          <p>
+                          <p className="admin-record-details" style={{ marginBottom: '4px' }}>
                             {formatDate(item.borrow_date, language)} – {formatDate(item.return_date, language)}
                           </p>
                           <small>{item.purpose}</small>
@@ -1151,9 +1177,20 @@ export default function AdminPage() {
                           </label>
                         </td>
                         <td>
-                          <Button disabled={busy} onClick={() => void updateAssetRequest(item)}>
-                            {t('Simpan', 'Save')}
-                          </Button>
+                          <div className="admin-action-buttons">
+                            <Button disabled={busy} onClick={() => void updateAssetRequest(item)}>
+                              <Icon name="save" size={17} />
+                              {t('Simpan', 'Save')}
+                            </Button>
+                            <Button
+                              variant="danger"
+                              disabled={busy}
+                              onClick={() => void deleteRow('asset_applications', item.id, t('permohonan e-Aset', 'e-Asset request'))}
+                            >
+                              <Icon name="trash" size={17} />
+                              {t('Padam', 'Delete')}
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -1282,18 +1319,22 @@ export default function AdminPage() {
                     <tbody>
                       {filteredDonations.map((item) => (
                         <tr key={item.id}>
-                          <td>{formatDate(item.created_at, language)}</td>
+                          <td>
+                            <small style={{ display: 'block', whiteSpace: 'nowrap' }}>{formatDate(item.created_at, language)}</small>
+                          </td>
                           <td>
                             <strong>{item.donor_name || t('Tanpa nama', 'Anonymous')}</strong>
-                            <small className="preserve-lines">{item.message || '—'}</small>
+                            {item.message && <small className="preserve-lines" style={{ display: 'block', marginTop: '4px', color: 'var(--ink-soft)' }}>{item.message}</small>}
                           </td>
                           <td>
                             <strong>{formatMoney(item.amount)}</strong>
-                            <small>{item.payment_method.replace('_', ' ')} · {item.reference_no || '—'}</small>
+                            <small style={{ display: 'block', marginTop: '4px', color: 'var(--ink-soft)' }}>{item.payment_method.replace('_', ' ')} · {item.reference_no || '—'}</small>
                             {item.proof_path && (
-                              <Button variant="ghost" onClick={() => void openPrivateFile(supabase, item.proof_path!)}>
-                                {t('Buka bukti', 'Open proof')}
-                              </Button>
+                              <div style={{ marginTop: '8px' }}>
+                                <Button variant="ghost" className="compact" onClick={() => void openPrivateFile(supabase, item.proof_path!)}>
+                                  {t('Buka bukti', 'Open proof')}
+                                </Button>
+                              </div>
                             )}
                           </td>
                           <td>
@@ -1308,10 +1349,20 @@ export default function AdminPage() {
                             <StatusBadge status={item.status} />
                           </td>
                           <td>
-                            <Button disabled={busy} onClick={() => void updateDonation(item)}>
-                              <Icon name="save" size={17} />
-                              {t('Simpan', 'Save')}
-                            </Button>
+                            <div className="admin-action-buttons">
+                              <Button disabled={busy} onClick={() => void updateDonation(item)}>
+                                <Icon name="save" size={17} />
+                                {t('Simpan', 'Save')}
+                              </Button>
+                              <Button
+                                variant="danger"
+                                disabled={busy}
+                                onClick={() => void deleteRow('donations', item.id, t('rekod derma', 'donation record'))}
+                              >
+                                <Icon name="trash" size={17} />
+                                {t('Padam', 'Delete')}
+                              </Button>
+                            </div>
                           </td>
                         </tr>
                       ))}
