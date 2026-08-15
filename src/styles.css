@@ -193,6 +193,8 @@ h1, h2, h3, .premium-brand strong, .fund-overview-primary strong,
 }
 .header-pill:hover { border-color: var(--gold-500); background: color-mix(in srgb, var(--gold-500) 7%, var(--surface)); transform: translateY(-1px); }
 .header-login-pill { color: #fff; border-color: var(--maroon-800); background: var(--maroon-800); }
+.header-login-pill:hover { color: var(--maroon-800); border-color: var(--maroon-800); background: color-mix(in srgb, var(--maroon-800) 10%, var(--surface)); }
+[data-theme="dark"] .header-login-pill:hover { color: var(--gold-300); border-color: var(--gold-500); }
 .desktop-signout { color: var(--danger); }
 .mobile-menu-button { display: none; }
 .premium-nav-row { border-top: 1px solid var(--line); background: color-mix(in srgb, var(--surface) 97%, transparent); }
@@ -764,6 +766,10 @@ tbody tr:hover { background: color-mix(in srgb, var(--gold-500) 3%, var(--surfac
 .admin-section { padding-top: 54px; }
 .admin-tabs { position: sticky; top: var(--header-offset); z-index: 45; margin: 0 0 24px; padding: 10px; background: color-mix(in srgb, var(--canvas) 94%, transparent); border: 1px solid var(--line); border-radius: 16px; backdrop-filter: blur(18px); box-shadow: var(--shadow-sm); }
 .admin-tabs .button { flex: 0 0 auto; min-height: 40px; padding-inline: 15px; }
+.admin-action-buttons { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.admin-action-buttons .button { min-height: 36px; padding-inline: 12px; font-size: .82rem; }
+.admin-record-details { margin: 6px 0 0; color: var(--ink-soft); font-size: .86rem; line-height: 1.5; }
+.admin-record-details strong { color: var(--ink); font-weight: 700; }
 .admin-content-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; align-items: start; }
 .admin-editor-grid { grid-template-columns: minmax(360px, .9fr) minmax(0, 1.1fr); }
 .admin-editor-active { border-color: var(--gold-500); box-shadow: 0 0 0 3px color-mix(in srgb, var(--gold-500) 11%, transparent), var(--shadow-sm); }

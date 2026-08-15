@@ -31,9 +31,21 @@ function buildLegacyHierarchy(members: OrganizationMember[]): TreeNode[] {
   const sorted = [...members].sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name))
   const treasurer = sorted.find((member) => {
     const position = normalise(member.position_bm)
-    return position.includes('bendahari agung kehormat') && !position.includes('naib')
+    const positionEn = normalise(member.position_en)
+    return (
+      (position.includes('bendahari') && !position.includes('naib')) ||
+      (positionEn.includes('treasurer') && !positionEn.includes('vice') && !positionEn.includes('deputy'))
+    )
   })
-  const deputy = sorted.find((member) => normalise(member.position_bm).includes('naib bendahari agung kehormat'))
+  const deputy = sorted.find((member) => {
+    const position = normalise(member.position_bm)
+    const positionEn = normalise(member.position_en)
+    return (
+      position.includes('naib bendahari') ||
+      positionEn.includes('vice treasurer') ||
+      positionEn.includes('deputy treasurer')
+    )
+  })
   const leadershipIds = new Set([treasurer?.id, deputy?.id].filter(Boolean) as string[])
   const regularMembers = sorted.filter((member) => !leadershipIds.has(member.id))
 
