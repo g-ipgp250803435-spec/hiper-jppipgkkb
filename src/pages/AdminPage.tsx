@@ -757,7 +757,7 @@ export default function AdminPage() {
               <StatCard label={t('Derma disahkan', 'Verified donations')} value={formatMoney(counts.verifiedDonations)} />
             </div>
             <div className="admin-v2-overview-layout">
-              <Card title={t('Tindakan Segera', 'Immediate Attention')} className="admin-v2-attention-card">
+              <Card title={t('Tindakan Segera & Ringkasan Kandungan Portal', 'Immediate Attention & Content Summary')} className="admin-v2-attention-card">
                 <div className="admin-v2-attention-list">
                   <button onClick={() => setTab('ikes')} className="admin-v2-attention-item">
                     <span className="admin-v2-attention-count">{counts.pendingIkes}</span>
@@ -799,6 +799,38 @@ export default function AdminPage() {
                     <span className="admin-v2-attention-arrow"><Icon name="chevron-right" size={18} /></span>
                   </button>
                 </div>
+
+                <div className="admin-v2-summary-divider" />
+
+                <div className="admin-v2-summary-block">
+                  <h3 className="admin-v2-subheading">{t('Ringkasan Kandungan Portal', 'Portal Content Summary')}</h3>
+                  <div className="admin-v2-summary-grid">
+                    <div className="admin-v2-summary-item">
+                      <span className="admin-v2-summary-label">{t('Jumlah Pengumuman', 'Total Announcements')}</span>
+                      <strong className="admin-v2-summary-value">{announcements.length}</strong>
+                      <span className="admin-v2-summary-sub">
+                        {announcements.filter(a => a.published).length} {t('Diterbitkan', 'Published')}
+                      </span>
+                    </div>
+                    <div className="admin-v2-summary-item">
+                      <span className="admin-v2-summary-label">{t('Katalog Aset', 'Asset Catalogue')}</span>
+                      <strong className="admin-v2-summary-value">{catalogue.length}</strong>
+                      <span className="admin-v2-summary-sub">{t('Aset aktif', 'Active assets')}</span>
+                    </div>
+                    <div className="admin-v2-summary-item">
+                      <span className="admin-v2-summary-label">{t('Ahli Organisasi', 'Organisation Members')}</span>
+                      <strong className="admin-v2-summary-value">{members.length}</strong>
+                      <span className="admin-v2-summary-sub">{t('Ahli PBAK', 'PBAK members')}</span>
+                    </div>
+                    <div className="admin-v2-summary-item">
+                      <span className="admin-v2-summary-label">{t('Rekod Agihan Dana', 'Fund Disbursement Records')}</span>
+                      <strong className="admin-v2-summary-value">{disbursements.length}</strong>
+                      <span className="admin-v2-summary-sub">
+                        {formatMoney(disbursements.reduce((sum, d) => sum + Number(d.amount), 0))} {t('diagihkan', 'disbursed')}
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </Card>
 
               <Card title={t('Aktiviti Terbaharu', 'Recent Activity')} className="admin-v2-recent-card">
@@ -830,35 +862,6 @@ export default function AdminPage() {
                     ))}
                   </div>
                 )}
-              </Card>
-
-              <Card title={t('Ringkasan Kandungan Portal', 'Portal Content Summary')} className="admin-v2-summary-card">
-                <div className="admin-v2-summary-grid">
-                  <div className="admin-v2-summary-item">
-                    <span className="admin-v2-summary-label">{t('Jumlah Pengumuman', 'Total Announcements')}</span>
-                    <strong className="admin-v2-summary-value">{announcements.length}</strong>
-                    <span className="admin-v2-summary-sub">
-                      {announcements.filter(a => a.published).length} {t('Diterbitkan', 'Published')}
-                    </span>
-                  </div>
-                  <div className="admin-v2-summary-item">
-                    <span className="admin-v2-summary-label">{t('Katalog Aset', 'Asset Catalogue')}</span>
-                    <strong className="admin-v2-summary-value">{catalogue.length}</strong>
-                    <span className="admin-v2-summary-sub">{t('Aset aktif', 'Active assets')}</span>
-                  </div>
-                  <div className="admin-v2-summary-item">
-                    <span className="admin-v2-summary-label">{t('Ahli Organisasi', 'Organisation Members')}</span>
-                    <strong className="admin-v2-summary-value">{members.length}</strong>
-                    <span className="admin-v2-summary-sub">{t('Ahli PBAK', 'PBAK members')}</span>
-                  </div>
-                  <div className="admin-v2-summary-item">
-                    <span className="admin-v2-summary-label">{t('Rekod Agihan Dana', 'Fund Disbursement Records')}</span>
-                    <strong className="admin-v2-summary-value">{disbursements.length}</strong>
-                    <span className="admin-v2-summary-sub">
-                      {formatMoney(disbursements.reduce((sum, d) => sum + Number(d.amount), 0))} {t('diagihkan', 'disbursed')}
-                    </span>
-                  </div>
-                </div>
               </Card>
             </div>
           </>
