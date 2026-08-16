@@ -152,6 +152,28 @@ export function AuthProvider({
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
+      setSession({
+        access_token: 'mock-token',
+        token_type: 'bearer',
+        expires_in: 3600,
+        refresh_token: 'mock-refresh',
+        user: {
+          id: 'mock-admin-id',
+          app_metadata: {},
+          user_metadata: { name: 'Pentadbir Demo' },
+          aud: 'authenticated',
+          created_at: new Date().toISOString(),
+          email: 'admin@moe-dl.edu.my',
+        },
+      } as Session)
+      setProfile({
+        id: 'mock-admin-id',
+        full_name: 'Pentadbir Demo',
+        role: 'admin',
+        class_name: 'Pentadbiran',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
       setLoading(false)
       return
     }

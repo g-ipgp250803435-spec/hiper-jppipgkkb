@@ -793,13 +793,16 @@ tbody tr:hover { background: color-mix(in srgb, var(--gold-500) 3%, var(--surfac
 .admin-v2-attention-item { width: 100%; display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 12px; padding: 14px 15px; color: var(--ink); background: var(--canvas); border: 1px solid var(--line); border-radius: 12px; cursor: pointer; text-align: left; }
 .admin-v2-attention-item:hover { border-color: var(--gold-500); }
 .admin-v2-attention-label { font-weight: 750; }
-.admin-v2-attention-count { min-width: 31px; height: 31px; display: grid; place-items: center; color: #fff; background: var(--maroon-800); border-radius: 50%; font-weight: 850; }
+.admin-v2-attention-count { width: 31px; height: 31px; aspect-ratio: 1 / 1; flex-shrink: 0; display: grid; place-items: center; color: #fff; background: var(--maroon-800); border-radius: 50%; font-weight: 850; font-size: .85rem; line-height: 1; box-sizing: border-box; }
 .admin-v2-low-stock-warning { color: var(--danger); }
+.admin-v2-summary-divider { height: 1px; background: var(--line); margin: 20px 0; }
+.admin-v2-summary-block { display: grid; gap: 12px; }
+.admin-v2-subheading { font-size: 1.05rem; font-weight: 750; color: var(--ink); margin: 0 0 4px; }
 .admin-v2-recent-item { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 14px; padding: 14px; border: 1px solid var(--line); border-radius: 12px; }
 .admin-v2-recent-type { color: var(--gold-700); font-size: .72rem; font-weight: 850; letter-spacing: .08em; text-transform: uppercase; }
 .admin-v2-recent-name { display: block; }
 .admin-v2-recent-date { color: var(--ink-soft); font-size: .78rem; white-space: nowrap; }
-.admin-v2-summary-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+.admin-v2-summary-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
 .admin-v2-summary-item { padding: 16px; background: var(--canvas); border: 1px solid var(--line); border-radius: 12px; }
 .admin-v2-summary-label, .admin-v2-summary-sub { display: block; color: var(--ink-soft); font-size: .76rem; }
 .admin-v2-summary-value { display: block; margin: 9px 0 3px; font-size: 1.55rem; }
