@@ -335,6 +335,51 @@ create policy "Admins delete public media"
   to authenticated
   using (bucket_id = 'public-media' and public.is_admin());
 
+-- Update asset stock trigger to handle status updates and request deletions
+create or replace function public.sync_asset_stock_from_request()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  affected_rows integer;
+begin
+  if tg_op = 'DELETE' then
+    if old.status = 'approved' then
+      update public.asset_items
+      set stock_available = least(stock_total, stock_available + old.quantity)
+      where id = old.asset_id;
+    end if;
+    return old;
+  elsif tg_op = 'UPDATE' then
+    if old.status <> 'approved' and new.status = 'approved' then
+      update public.asset_items
+      set stock_available = stock_available - new.quantity
+      where id = new.asset_id
+        and active = true
+        and stock_available >= new.quantity;
+
+      get diagnostics affected_rows = row_count;
+      if affected_rows = 0 then
+        raise exception 'Insufficient available stock for this asset.';
+      end if;
+    elsif old.status = 'approved' and new.status <> 'approved' then
+      update public.asset_items
+      set stock_available = least(stock_total, stock_available + old.quantity)
+      where id = old.asset_id;
+    end if;
+    return new;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists sync_asset_stock_trigger on public.asset_applications;
+create trigger sync_asset_stock_trigger
+before update of status or delete on public.asset_applications
+for each row execute procedure public.sync_asset_stock_from_request();
+
 -- Keep internal stock trigger inaccessible as an RPC endpoint.
 revoke execute on function public.sync_asset_stock_from_request()
   from public, anon, authenticated;

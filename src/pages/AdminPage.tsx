@@ -680,6 +680,18 @@ export default function AdminPage() {
       if (table === 'organization_members' && editingMemberId === id) resetMemberEditor()
 
       if (!isSupabaseConfigured) {
+        if (table === 'asset_applications') {
+          const reqToDelete = assetRequests.find((r) => r.id === id)
+          if (reqToDelete && reqToDelete.status === 'approved' && reqToDelete.asset_id) {
+            setCatalogue((items) =>
+              items.map((item) =>
+                item.id === reqToDelete.asset_id
+                  ? { ...item, stock_available: Math.min(item.stock_total, item.stock_available + reqToDelete.quantity) }
+                  : item
+              )
+            )
+          }
+        }
         if (table === 'ikes_applications') setIkes((rows) => rows.filter((r) => r.id !== id))
         else if (table === 'asset_applications') setAssetRequests((rows) => rows.filter((r) => r.id !== id))
         else if (table === 'donations') setDonations((rows) => rows.filter((r) => r.id !== id))
@@ -688,6 +700,18 @@ export default function AdminPage() {
         else if (table === 'organization_members') setMembers((rows) => rows.filter((r) => r.id !== id))
         else if (table === 'fund_disbursements') setDisbursements((rows) => rows.filter((r) => r.id !== id))
         return
+      }
+
+      if (table === 'ikes_applications') {
+        const item = ikes.find((r) => r.id === id)
+        if (item?.ticket_path) {
+          try { await supabase.storage.from('application-files').remove([item.ticket_path]) } catch { /* ignore storage cleanup errors */ }
+        }
+      } else if (table === 'donations') {
+        const item = donations.find((r) => r.id === id)
+        if (item?.proof_path) {
+          try { await supabase.storage.from('application-files').remove([item.proof_path]) } catch { /* ignore storage cleanup errors */ }
+        }
       }
 
       const { error } = await supabase.from(table).delete().eq('id', id)

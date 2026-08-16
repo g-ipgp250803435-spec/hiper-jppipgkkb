@@ -118,18 +118,23 @@ export const getErrorMessage = (
   error: unknown,
   fallback = 'Tindakan tidak dapat diselesaikan.',
 ) => {
-  if (error instanceof Error && error.message.trim()) return error.message
-
   if (error && typeof error === 'object') {
     const record = error as Record<string, unknown>
+    const code = typeof record.code === 'string' ? record.code.trim() : ''
+
+    if (code === '23503') {
+      return 'Rekod ini tidak boleh dipadam kerana terdapat rekod lain yang berkait kepadanya.'
+    }
+
     const message = typeof record.message === 'string' ? record.message.trim() : ''
     const details = typeof record.details === 'string' ? record.details.trim() : ''
     const hint = typeof record.hint === 'string' ? record.hint.trim() : ''
-    const code = typeof record.code === 'string' ? record.code.trim() : ''
 
     const parts = [message, details, hint].filter(Boolean)
     if (parts.length > 0) return `${parts.join(' — ')}${code ? ` (${code})` : ''}`
   }
+
+  if (error instanceof Error && error.message.trim()) return error.message
 
   return fallback
 }
