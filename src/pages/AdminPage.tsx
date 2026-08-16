@@ -3,6 +3,7 @@ import { Button, Card, EmptyState, Field, LoadingBlock, Notice, PageHeader, Stat
 import { Icon } from '../components/Icons'
 import { RichTextEditor, richTextToPlainText } from '../components/RichText'
 import SiteSettingsEditor from '../components/admin/SiteSettingsEditor'
+import { OrganizationTree } from '../components/OrganizationTree'
 import { useAuth } from '../contexts/AuthContext'
 import { useUi } from '../contexts/UiContext'
 import { isSupabaseConfigured } from '../lib/config'
@@ -781,47 +782,82 @@ export default function AdminPage() {
               <StatCard label={t('Derma disahkan', 'Verified donations')} value={formatMoney(counts.verifiedDonations)} />
             </div>
             <div className="admin-v2-overview-layout">
-              <Card title={t('Tindakan Segera', 'Immediate Attention')} className="admin-v2-attention-card">
-                <div className="admin-v2-attention-list">
-                  <button onClick={() => setTab('ikes')} className="admin-v2-attention-item">
-                    <span className="admin-v2-attention-count">{counts.pendingIkes}</span>
-                    <span className="admin-v2-attention-label">
-                      {t('Permohonan iKES Menunggu', 'Pending iKES Applications')}
-                    </span>
-                    <span className="admin-v2-attention-arrow"><Icon name="chevron-right" size={18} /></span>
-                  </button>
+              <Card title={t('Tindakan Segera & Ringkasan Portal', 'Immediate Attention & Portal Summary')} className="admin-v2-combined-card">
+                <div className="admin-v2-combined-section">
+                  <h4 className="admin-v2-combined-subtitle">{t('Tindakan Segera', 'Immediate Attention')}</h4>
+                  <div className="admin-v2-attention-list">
+                    <button onClick={() => setTab('ikes')} className="admin-v2-attention-item">
+                      <span className="admin-v2-attention-count">{counts.pendingIkes}</span>
+                      <span className="admin-v2-attention-label">
+                        {t('Permohonan iKES Menunggu', 'Pending iKES Applications')}
+                      </span>
+                      <span className="admin-v2-attention-arrow"><Icon name="chevron-right" size={18} /></span>
+                    </button>
 
-                  <button onClick={() => setTab('assets-requests')} className="admin-v2-attention-item">
-                    <span className="admin-v2-attention-count">{counts.pendingAssets}</span>
-                    <span className="admin-v2-attention-label">
-                      {t('Permohonan e-Aset Menunggu', 'Pending e-Asset Requests')}
-                    </span>
-                    <span className="admin-v2-attention-arrow"><Icon name="chevron-right" size={18} /></span>
-                  </button>
+                    <button onClick={() => setTab('assets-requests')} className="admin-v2-attention-item">
+                      <span className="admin-v2-attention-count">{counts.pendingAssets}</span>
+                      <span className="admin-v2-attention-label">
+                        {t('Permohonan e-Aset Menunggu', 'Pending e-Asset Requests')}
+                      </span>
+                      <span className="admin-v2-attention-arrow"><Icon name="chevron-right" size={18} /></span>
+                    </button>
 
-                  <button onClick={() => setTab('donations')} className="admin-v2-attention-item">
-                    <span className="admin-v2-attention-count">{counts.pendingDonations}</span>
-                    <span className="admin-v2-attention-label">
-                      {t('Sumbangan Perlu Pengesahan', 'Donation Verification Pending')}
-                    </span>
-                    <span className="admin-v2-attention-arrow"><Icon name="chevron-right" size={18} /></span>
-                  </button>
+                    <button onClick={() => setTab('donations')} className="admin-v2-attention-item">
+                      <span className="admin-v2-attention-count">{counts.pendingDonations}</span>
+                      <span className="admin-v2-attention-label">
+                        {t('Sumbangan Perlu Pengesahan', 'Donation Verification Pending')}
+                      </span>
+                      <span className="admin-v2-attention-arrow"><Icon name="chevron-right" size={18} /></span>
+                    </button>
 
-                  <button onClick={() => setTab('catalogue')} className="admin-v2-attention-item admin-v2-low-stock-warning">
-                    <span className={`admin-v2-attention-count ${counts.lowStockAssets > 0 ? 'admin-v2-warning-highlight' : ''}`}>{counts.lowStockAssets}</span>
-                    <span className="admin-v2-attention-label">
-                      {t('Aset Kurang Stok', 'Low-Stock Assets')}
-                    </span>
-                    <span className="admin-v2-attention-arrow"><Icon name="chevron-right" size={18} /></span>
-                  </button>
+                    <button onClick={() => setTab('catalogue')} className="admin-v2-attention-item admin-v2-low-stock-warning">
+                      <span className={`admin-v2-attention-count ${counts.lowStockAssets > 0 ? 'admin-v2-warning-highlight' : ''}`}>{counts.lowStockAssets}</span>
+                      <span className="admin-v2-attention-label">
+                        {t('Aset Kurang Stok', 'Low-Stock Assets')}
+                      </span>
+                      <span className="admin-v2-attention-arrow"><Icon name="chevron-right" size={18} /></span>
+                    </button>
 
-                  <button onClick={() => setTab('announcements')} className="admin-v2-attention-item">
-                    <span className="admin-v2-attention-count">{counts.unpublishedAnnouncements}</span>
-                    <span className="admin-v2-attention-label">
-                      {t('Pengumuman Belum Diterbitkan', 'Unpublished Announcements')}
-                    </span>
-                    <span className="admin-v2-attention-arrow"><Icon name="chevron-right" size={18} /></span>
-                  </button>
+                    <button onClick={() => setTab('announcements')} className="admin-v2-attention-item">
+                      <span className="admin-v2-attention-count">{counts.unpublishedAnnouncements}</span>
+                      <span className="admin-v2-attention-label">
+                        {t('Pengumuman Belum Diterbitkan', 'Unpublished Announcements')}
+                      </span>
+                      <span className="admin-v2-attention-arrow"><Icon name="chevron-right" size={18} /></span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="admin-v2-combined-divider" />
+
+                <div className="admin-v2-combined-section">
+                  <h4 className="admin-v2-combined-subtitle">{t('Ringkasan Kandungan Portal', 'Portal Content Summary')}</h4>
+                  <div className="admin-v2-summary-grid">
+                    <div className="admin-v2-summary-item">
+                      <span className="admin-v2-summary-label">{t('Jumlah Pengumuman', 'Total Announcements')}</span>
+                      <strong className="admin-v2-summary-value">{announcements.length}</strong>
+                      <span className="admin-v2-summary-sub">
+                        {announcements.filter(a => a.published).length} {t('Diterbitkan', 'Published')}
+                      </span>
+                    </div>
+                    <div className="admin-v2-summary-item">
+                      <span className="admin-v2-summary-label">{t('Katalog Aset', 'Asset Catalogue')}</span>
+                      <strong className="admin-v2-summary-value">{catalogue.length}</strong>
+                      <span className="admin-v2-summary-sub">{t('Aset aktif', 'Active assets')}</span>
+                    </div>
+                    <div className="admin-v2-summary-item">
+                      <span className="admin-v2-summary-label">{t('Ahli Organisasi', 'Organisation Members')}</span>
+                      <strong className="admin-v2-summary-value">{members.length}</strong>
+                      <span className="admin-v2-summary-sub">{t('Ahli PBAK', 'PBAK members')}</span>
+                    </div>
+                    <div className="admin-v2-summary-item">
+                      <span className="admin-v2-summary-label">{t('Rekod Agihan Dana', 'Fund Disbursement Records')}</span>
+                      <strong className="admin-v2-summary-value">{disbursements.length}</strong>
+                      <span className="admin-v2-summary-sub">
+                        {formatMoney(disbursements.reduce((sum, d) => sum + Number(d.amount), 0))} {t('diagihkan', 'disbursed')}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </Card>
 
@@ -854,35 +890,6 @@ export default function AdminPage() {
                     ))}
                   </div>
                 )}
-              </Card>
-
-              <Card title={t('Ringkasan Kandungan Portal', 'Portal Content Summary')} className="admin-v2-summary-card">
-                <div className="admin-v2-summary-grid">
-                  <div className="admin-v2-summary-item">
-                    <span className="admin-v2-summary-label">{t('Jumlah Pengumuman', 'Total Announcements')}</span>
-                    <strong className="admin-v2-summary-value">{announcements.length}</strong>
-                    <span className="admin-v2-summary-sub">
-                      {announcements.filter(a => a.published).length} {t('Diterbitkan', 'Published')}
-                    </span>
-                  </div>
-                  <div className="admin-v2-summary-item">
-                    <span className="admin-v2-summary-label">{t('Katalog Aset', 'Asset Catalogue')}</span>
-                    <strong className="admin-v2-summary-value">{catalogue.length}</strong>
-                    <span className="admin-v2-summary-sub">{t('Aset aktif', 'Active assets')}</span>
-                  </div>
-                  <div className="admin-v2-summary-item">
-                    <span className="admin-v2-summary-label">{t('Ahli Organisasi', 'Organisation Members')}</span>
-                    <strong className="admin-v2-summary-value">{members.length}</strong>
-                    <span className="admin-v2-summary-sub">{t('Ahli PBAK', 'PBAK members')}</span>
-                  </div>
-                  <div className="admin-v2-summary-item">
-                    <span className="admin-v2-summary-label">{t('Rekod Agihan Dana', 'Fund Disbursement Records')}</span>
-                    <strong className="admin-v2-summary-value">{disbursements.length}</strong>
-                    <span className="admin-v2-summary-sub">
-                      {formatMoney(disbursements.reduce((sum, d) => sum + Number(d.amount), 0))} {t('diagihkan', 'disbursed')}
-                    </span>
-                  </div>
-                </div>
               </Card>
             </div>
           </>
@@ -1058,14 +1065,6 @@ export default function AdminPage() {
                               <Icon name="save" size={17} />
                               {t('Simpan', 'Save')}
                             </Button>
-                            <Button
-                              variant="danger"
-                              disabled={busy}
-                              onClick={() => void deleteRow('ikes_applications', item.id, t('permohonan iKES', 'iKES application'))}
-                            >
-                              <Icon name="trash" size={17} />
-                              {t('Padam', 'Delete')}
-                            </Button>
                           </div>
                         </td>
                       </tr>
@@ -1218,14 +1217,6 @@ export default function AdminPage() {
                             <Button disabled={busy} onClick={() => void updateAssetRequest(item)}>
                               <Icon name="save" size={17} />
                               {t('Simpan', 'Save')}
-                            </Button>
-                            <Button
-                              variant="danger"
-                              disabled={busy}
-                              onClick={() => void deleteRow('asset_applications', item.id, t('permohonan e-Aset', 'e-Asset request'))}
-                            >
-                              <Icon name="trash" size={17} />
-                              {t('Padam', 'Delete')}
                             </Button>
                           </div>
                         </td>
@@ -1390,14 +1381,6 @@ export default function AdminPage() {
                               <Button disabled={busy} onClick={() => void updateDonation(item)}>
                                 <Icon name="save" size={17} />
                                 {t('Simpan', 'Save')}
-                              </Button>
-                              <Button
-                                variant="danger"
-                                disabled={busy}
-                                onClick={() => void deleteRow('donations', item.id, t('rekod derma', 'donation record'))}
-                              >
-                                <Icon name="trash" size={17} />
-                                {t('Padam', 'Delete')}
                               </Button>
                             </div>
                           </td>
@@ -1603,119 +1586,129 @@ export default function AdminPage() {
         )}
 
         {tab === 'organization' && (
-          <div className="admin-content-grid admin-editor-grid">
-            <Card
-              title={editingMemberId ? t('Edit ahli organisasi', 'Edit organisation member') : t('Tambah ahli', 'Add member')}
-              className={editingMemberId ? 'admin-editor-active' : ''}
-              action={editingMemberId ? <span className="editor-mode-badge"><Icon name="edit" size={15} /> {t('Mod edit', 'Edit mode')}</span> : undefined}
-            >
-              <form className="form-grid" onSubmit={saveMember}>
-                <Field label={t('Nama / nama unit', 'Name / unit name')} required>
-                  <input value={memberForm.name} onChange={(event) => setMemberForm({ ...memberForm, name: event.target.value })} required />
-                </Field>
-                <Field label={t('Jenis nod', 'Node type')} required>
-                  <select value={memberForm.node_type} onChange={(event) => setMemberForm({ ...memberForm, node_type: event.target.value as 'leadership' | 'unit' | 'member', parent_id: '' })}>
-                    <option value="leadership">{t('Kepimpinan', 'Leadership')}</option>
-                    <option value="unit">{t('Unit', 'Unit')}</option>
-                    <option value="member">{t('Ahli', 'Member')}</option>
-                  </select>
-                </Field>
-                <Field label={t('Induk dalam hierarki', 'Parent in hierarchy')} hint={t('Kosongkan untuk peringkat tertinggi.', 'Leave blank for a top-level node.')}>
-                  <select value={memberForm.parent_id} onChange={(event) => setMemberForm({ ...memberForm, parent_id: event.target.value })}>
-                    <option value="">{t('Tiada induk', 'No parent')}</option>
-                    {members
-                      .filter((member) => member.id !== editingMemberId)
-                      .filter((member) => {
-                        if (memberForm.node_type === 'leadership') return member.node_type === 'leadership'
-                        if (memberForm.node_type === 'unit') return member.node_type === 'leadership'
-                        return member.node_type === 'unit'
-                      })
-                      .map((member) => (
-                        <option key={member.id} value={member.id}>{member.name} — {member.position_bm}</option>
-                      ))}
-                  </select>
-                </Field>
-                <Field label={t('Susunan', 'Order')} required>
-                  <input type="number" min="0" value={memberForm.sort_order} onChange={(event) => setMemberForm({ ...memberForm, sort_order: Number(event.target.value) })} required />
-                </Field>
-                <Field label="Jawatan BM" required>
-                  <input value={memberForm.position_bm} onChange={(event) => setMemberForm({ ...memberForm, position_bm: event.target.value })} required />
-                </Field>
-                <Field label="English position">
-                  <input value={memberForm.position_en} onChange={(event) => setMemberForm({ ...memberForm, position_en: event.target.value })} />
-                </Field>
-                <Field label="Unit BM">
-                  <input value={memberForm.unit_bm} onChange={(event) => setMemberForm({ ...memberForm, unit_bm: event.target.value })} />
-                </Field>
-                <Field label="English unit">
-                  <input value={memberForm.unit_en} onChange={(event) => setMemberForm({ ...memberForm, unit_en: event.target.value })} />
-                </Field>
-                <Field label={t('Kelas', 'Class')}>
-                  <input value={memberForm.class_name} onChange={(event) => setMemberForm({ ...memberForm, class_name: event.target.value })} />
-                </Field>
-                <Field label={editingMemberId ? t('Ganti gambar', 'Replace photo') : t('Gambar', 'Photo')}>
-                  <input type="file" accept="image/*" onChange={(event) => setMemberPhoto(event.target.files?.[0] || null)} />
-                </Field>
-                {memberForm.photo_url && !memberPhoto && (
-                  <div className="full-span admin-media-preview">
-                    <img src={memberForm.photo_url} alt="" />
-                    <span>{t('Gambar semasa akan dikekalkan.', 'Current photo will be retained.')}</span>
+          <div className="stack">
+            <div className="admin-content-grid admin-editor-grid">
+              <Card
+                title={editingMemberId ? t('Edit ahli organisasi', 'Edit organisation member') : t('Tambah ahli', 'Add member')}
+                className={editingMemberId ? 'admin-editor-active' : ''}
+                action={editingMemberId ? <span className="editor-mode-badge"><Icon name="edit" size={15} /> {t('Mod edit', 'Edit mode')}</span> : undefined}
+              >
+                <form className="form-grid" onSubmit={saveMember}>
+                  <Field label={t('Nama / nama unit', 'Name / unit name')} required>
+                    <input value={memberForm.name} onChange={(event) => setMemberForm({ ...memberForm, name: event.target.value })} required />
+                  </Field>
+                  <Field label={t('Jenis nod', 'Node type')} required>
+                    <select value={memberForm.node_type} onChange={(event) => setMemberForm({ ...memberForm, node_type: event.target.value as 'leadership' | 'unit' | 'member', parent_id: '' })}>
+                      <option value="leadership">{t('Kepimpinan', 'Leadership')}</option>
+                      <option value="unit">{t('Unit', 'Unit')}</option>
+                      <option value="member">{t('Ahli', 'Member')}</option>
+                    </select>
+                  </Field>
+                  <Field label={t('Induk dalam hierarki', 'Parent in hierarchy')} hint={t('Kosongkan untuk peringkat tertinggi.', 'Leave blank for a top-level node.')}>
+                    <select value={memberForm.parent_id} onChange={(event) => setMemberForm({ ...memberForm, parent_id: event.target.value })}>
+                      <option value="">{t('Tiada induk', 'No parent')}</option>
+                      {members
+                        .filter((member) => member.id !== editingMemberId)
+                        .filter((member) => {
+                          if (memberForm.node_type === 'leadership') return member.node_type === 'leadership'
+                          if (memberForm.node_type === 'unit') return member.node_type === 'leadership'
+                          return member.node_type === 'unit'
+                        })
+                        .map((member) => (
+                          <option key={member.id} value={member.id}>{member.name} — {member.position_bm}</option>
+                        ))}
+                    </select>
+                  </Field>
+                  <Field label={t('Susunan', 'Order')} required>
+                    <input type="number" min="0" value={memberForm.sort_order} onChange={(event) => setMemberForm({ ...memberForm, sort_order: Number(event.target.value) })} required />
+                  </Field>
+                  <Field label="Jawatan BM" required>
+                    <input value={memberForm.position_bm} onChange={(event) => setMemberForm({ ...memberForm, position_bm: event.target.value })} required />
+                  </Field>
+                  <Field label="English position">
+                    <input value={memberForm.position_en} onChange={(event) => setMemberForm({ ...memberForm, position_en: event.target.value })} />
+                  </Field>
+                  <Field label="Unit BM">
+                    <input value={memberForm.unit_bm} onChange={(event) => setMemberForm({ ...memberForm, unit_bm: event.target.value })} />
+                  </Field>
+                  <Field label="English unit">
+                    <input value={memberForm.unit_en} onChange={(event) => setMemberForm({ ...memberForm, unit_en: event.target.value })} />
+                  </Field>
+                  <Field label={t('Kelas', 'Class')}>
+                    <input value={memberForm.class_name} onChange={(event) => setMemberForm({ ...memberForm, class_name: event.target.value })} />
+                  </Field>
+                  <Field label={editingMemberId ? t('Ganti gambar', 'Replace photo') : t('Gambar', 'Photo')}>
+                    <input type="file" accept="image/*" onChange={(event) => setMemberPhoto(event.target.files?.[0] || null)} />
+                  </Field>
+                  {memberForm.photo_url && !memberPhoto && (
+                    <div className="full-span admin-media-preview">
+                      <img src={memberForm.photo_url} alt="" />
+                      <span>{t('Gambar semasa akan dikekalkan.', 'Current photo will be retained.')}</span>
+                    </div>
+                  )}
+                  <div className="full-span">
+                    <Field label="Bidang tugas BM">
+                      <textarea rows={4} value={memberForm.duties_bm} onChange={(event) => setMemberForm({ ...memberForm, duties_bm: event.target.value })} />
+                    </Field>
+                  </div>
+                  <div className="full-span">
+                    <Field label="English duties">
+                      <textarea rows={4} value={memberForm.duties_en} onChange={(event) => setMemberForm({ ...memberForm, duties_en: event.target.value })} />
+                    </Field>
+                  </div>
+                  <label className="checkbox-field full-span">
+                    <input type="checkbox" checked={memberForm.active} onChange={(event) => setMemberForm({ ...memberForm, active: event.target.checked })} />
+                    {t('Ahli aktif dan dipaparkan di halaman Kenali Pejabat', 'Active member shown on the Our Office page')}
+                  </label>
+                  <div className="full-span form-actions">
+                    <Button disabled={busy} type="submit">
+                      <Icon name="save" size={18} />
+                      {editingMemberId ? t('Simpan perubahan', 'Save changes') : t('Tambah ahli', 'Add member')}
+                    </Button>
+                    {editingMemberId && (
+                      <Button type="button" variant="secondary" onClick={resetMemberEditor}>
+                        <Icon name="close" size={18} /> {t('Batal edit', 'Cancel edit')}
+                      </Button>
+                    )}
+                  </div>
+                </form>
+              </Card>
+
+              <Card title={t('Ahli carta organisasi', 'Organisation chart members')}>
+                {members.length === 0 ? (
+                  <EmptyState title={t('Tiada ahli organisasi', 'No organisation members')} />
+                ) : (
+                  <div className="management-list">
+                    {members.map((item) => (
+                      <div className="management-item management-item-rich" key={item.id}>
+                        <div className="management-thumb management-avatar">
+                          {item.photo_url ? <img src={item.photo_url} alt="" /> : <Icon name="user" size={24} />}
+                        </div>
+                        <div className="management-copy">
+                          <strong>{item.sort_order}. {item.name}</strong>
+                          <small>{language === 'bm' ? item.position_bm : item.position_en || item.position_bm} · {item.class_name || '—'}</small>
+                          <p className="management-excerpt">{language === 'bm' ? item.unit_bm || item.duties_bm : item.unit_en || item.unit_bm || item.duties_en || item.duties_bm}</p>
+                        </div>
+                        <div className="management-actions">
+                          <Button variant="secondary" className="compact" onClick={() => startMemberEdit(item)}>
+                            <Icon name="edit" size={17} /> {t('Edit', 'Edit')}
+                          </Button>
+                          <Button variant="danger" className="compact" onClick={() => void deleteRow('organization_members', item.id, t('ahli', 'member'))}>
+                            <Icon name="trash" size={17} /> {t('Padam', 'Delete')}
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
-                <div className="full-span">
-                  <Field label="Bidang tugas BM">
-                    <textarea rows={4} value={memberForm.duties_bm} onChange={(event) => setMemberForm({ ...memberForm, duties_bm: event.target.value })} />
-                  </Field>
-                </div>
-                <div className="full-span">
-                  <Field label="English duties">
-                    <textarea rows={4} value={memberForm.duties_en} onChange={(event) => setMemberForm({ ...memberForm, duties_en: event.target.value })} />
-                  </Field>
-                </div>
-                <label className="checkbox-field full-span">
-                  <input type="checkbox" checked={memberForm.active} onChange={(event) => setMemberForm({ ...memberForm, active: event.target.checked })} />
-                  {t('Ahli aktif dan dipaparkan di halaman Kenali Pejabat', 'Active member shown on the Our Office page')}
-                </label>
-                <div className="full-span form-actions">
-                  <Button disabled={busy} type="submit">
-                    <Icon name="save" size={18} />
-                    {editingMemberId ? t('Simpan perubahan', 'Save changes') : t('Tambah ahli', 'Add member')}
-                  </Button>
-                  {editingMemberId && (
-                    <Button type="button" variant="secondary" onClick={resetMemberEditor}>
-                      <Icon name="close" size={18} /> {t('Batal edit', 'Cancel edit')}
-                    </Button>
-                  )}
-                </div>
-              </form>
-            </Card>
+              </Card>
+            </div>
 
-            <Card title={t('Ahli carta organisasi', 'Organisation chart members')}>
+            <Card title={t('Pratonton Carta Organisasi', 'Organisation Chart Preview')} className="admin-tree-preview-card">
               {members.length === 0 ? (
                 <EmptyState title={t('Tiada ahli organisasi', 'No organisation members')} />
               ) : (
-                <div className="management-list">
-                  {members.map((item) => (
-                    <div className="management-item management-item-rich" key={item.id}>
-                      <div className="management-thumb management-avatar">
-                        {item.photo_url ? <img src={item.photo_url} alt="" /> : <Icon name="user" size={24} />}
-                      </div>
-                      <div className="management-copy">
-                        <strong>{item.sort_order}. {item.name}</strong>
-                        <small>{language === 'bm' ? item.position_bm : item.position_en || item.position_bm} · {item.class_name || '—'}</small>
-                        <p className="management-excerpt">{language === 'bm' ? item.unit_bm || item.duties_bm : item.unit_en || item.unit_bm || item.duties_en || item.duties_bm}</p>
-                      </div>
-                      <div className="management-actions">
-                        <Button variant="secondary" className="compact" onClick={() => startMemberEdit(item)}>
-                          <Icon name="edit" size={17} /> {t('Edit', 'Edit')}
-                        </Button>
-                        <Button variant="danger" className="compact" onClick={() => void deleteRow('organization_members', item.id, t('ahli', 'member'))}>
-                          <Icon name="trash" size={17} /> {t('Padam', 'Delete')}
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <OrganizationTree members={members} language={language} />
               )}
             </Card>
           </div>
