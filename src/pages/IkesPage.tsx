@@ -8,7 +8,7 @@ import { useSiteSettings } from '../contexts/SiteSettingsContext'
 import { isSupabaseConfigured } from '../lib/config'
 import { localise } from '../lib/siteSettings'
 import { uploadPrivateFile } from '../lib/helpers'
-import { supabase } from '../lib/supabase'
+import { supabase } from '../lib/supabase'\nimport { createNotification } from '../lib/v3/notificationService'
 
 export default function IkesPage() {
   const { language, t } = useUi()
@@ -83,6 +83,9 @@ export default function IkesPage() {
         ticket_path: ticketPath,
       })
       if (error) throw error
+
+      // HiPER V3.1.1: notify user/admin foundation
+      await createNotification(user.id, 'Permohonan iKES diterima', 'Permohonan iKES anda telah diterima dan sedang diproses.', 'IKES_STATUS')
 
       await supabase
         .from('profiles')
