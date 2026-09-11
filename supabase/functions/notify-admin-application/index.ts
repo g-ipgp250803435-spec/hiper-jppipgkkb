@@ -67,7 +67,7 @@ Deno.serve(async (request) => {
   if (payload.type !== 'INSERT' || payload.schema !== 'public' || !record) {
     return jsonResponse({ skipped: true, reason: 'Only public INSERT webhooks are processed' })
   }
-  if (sourceTable !== 'ikes_applications' && sourceTable !== 'asset_applications') {
+  if (sourceTable !== 'ikes_applications' && sourceTable !== 'asset_applications' && sourceTable !== 'donations') {
     return jsonResponse({ error: 'Unsupported webhook table' }, 400)
   }
 
@@ -138,7 +138,7 @@ Deno.serve(async (request) => {
       <tr><td>Jenis</td><td>${escapeHtml(record.ikes_type)}</td></tr>
       <tr><td>Amaun</td><td>${escapeHtml(formatMoney(record.amount))}</td></tr>
       <tr><td>Diterima</td><td>${escapeHtml(formatDate(record.created_at))}</td></tr>`
-  } else {
+  } else if (sourceTable === 'asset_applications') {
     let assetName = 'Aset'
     if (record.asset_id) {
       const { data: asset } = await adminClient.from('asset_items').select('name_bm, asset_code').eq('id', record.asset_id).maybeSingle()
@@ -152,6 +152,32 @@ Deno.serve(async (request) => {
       <tr><td>Kuantiti</td><td>${escapeHtml(record.quantity)}</td></tr>
       <tr><td>Tarikh pinjam</td><td>${escapeHtml(formatDate(record.borrow_date))}</td></tr>
       <tr><td>Tarikh pulang</td><td>${escapeHtml(formatDate(record.return_date))}</td></tr>
+      <tr><td>Diterima</td><td>${escapeHtml(formatDate(record.created_at))}</td></tr>`
+  } else if (sourceTable === 'donations') {
+    let donorName = String(record.donor_name || '').trim()
+    if (!donorName && record.user_id) {
+      const { data: profile } = await adminClient.from('profiles').select('full_name').eq('id', record.user_id).maybeSingle()
+      if (profile?.full_name) {
+        donorName = `${profile.full_name} (Sumbangan tanpa nama penderma)`
+      }
+    }
+    if (!donorName) donorName = 'Tanpa Nama'
+
+    const paymentMethodMap: Record<string, string> = {
+      qr: 'DuitNow QR',
+      bank_transfer: 'Pindahan Bank',
+      cash: 'Tunai',
+    }
+    const rawMethod = String(record.payment_method || '')
+    const paymentMethodLabel = paymentMethodMap[rawMethod] || rawMethod.toUpperCase()
+
+    applicationLabel = 'Sumbangan Tabung Jumaat baharu'
+    detailsHtml = `
+      <tr><td>Nama penderma</td><td><strong>${escapeHtml(donorName)}</strong></td></tr>
+      <tr><td>Amaun sumbangan</td><td><strong>${escapeHtml(formatMoney(record.amount))}</strong></td></tr>
+      <tr><td>Kaedah bayaran</td><td>${escapeHtml(paymentMethodLabel)}</td></tr>
+      ${record.reference_no ? `<tr><td>No. rujukan</td><td>${escapeHtml(record.reference_no)}</td></tr>` : ''}
+      ${record.message ? `<tr><td>Pesanan</td><td>${escapeHtml(record.message)}</td></tr>` : ''}
       <tr><td>Diterima</td><td>${escapeHtml(formatDate(record.created_at))}</td></tr>`
   }
 

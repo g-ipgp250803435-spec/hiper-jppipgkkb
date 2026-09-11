@@ -52,8 +52,9 @@ Uji 1920, 1440, 1366, 1024, 821, 820, 390 dan 360 px.
 
 - [ ] Edge Function deployed.
 - [ ] Secret disimpan di Supabase sahaja.
-- [ ] Dua Database Webhooks INSERT aktif.
+- [ ] Tiga Database Webhooks INSERT aktif (iKES, e-Aset, dan Tabung Jumaat).
 - [ ] iKES menghasilkan satu e-mel.
 - [ ] e-Aset menghasilkan satu e-mel.
+- [ ] Tabung Jumaat menghasilkan satu e-mel.
 - [ ] Notification log direkodkan.
 - [ ] Notifikasi boleh dimatikan melalui CMS.

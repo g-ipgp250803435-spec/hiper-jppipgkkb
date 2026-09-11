@@ -15,7 +15,7 @@ Pakej ini membina semula pengalaman HiPER berasaskan rujukan visual website lama
 - Rich-text pengumuman: bold, italic, bullets dan numbering, dengan sanitasi paparan.
 - CMS pentadbir untuk logo, favicon, nama portal, header, navigasi, homepage, tajuk halaman dan footer.
 - Carta organisasi parent/child sebenar dengan perlindungan kitaran hierarchy.
-- Edge Function notifikasi e-mel admin untuk permohonan iKES dan e-Aset.
+- Edge Function notifikasi e-mel admin untuk permohonan iKES, e-Aset, dan sumbangan Tabung Jumaat.
 - RLS dan Storage policy khusus admin untuk CMS/media.
 
 ## Teknologi
@@ -42,7 +42,7 @@ Isi `.env` menggunakan Project URL dan anon/publishable key Supabase. Jangan mas
 2. Sambungkan repository kepada Vercel.
 3. Masukkan environment variables frontend dalam Vercel.
 4. Jalankan migration Supabase.
-5. Deploy Edge Function dan sediakan dua Database Webhooks.
+5. Deploy Edge Function dan sediakan tiga Database Webhooks.
 6. Uji Vercel Preview sebelum Production.
 
 Panduan terperinci:
