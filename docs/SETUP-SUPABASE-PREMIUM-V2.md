@@ -71,11 +71,11 @@ Fungsi ini:
 
 - menerima webhook INSERT sahaja;
 - menyemak header rahsia `x-hiper-webhook-secret`;
-- menerima hanya `ikes_applications` atau `asset_applications`;
+- menerima rekod permohonan baharu daripada `ikes_applications`, `asset_applications`, atau `donations` (Tabung Jumaat);
 - membaca penerima daripada `profiles.role = 'admin'`;
-- menghantar e-mel melalui Resend;
-- tidak memasukkan sebab penuh atau dokumen sulit dalam e-mel;
-- merekod status ke `notification_delivery_log`;
+- menghantar e-mel terus kepada e-mel pentadbir melalui Resend API;
+- tidak memasukkan dokumen sulit secara terus dalam e-mel (pautan ke dashboard pentadbir disediakan);
+- merekod status penghantaran ke `notification_delivery_log`;
 - menghalang penghantaran berjaya yang sama daripada dihantar dua kali.
 
 ### 4.1 Sediakan domain e-mel
@@ -110,7 +110,7 @@ npx --yes supabase@latest functions deploy notify-admin-application --no-verify-
 
 ## 5. Cipta Database Webhooks
 
-Dalam Supabase Dashboard, buka Database → Webhooks dan cipta dua webhook.
+Dalam Supabase Dashboard, buka Database → Webhooks dan cipta tiga webhook.
 
 ### Webhook iKES
 
@@ -136,6 +136,18 @@ Header name: x-hiper-webhook-secret
 Header value: nilai HIPER_WEBHOOK_SECRET yang sama
 ```
 
+### Webhook Tabung Jumaat (Derma)
+
+```text
+Name: notify-admin-new-donation
+Table: public.donations
+Events: INSERT
+Method: POST
+URL: https://nzcjepfxgeupcjjwwaua.supabase.co/functions/v1/notify-admin-application
+Header name: x-hiper-webhook-secret
+Header value: nilai HIPER_WEBHOOK_SECRET yang sama
+```
+
 Pilih INSERT sahaja supaya perubahan status admin tidak menghantar e-mel permohonan baharu sekali lagi.
 
 ## 6. Aktifkan/nyahaktif e-mel dari CMS
@@ -154,8 +166,9 @@ Alamat penerima diambil daripada profil admin. Pastikan setiap admin mempunyai e
 3. Semak inbox/spam admin.
 4. Semak jadual `notification_delivery_log` melalui SQL Editor atau aplikasi admin.
 5. Hantar satu permohonan e-Aset ujian.
-6. Pastikan setiap rekod hanya menghasilkan satu e-mel berjaya.
+6. Hantar satu rekod sumbangan Tabung Jumaat ujian.
+7. Pastikan setiap rekod hanya menghasilkan satu e-mel berjaya.
 
 ## 8. Rollback
 
-Sebelum rollback, ambil backup. Jangan padam migration yang sudah digunakan pada Production. Cipta migration rollback baharu jika benar-benar perlu. Menyahaktifkan dua Database Webhooks akan menghentikan e-mel tanpa mengganggu permohonan.
+Sebelum rollback, ambil backup. Jangan padam migration yang sudah digunakan pada Production. Cipta migration rollback baharu jika benar-benar perlu. Menyahaktifkan tiga Database Webhooks akan menghentikan e-mel tanpa mengganggu permohonan.
