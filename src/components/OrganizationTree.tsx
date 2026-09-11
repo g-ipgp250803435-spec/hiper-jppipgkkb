@@ -5,99 +5,120 @@ interface TreeNode extends OrganizationMember {
   children: TreeNode[]
 }
 
-function buildExplicitTree(members: OrganizationMember[]): TreeNode[] {
-  const nodes = new Map<string, TreeNode>()
-  members.forEach((member) => nodes.set(member.id, { ...member, children: [] }))
-
-  const roots: TreeNode[] = []
-  nodes.forEach((node) => {
-    if (node.parent_id && nodes.has(node.parent_id)) nodes.get(node.parent_id)?.children.push(node)
-    else roots.push(node)
-  })
-
-  const sortNodes = (items: TreeNode[]) => {
-    items.sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name))
-    items.forEach((item) => sortNodes(item.children))
-  }
-  sortNodes(roots)
-  return roots
-}
-
 function normalise(value?: string | null) {
-  return (value || '').trim().toLocaleLowerCase('ms-MY')
+  return (value || '').trim().toLowerCase()
 }
 
-function buildLegacyHierarchy(members: OrganizationMember[]): TreeNode[] {
-  const sorted = [...members].sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name))
-  const treasurer = sorted.find((member) => {
-    const position = normalise(member.position_bm)
-    const positionEn = normalise(member.position_en)
-    return (
-      (position.includes('bendahari') && !position.includes('naib')) ||
-      (positionEn.includes('treasurer') && !positionEn.includes('vice') && !positionEn.includes('deputy'))
-    )
-  })
-  const deputy = sorted.find((member) => {
-    const position = normalise(member.position_bm)
-    const positionEn = normalise(member.position_en)
-    return (
-      position.includes('naib bendahari') ||
-      positionEn.includes('vice treasurer') ||
-      positionEn.includes('deputy treasurer')
-    )
-  })
-  const leadershipIds = new Set([treasurer?.id, deputy?.id].filter(Boolean) as string[])
-  const regularMembers = sorted.filter((member) => !leadershipIds.has(member.id))
+export function buildTree(members: OrganizationMember[]): TreeNode[] {
+  if (!members || members.length === 0) return []
 
-  const unitGroups = new Map<string, OrganizationMember[]>()
-  regularMembers.forEach((member) => {
-    const unitName = (member.unit_bm || member.unit_en || '').trim() || 'Ahli PBAK'
-    const key = normalise(unitName)
-    const current = unitGroups.get(key) || []
-    current.push(member)
-    unitGroups.set(key, current)
+  const activeMembers = members.filter((m) => m.active !== false)
+  const sorted = [...activeMembers].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0) || a.name.localeCompare(b.name))
+
+  const nodeMap = new Map<string, TreeNode>()
+  sorted.forEach((member) => {
+    nodeMap.set(member.id, { ...member, children: [] })
   })
 
-  const unitNodes: TreeNode[] = Array.from(unitGroups.entries()).map(([key, group], index) => {
-    const first = group[0]
-    const unitName = (first.unit_bm || first.unit_en || 'Ahli PBAK').trim()
-    return {
-      id: `virtual-unit-${key.replace(/[^a-z0-9]+/g, '-') || index + 1}`,
-      parent_id: null,
-      node_type: 'unit' as const,
-      sort_order: Math.min(...group.map((member) => member.sort_order || 1)),
-      name: unitName,
-      position_bm: 'Unit',
-      position_en: 'Unit',
-      unit_bm: unitName,
-      unit_en: first.unit_en || unitName,
-      class_name: null,
-      duties_bm: null,
-      duties_en: null,
-      photo_url: null,
-      active: true,
-      children: group.map((member): TreeNode => ({ ...member, node_type: 'member', children: [] })),
+  const rootLeadershipNodes: TreeNode[] = []
+  const orphanUnits: TreeNode[] = []
+  const orphanMembers: TreeNode[] = []
+
+  // First pass: Link explicit parent_id relationships
+  nodeMap.forEach((node) => {
+    if (node.parent_id && nodeMap.has(node.parent_id)) {
+      const parent = nodeMap.get(node.parent_id)!
+      if (!parent.children.some((child) => child.id === node.id)) {
+        parent.children.push(node)
+      }
+    } else {
+      if (node.node_type === 'leadership') {
+        rootLeadershipNodes.push(node)
+      } else if (node.node_type === 'unit') {
+        orphanUnits.push(node)
+      } else {
+        orphanMembers.push(node)
+      }
     }
   })
 
-  if (deputy) {
-    const deputyNode: TreeNode = { ...deputy, node_type: 'leadership', children: unitNodes }
-    if (treasurer) {
-      return [{ ...treasurer, node_type: 'leadership' as const, children: [deputyNode] }]
+  // Find target leadership node to connect units
+  let targetLeadershipNode: TreeNode | null = null
+  if (rootLeadershipNodes.length > 0) {
+    let current = rootLeadershipNodes[rootLeadershipNodes.length - 1]
+    while (current.children.some((c) => c.node_type === 'leadership')) {
+      current = current.children.find((c) => c.node_type === 'leadership')!
     }
-    return [deputyNode]
+    targetLeadershipNode = current
   }
 
-  if (treasurer) {
-    return [{ ...treasurer, node_type: 'leadership' as const, children: unitNodes }]
+  // Find existing unit nodes map
+  const existingUnitsMap = new Map<string, TreeNode>()
+  nodeMap.forEach((node) => {
+    if (node.node_type === 'unit') {
+      const unitKey = normalise(node.unit_bm || node.name)
+      if (unitKey) existingUnitsMap.set(unitKey, node)
+    }
+  })
+
+  // Link orphan units to leadership
+  orphanUnits.forEach((unitNode) => {
+    if (targetLeadershipNode) {
+      if (!targetLeadershipNode.children.some((c) => c.id === unitNode.id)) {
+        targetLeadershipNode.children.push(unitNode)
+      }
+    } else {
+      if (!rootLeadershipNodes.some((r) => r.id === unitNode.id)) {
+        rootLeadershipNodes.push(unitNode)
+      }
+    }
+  })
+
+  // Link orphan members to appropriate unit
+  orphanMembers.forEach((memberNode) => {
+    const unitName = (memberNode.unit_bm || memberNode.unit_en || 'Ahli PBAK').trim()
+    const unitKey = normalise(unitName)
+
+    let targetUnit = existingUnitsMap.get(unitKey)
+    if (!targetUnit) {
+      targetUnit = {
+        id: `virtual-unit-${unitKey.replace(/[^a-z0-9]+/g, '-') || 'default'}`,
+        parent_id: targetLeadershipNode?.id || null,
+        node_type: 'unit',
+        sort_order: 99,
+        name: unitName,
+        position_bm: 'Unit',
+        position_en: 'Unit',
+        unit_bm: unitName,
+        unit_en: memberNode.unit_en || unitName,
+        class_name: null,
+        duties_bm: null,
+        duties_en: null,
+        photo_url: null,
+        active: true,
+        children: [],
+      }
+      existingUnitsMap.set(unitKey, targetUnit)
+      if (targetLeadershipNode) {
+        targetLeadershipNode.children.push(targetUnit)
+      } else {
+        rootLeadershipNodes.push(targetUnit)
+      }
+    }
+    if (!targetUnit.children.some((c) => c.id === memberNode.id)) {
+      targetUnit.children.push(memberNode)
+    }
+  })
+
+  // Sort nodes recursively
+  const sortTreeNodes = (items: TreeNode[]) => {
+    items.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0) || a.name.localeCompare(b.name))
+    items.forEach((item) => sortTreeNodes(item.children))
   }
 
-  return unitNodes.length > 0 ? unitNodes : sorted.map((member): TreeNode => ({ ...member, children: [] }))
-}
-
-function buildTree(members: OrganizationMember[]): TreeNode[] {
-  const hasExplicitHierarchy = members.some((member) => Boolean(member.parent_id) || member.node_type === 'unit')
-  return hasExplicitHierarchy ? buildExplicitTree(members) : buildLegacyHierarchy(members)
+  const finalRoots = rootLeadershipNodes.length > 0 ? rootLeadershipNodes : Array.from(existingUnitsMap.values())
+  sortTreeNodes(finalRoots)
+  return finalRoots
 }
 
 function nodeCopy(node: TreeNode, language: Language) {
