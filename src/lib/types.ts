@@ -3,6 +3,8 @@ export type Theme = 'light' | 'dark'
 export type UserRole = 'user' | 'admin'
 export type RequestStatus = 'pending' | 'approved' | 'rejected' | 'cancelled' | 'completed'
 export type OrganizationNodeType = 'leadership' | 'unit' | 'member'
+export type AnnouncementPinType = 'none' | 'penting' | 'terkini'
+export type NotificationType = 'e_aset' | 'ikes' | 'tabung_jumaat' | 'kpk' | 'tempahan' | 'announcement'
 
 export interface LocalisedText {
   bm: string
@@ -126,6 +128,8 @@ export interface Announcement {
   poster_url: string | null
   published: boolean
   pinned: boolean
+  pin_type?: AnnouncementPinType
+  expiry_at?: string | null
   created_at: string
   updated_at: string
 }
@@ -134,6 +138,8 @@ export interface OrganizationMember {
   id: string
   parent_id: string | null
   node_type: OrganizationNodeType
+  node_category?: string | null
+  description?: string | null
   sort_order: number
   name: string
   position_bm: string
@@ -190,12 +196,15 @@ export interface AssetApplication {
   user_id: string
   applicant_name: string
   class_name: string
+  department_unit?: string | null
   phone: string
   asset_id: string
   quantity: number
   borrow_date: string
   return_date: string
   purpose: string
+  aku_janji_agreed?: boolean
+  aku_janji_agreed_at?: string | null
   status: RequestStatus
   admin_notes: string | null
   returned_at: string | null
@@ -245,4 +254,15 @@ export interface FundSummary {
   total_verified: number
   total_disbursed: number
   balance: number
+}
+
+export interface Notification {
+  id: string
+  recipient_id: string | null
+  title: string
+  message: string
+  notification_type: NotificationType
+  reference_id: string | null
+  is_read: boolean
+  created_at: string
 }

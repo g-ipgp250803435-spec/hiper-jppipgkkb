@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { PageHeader, Card, EmptyState, LoadingBlock, Notice } from '../components/UI'
 import { Icon } from '../components/Icons'
 import { RichTextContent } from '../components/RichText'
@@ -12,14 +12,15 @@ import { formatDate } from '../lib/helpers'
 
 const sample: Announcement[] = [
   {
-    id: 'sample',
-    title_bm: 'Portal HiPER sedang disediakan',
-    title_en: 'HiPER portal is being prepared',
-    content_bm: '<p>Pentadbir boleh menggantikan pengumuman ini selepas Supabase disambungkan.</p><ul><li>Kandungan berbilang baris</li><li>Teks tebal dan condong</li><li>Senarai bernombor atau bullets</li></ul>',
-    content_en: '<p>Administrators can replace this announcement after Supabase is connected.</p><ul><li>Multi-line content</li><li>Bold and italic text</li><li>Numbered or bulleted lists</li></ul>',
+    id: 'sample-1',
+    title_bm: 'Pengumuman Pentadbir HiPER',
+    title_en: 'HiPER Portal Announcement',
+    content_bm: '<p>Selamat datang ke Portal Perbendaharaan HiPER. Pengumuman penting akan dipaparkan di bahagian ini.</p>',
+    content_en: '<p>Welcome to HiPER Treasury Portal. Important announcements will be highlighted here.</p>',
     poster_url: '/placeholder-poster.svg',
     published: true,
     pinned: true,
+    pin_type: 'penting',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   },
@@ -28,7 +29,7 @@ const sample: Announcement[] = [
 export default function AnnouncementsPage() {
   const { language, t } = useUi()
   const { settings } = useSiteSettings()
-  const [items, setItems] = useState<Announcement[]>(isSupabaseConfigured ? [] : sample)
+  const [rawItems, setRawItems] = useState<Announcement[]>(isSupabaseConfigured ? [] : sample)
   const [loading, setLoading] = useState(isSupabaseConfigured)
   const [loadError, setLoadError] = useState<string | null>(null)
 
@@ -40,25 +41,50 @@ export default function AnnouncementsPage() {
           .from('announcements')
           .select('*')
           .eq('published', true)
-          .order('pinned', { ascending: false })
           .order('created_at', { ascending: false })
 
         if (error) {
           setLoadError(error.message)
-          setItems([])
+          setRawItems([])
         } else {
           setLoadError(null)
-          setItems((data as Announcement[]) || [])
+          setRawItems((data as Announcement[]) || [])
         }
       } catch (error) {
         setLoadError(error instanceof Error ? error.message : t('Pengumuman gagal dimuatkan.', 'Announcements could not be loaded.'))
-        setItems([])
+        setRawItems([])
       } finally {
         setLoading(false)
       }
     }
     void fetchAnnouncements()
   }, [])
+
+  const sortedItems = useMemo(() => {
+    const now = new Date().getTime()
+    const active = rawItems.filter((item) => {
+      if (!item.expiry_at) return true
+      return new Date(item.expiry_at).getTime() >= now
+    })
+
+    return active.sort((a, b) => {
+      const getPriorityScore = (item: Announcement) => {
+        if (item.pin_type === 'penting') return 3
+        if (item.pin_type === 'terkini') return 2
+        if (item.pinned) return 1
+        return 0
+      }
+
+      const scoreA = getPriorityScore(a)
+      const scoreB = getPriorityScore(b)
+
+      if (scoreA !== scoreB) {
+        return scoreB - scoreA
+      }
+
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    })
+  }, [rawItems])
 
   return (
     <section className="section announcements-page-section">
@@ -71,35 +97,45 @@ export default function AnnouncementsPage() {
         {loadError && <Notice type="danger">{loadError}</Notice>}
         {loading ? (
           <LoadingBlock />
-        ) : items.length === 0 ? (
+        ) : sortedItems.length === 0 ? (
           <EmptyState title={t('Tiada pengumuman', 'No announcements')} />
         ) : (
           <div className="announcement-grid announcement-page-grid">
-            {items.map((item) => (
-              <Card className={`announcement-card announcement-page-card${item.pinned ? ' pinned' : ''}`} key={item.id}>
-                <div className="announcement-poster-wrap">
-                  <img
-                    src={item.poster_url || '/placeholder-poster.svg'}
-                    alt={language === 'bm' ? item.title_bm : item.title_en || item.title_bm}
-                  />
-                  {item.pinned && (
-                    <span className="poster-pin">
-                      <Icon name="pin" size={14} /> {t('Penting', 'Pinned')}
-                    </span>
-                  )}
-                </div>
-                <div className="announcement-body">
-                  <div className="announcement-date">
-                    <Icon name="calendar" size={15} />
-                    <span>{formatDate(item.created_at, language)}</span>
+            {sortedItems.map((item) => {
+              const isPenting = item.pin_type === 'penting'
+              const isTerkini = item.pin_type === 'terkini' || (!item.pin_type && item.pinned)
+
+              return (
+                <Card className={`announcement-card announcement-page-card${isPenting ? ' pinned' : ''}`} key={item.id}>
+                  <div className="announcement-poster-wrap">
+                    <img
+                      src={item.poster_url || '/placeholder-poster.svg'}
+                      alt={language === 'bm' ? item.title_bm : item.title_en || item.title_bm}
+                    />
+                    {isPenting && (
+                      <span className="poster-pin poster-pin-danger">
+                        <Icon name="pin" size={14} /> PENTING
+                      </span>
+                    )}
+                    {!isPenting && isTerkini && (
+                      <span className="poster-pin poster-pin-primary">
+                        <Icon name="pin" size={14} /> TERKINI
+                      </span>
+                    )}
                   </div>
-                  <h2>{language === 'bm' ? item.title_bm : item.title_en || item.title_bm}</h2>
-                  <div className="announcement-content">
-                    <RichTextContent html={language === 'bm' ? item.content_bm : item.content_en || item.content_bm} />
+                  <div className="announcement-body">
+                    <div className="announcement-date">
+                      <Icon name="calendar" size={15} />
+                      <span>{formatDate(item.created_at, language)}</span>
+                    </div>
+                    <h2>{language === 'bm' ? item.title_bm : item.title_en || item.title_bm}</h2>
+                    <div className="announcement-content">
+                      <RichTextContent html={language === 'bm' ? item.content_bm : item.content_en || item.content_bm} />
+                    </div>
                   </div>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              )
+            })}
           </div>
         )}
       </div>
