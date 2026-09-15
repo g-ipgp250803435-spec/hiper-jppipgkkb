@@ -9,6 +9,7 @@ import AdminDonations from '../components/admin/AdminDonations'
 import AdminAnnouncements from '../components/admin/AdminAnnouncements'
 import AdminOrganization from '../components/admin/AdminOrganization'
 import AdminNotifications from '../components/admin/AdminNotifications'
+import AdminKpk from '../components/admin/AdminKpk'
 import { useAuth } from '../contexts/AuthContext'
 import { useUi } from '../contexts/UiContext'
 import { isSupabaseConfigured } from '../lib/config'
@@ -22,11 +23,24 @@ import type {
   DonationSettings,
   FundDisbursement,
   IkesApplication,
+  KpkApplication,
+  KpkBureau,
   Notification,
   OrganizationMember,
 } from '../lib/types'
 
-type AdminTab = 'overview' | 'ikes' | 'assets-requests' | 'donations' | 'announcements' | 'catalogue' | 'organization' | 'fund' | 'site' | 'notifications'
+type AdminTab =
+  | 'overview'
+  | 'ikes'
+  | 'assets-requests'
+  | 'kpk'
+  | 'donations'
+  | 'announcements'
+  | 'catalogue'
+  | 'organization'
+  | 'fund'
+  | 'site'
+  | 'notifications'
 
 export default function AdminPage() {
   const { language, t } = useUi()
@@ -42,6 +56,8 @@ export default function AdminPage() {
   const [disbursements, setDisbursements] = useState<FundDisbursement[]>([])
   const [donationSettings, setDonationSettings] = useState<DonationSettings | null>(null)
   const [notifications, setNotifications] = useState<Notification[]>([])
+  const [kpkApplications, setKpkApplications] = useState<KpkApplication[]>([])
+  const [kpkBureaus, setKpkBureaus] = useState<KpkBureau[]>([])
 
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
@@ -105,6 +121,39 @@ export default function AdminPage() {
             image_url: null,
           },
         },
+      ])
+      setKpkApplications([
+        {
+          id: 'mock-kpk-1',
+          user_id: 'mock-user-1',
+          club_name: 'Kelab Kebudayaan & Kesenian',
+          applicant_name: 'Ahmad Daniel',
+          phone: '012-9876543',
+          department_unit: 'PISMP Seni',
+          bureau_id: 'b8',
+          bureau_name: 'Biro Kebudayaan',
+          loan_amount: 800,
+          purpose: 'Pendahuluan sewaan busana Malam Kebudayaan.',
+          supporting_document_path: null,
+          aku_janji_agreed: true,
+          aku_janji_agreed_at: new Date().toISOString(),
+          status: 'pending',
+          admin_notes: null,
+          created_at: new Date(Date.now() - 3600000 * 5).toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+      ])
+      setKpkBureaus([
+        { id: 'b1', name: 'Biro Akademik', active: true, display_order: 1 },
+        { id: 'b2', name: 'Biro Kerohanian', active: true, display_order: 2 },
+        { id: 'b3', name: 'Biro Kebajikan', active: true, display_order: 3 },
+        { id: 'b4', name: 'Biro Sukan', active: true, display_order: 4 },
+        { id: 'b5', name: 'Biro Multimedia', active: true, display_order: 5 },
+        { id: 'b6', name: 'Biro Protokol', active: true, display_order: 6 },
+        { id: 'b7', name: 'Biro Keusahawanan', active: true, display_order: 7 },
+        { id: 'b8', name: 'Biro Kebudayaan', active: true, display_order: 8 },
+        { id: 'b9', name: 'Biro Pengantarabangsaan', active: true, display_order: 9 },
+        { id: 'b10', name: 'Biro Khas', active: true, display_order: 10 },
       ])
       setDonations([
         {
@@ -209,6 +258,8 @@ export default function AdminPage() {
         supabase.from('fund_disbursements').select('*').order('disbursed_at', { ascending: false }),
         supabase.from('donation_settings').select('*').eq('id', 1).maybeSingle(),
         supabase.from('notifications').select('*').order('created_at', { ascending: false }),
+        supabase.from('kpk_applications').select('*').order('created_at', { ascending: false }),
+        supabase.from('kpk_bureaus').select('*').order('display_order', { ascending: true }),
       ])
       const firstError = results.find((result) => result.error)?.error
       if (firstError) setNotice({ type: 'danger', text: firstError.message })
@@ -221,6 +272,8 @@ export default function AdminPage() {
       setDisbursements((results[6].data as FundDisbursement[]) || [])
       setDonationSettings((results[7].data as DonationSettings | null) || null)
       setNotifications((results[8].data as Notification[]) || [])
+      setKpkApplications((results[9].data as KpkApplication[]) || [])
+      setKpkBureaus((results[10].data as KpkBureau[]) || [])
     } catch (err) {
       setNotice({
         type: 'danger',
@@ -264,8 +317,8 @@ export default function AdminPage() {
         type: 'danger',
         text: isPremiumSchemaMissingError(error)
           ? t(
-              `Pangkalan data HiPER Premium belum lengkap. Jalankan fail SUPABASE-ONE-TIME-REPAIR.sql di Supabase SQL Editor. Butiran: ${message}`,
-              `The HiPER Premium database upgrade is incomplete. Run SUPABASE-ONE-TIME-REPAIR.sql in the Supabase SQL Editor. Details: ${message}`
+              `Pangkalan data HiPER Premium belum lengkap. Jalankan fail SUPABASE-ONE-TIME-REPAIR.sql dan migration 20260808010000_phase2_kpk_notifications.sql di Supabase SQL Editor. Butiran: ${message}`,
+              `The HiPER Premium database upgrade is incomplete. Run SUPABASE-ONE-TIME-REPAIR.sql and migration 20260808010000_phase2_kpk_notifications.sql in the Supabase SQL Editor. Details: ${message}`
             )
           : message,
       })
@@ -283,6 +336,18 @@ export default function AdminPage() {
         repaid_at: item.repaid_at || null,
       }).eq('id', item.id)
       if (error) throw error
+
+      try {
+        await supabase.from('notifications').insert({
+          recipient_id: item.user_id,
+          title: `Status Permohonan iKES: ${item.status.toUpperCase()}`,
+          message: `Permohonan iKES anda (${item.applicant_name}) kini berstatus ${item.status}. ${item.admin_notes ? `Catatan: ${item.admin_notes}` : ''}`,
+          notification_type: 'ikes',
+          reference_id: item.id,
+        })
+      } catch {
+        // ignore notification failures
+      }
     }, 'Permohonan iKES dikemas kini.')
   }
 
@@ -294,13 +359,82 @@ export default function AdminPage() {
         returned_at: item.returned_at || null,
       }).eq('id', item.id)
       if (error) throw error
+
+      try {
+        await supabase.from('notifications').insert({
+          recipient_id: item.user_id,
+          title: `Status Permohonan e-Aset: ${item.status.toUpperCase()}`,
+          message: `Permohonan pinjaman e-Aset anda kini berstatus ${item.status}. ${item.admin_notes ? `Catatan: ${item.admin_notes}` : ''}`,
+          notification_type: 'e_aset',
+          reference_id: item.id,
+        })
+      } catch {
+        // ignore notification failures
+      }
     }, 'Permohonan e-Aset dikemas kini.')
+  }
+
+  const updateKpkApplication = async (item: KpkApplication) => {
+    await runAction(async () => {
+      const { error } = await supabase.from('kpk_applications').update({
+        status: item.status,
+        admin_notes: item.admin_notes,
+      }).eq('id', item.id)
+      if (error) throw error
+
+      try {
+        await supabase.from('notifications').insert({
+          recipient_id: item.user_id,
+          title: `Status Permohonan KPK+: ${item.status.toUpperCase()}`,
+          message: `Permohonan pembiayaan KPK+ untuk ${item.club_name} kini berstatus ${item.status}. ${item.admin_notes ? `Catatan: ${item.admin_notes}` : ''}`,
+          notification_type: 'kpk',
+          reference_id: item.id,
+        })
+      } catch {
+        // ignore notification failures
+      }
+    }, 'Permohonan KPK+ dikemas kini.')
+  }
+
+  const saveBureau = async (name: string, displayOrder: number, active: boolean, editingId: string | null, resetForm: () => void) => {
+    await runAction(async () => {
+      const payload = {
+        name,
+        display_order: displayOrder,
+        active,
+      }
+      const query = editingId
+        ? supabase.from('kpk_bureaus').update(payload).eq('id', editingId)
+        : supabase.from('kpk_bureaus').insert(payload)
+      const { error } = await query
+      if (error) throw error
+      resetForm()
+    }, editingId ? 'Biro KPK+ dikemas kini.' : 'Biro KPK+ ditambah.')
+  }
+
+  const toggleBureauActive = async (bureau: KpkBureau) => {
+    await runAction(async () => {
+      const { error } = await supabase.from('kpk_bureaus').update({ active: !bureau.active }).eq('id', bureau.id)
+      if (error) throw error
+    }, `Biro ${bureau.name} ${!bureau.active ? 'diaktifkan' : 'dinyahaktifkan'}.`)
   }
 
   const updateDonation = async (item: Donation) => {
     await runAction(async () => {
       const { error } = await supabase.from('donations').update({ status: item.status }).eq('id', item.id)
       if (error) throw error
+
+      try {
+        await supabase.from('notifications').insert({
+          recipient_id: item.user_id,
+          title: `Status Sumbangan Tabung Jumaat: ${item.status.toUpperCase()}`,
+          message: `Sumbangan anda sebanyak RM${item.amount} telah berstatus ${item.status}. Terima kasih!`,
+          notification_type: 'tabung_jumaat',
+          reference_id: item.id,
+        })
+      } catch {
+        // ignore notification failures
+      }
     }, 'Rekod derma dikemas kini.')
   }
 
@@ -486,6 +620,7 @@ export default function AdminPage() {
       if (!isSupabaseConfigured) {
         if (table === 'ikes_applications') setIkes((rows) => rows.filter((r) => r.id !== id))
         else if (table === 'asset_applications') setAssetRequests((rows) => rows.filter((r) => r.id !== id))
+        else if (table === 'kpk_applications') setKpkApplications((rows) => rows.filter((r) => r.id !== id))
         else if (table === 'donations') setDonations((rows) => rows.filter((r) => r.id !== id))
         else if (table === 'announcements') setAnnouncements((rows) => rows.filter((r) => r.id !== id))
         else if (table === 'asset_items') setCatalogue((rows) => rows.filter((r) => r.id !== id))
@@ -499,6 +634,7 @@ export default function AdminPage() {
 
       if (table === 'ikes_applications') setIkes((rows) => rows.filter((r) => r.id !== id))
       else if (table === 'asset_applications') setAssetRequests((rows) => rows.filter((r) => r.id !== id))
+      else if (table === 'kpk_applications') setKpkApplications((rows) => rows.filter((r) => r.id !== id))
       else if (table === 'donations') setDonations((rows) => rows.filter((r) => r.id !== id))
       else if (table === 'announcements') setAnnouncements((rows) => rows.filter((r) => r.id !== id))
       else if (table === 'asset_items') setCatalogue((rows) => rows.filter((r) => r.id !== id))
@@ -535,6 +671,7 @@ export default function AdminPage() {
 
   const pendingIkesCount = ikes.filter((i) => i.status === 'pending').length
   const pendingAssetsCount = assetRequests.filter((a) => a.status === 'pending').length
+  const pendingKpkCount = kpkApplications.filter((k) => k.status === 'pending').length
   const pendingDonationsCount = donations.filter((d) => d.status === 'pending').length
   const unreadNotifsCount = notifications.filter((n) => !n.is_read).length
 
@@ -542,12 +679,13 @@ export default function AdminPage() {
     { id: 'overview', label: t('Ringkasan', 'Overview') },
     { id: 'ikes', label: `iKES (${pendingIkesCount})` },
     { id: 'assets-requests', label: `${t('Permohonan Aset', 'Asset Requests')} (${pendingAssetsCount})` },
+    { id: 'kpk', label: `KPK+ (${pendingKpkCount})` },
     { id: 'donations', label: `${t('Derma', 'Donations')} (${pendingDonationsCount})` },
     { id: 'announcements', label: t('Pengumuman', 'Announcements') },
     { id: 'catalogue', label: t('Katalog Aset', 'Asset Catalogue') },
     { id: 'organization', label: t('Organisasi', 'Organisation') },
     { id: 'fund', label: t('Tabung', 'Fund') },
-    { id: 'notifications', label: `${t('Notifikasi', 'Notifications')} ${unreadNotifsCount > 0 ? `(${unreadNotifsCount})` : ''}` },
+    { id: 'notifications', label: `🔔 ${t('Notifikasi', 'Notifications')} ${unreadNotifsCount > 0 ? `(${unreadNotifsCount})` : ''}` },
     { id: 'site', label: t('Identiti & Kandungan', 'Identity & Content') },
   ]
 
@@ -571,8 +709,8 @@ export default function AdminPage() {
         {premiumDbReady === false && (
           <Notice type="warning">
             {t(
-              'Pangkalan data HiPER Premium belum lengkap. Jalankan fail SUPABASE-ONE-TIME-REPAIR.sql dan migration 20260808000000_phase1_upgrades.sql di Supabase SQL Editor.',
-              'The HiPER Premium database upgrade is incomplete. Run SUPABASE-ONE-TIME-REPAIR.sql and migration 20260808000000_phase1_upgrades.sql in the Supabase SQL Editor.'
+              'Pangkalan data HiPER Premium belum lengkap. Jalankan fail SUPABASE-ONE-TIME-REPAIR.sql dan migration 20260808010000_phase2_kpk_notifications.sql di Supabase SQL Editor.',
+              'The HiPER Premium database upgrade is incomplete. Run SUPABASE-ONE-TIME-REPAIR.sql and migration 20260808010000_phase2_kpk_notifications.sql in the Supabase SQL Editor.'
             )}
           </Notice>
         )}
@@ -625,6 +763,21 @@ export default function AdminPage() {
             onUpdateAssetRequest={updateAssetRequest}
             onSaveAsset={saveAsset}
             onDeleteAsset={(id) => deleteRow('asset_items', id, t('aset', 'asset'))}
+          />
+        )}
+
+        {tab === 'kpk' && (
+          <AdminKpk
+            t={t}
+            language={language}
+            kpkApplications={kpkApplications}
+            bureaus={kpkBureaus}
+            busy={busy}
+            supabaseClient={supabase}
+            setKpkApplications={setKpkApplications}
+            onUpdateKpkApplication={updateKpkApplication}
+            onSaveBureau={saveBureau}
+            onToggleBureauActive={toggleBureauActive}
           />
         )}
 

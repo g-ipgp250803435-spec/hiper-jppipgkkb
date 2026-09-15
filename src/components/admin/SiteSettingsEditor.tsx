@@ -8,7 +8,7 @@ import type { LocalisedText, SiteSettings } from '../../lib/types'
 import { Button, Card, Field, Notice } from '../UI'
 import { Icon } from '../Icons'
 
-type PageKey = keyof SiteSettings['pages']
+type PageKey = keyof Required<SiteSettings>['pages']
 
 function LocalisedFields({
   label,
@@ -53,7 +53,15 @@ export function SiteSettingsEditor() {
   const updatePage = (page: PageKey, field: 'eyebrow' | 'title' | 'description', value: LocalisedText) => {
     setDraft((current) => ({
       ...current,
-      pages: { ...current.pages, [page]: { ...current.pages[page], [field]: value } },
+      pages: {
+        ...current.pages,
+        [page]: {
+          eyebrow: current.pages[page]?.eyebrow || { bm: '', en: '' },
+          title: current.pages[page]?.title || { bm: '', en: '' },
+          description: current.pages[page]?.description || { bm: '', en: '' },
+          [field]: value,
+        },
+      },
     }))
   }
 
@@ -144,14 +152,17 @@ export function SiteSettingsEditor() {
 
       <Card title={t('Navigasi utama', 'Main navigation')}>
         <div className="form-grid">
-          {(Object.keys(draft.navigation) as Array<keyof SiteSettings['navigation']>).map((key) => (
-            <LocalisedFields
-              key={key}
-              label={key}
-              value={draft.navigation[key]}
-              onChange={(value) => setDraft({ ...draft, navigation: { ...draft.navigation, [key]: value } })}
-            />
-          ))}
+          {(Object.keys(draft.navigation) as Array<keyof Required<SiteSettings>['navigation']>).map((key) => {
+            const navValue = draft.navigation[key] || { bm: '', en: '' }
+            return (
+              <LocalisedFields
+                key={key}
+                label={key}
+                value={navValue}
+                onChange={(value) => setDraft({ ...draft, navigation: { ...draft.navigation, [key]: value } })}
+              />
+            )
+          })}
         </div>
       </Card>
 
@@ -198,16 +209,19 @@ export function SiteSettingsEditor() {
 
       <Card title={t('Tajuk halaman', 'Page headings')}>
         <div className="cms-page-copy-list">
-          {(Object.keys(draft.pages) as PageKey[]).map((page) => (
-            <details className="cms-page-copy" key={page}>
-              <summary>{page}</summary>
-              <div className="form-grid">
-                <LocalisedFields label={t('Label kecil', 'Eyebrow')} value={draft.pages[page].eyebrow} onChange={(value) => updatePage(page, 'eyebrow', value)} />
-                <LocalisedFields label={t('Tajuk', 'Title')} value={draft.pages[page].title} multiline onChange={(value) => updatePage(page, 'title', value)} />
-                <LocalisedFields label={t('Penerangan', 'Description')} value={draft.pages[page].description} multiline onChange={(value) => updatePage(page, 'description', value)} />
-              </div>
-            </details>
-          ))}
+          {(Object.keys(draft.pages) as PageKey[]).map((page) => {
+            const pageData = draft.pages[page] || { eyebrow: { bm: '', en: '' }, title: { bm: '', en: '' }, description: { bm: '', en: '' } }
+            return (
+              <details className="cms-page-copy" key={page}>
+                <summary>{page}</summary>
+                <div className="form-grid">
+                  <LocalisedFields label={t('Label kecil', 'Eyebrow')} value={pageData.eyebrow} onChange={(value) => updatePage(page, 'eyebrow', value)} />
+                  <LocalisedFields label={t('Tajuk', 'Title')} value={pageData.title} multiline onChange={(value) => updatePage(page, 'title', value)} />
+                  <LocalisedFields label={t('Penerangan', 'Description')} value={pageData.description} multiline onChange={(value) => updatePage(page, 'description', value)} />
+                </div>
+              </details>
+            )
+          })}
         </div>
       </Card>
 
