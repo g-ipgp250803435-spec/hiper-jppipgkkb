@@ -8,6 +8,7 @@ import { useSiteSettings } from '../contexts/SiteSettingsContext'
 import { isSupabaseConfigured } from '../lib/config'
 import { localise } from '../lib/siteSettings'
 import { supabase } from '../lib/supabase'
+import { notifyAdmins } from '../lib/v3/notificationService'
 import type { AssetItem } from '../lib/types'
 
 const sampleAssets: AssetItem[] = [
@@ -175,17 +176,12 @@ export default function AssetsPage() {
 
       // Post in-app notification for admin dashboard foundation
       if (newApplication) {
-        try {
-          await supabase.from('notifications').insert({
-            recipient_id: null,
-            title: `Permohonan e-Aset Baharu: ${selectedAsset.name_bm}`,
-            message: `${name.trim()} (${departmentUnit.trim()}) memohon ${numericQuantity} unit ${selectedAsset.name_bm}.`,
-            notification_type: 'e_aset',
-            reference_id: newApplication.id,
-          })
-        } catch {
-          // ignore notification insertion failure gracefully
-        }
+        await notifyAdmins(
+          `🔔 Permohonan e-Aset Baharu: ${selectedAsset.name_bm}`,
+          `${name.trim()} (${departmentUnit.trim()}) memohon ${numericQuantity} unit ${selectedAsset.name_bm}.`,
+          'e_aset',
+          newApplication.id
+        )
       }
 
       await supabase.from('profiles').update({ full_name: name.trim(), class_name: departmentUnit.trim(), phone: phone.trim() }).eq('id', user.id)

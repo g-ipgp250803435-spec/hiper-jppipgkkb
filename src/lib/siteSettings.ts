@@ -33,6 +33,7 @@ export const defaultSiteSettings: SiteSettings = {
     home: { bm: 'Utama', en: 'Home' },
     assets: { bm: 'e-Aset', en: 'e-Asset' },
     ikes: { bm: 'iKES', en: 'iKES' },
+    kpk: { bm: 'KPK+', en: 'KPK+' },
     fund: { bm: 'Tabung Jumaat', en: 'Friday Fund' },
     announcements: { bm: 'Pengumuman', en: 'Announcements' },
     office: { bm: 'Organisasi', en: 'Organisation' },
@@ -102,6 +103,14 @@ export const defaultSiteSettings: SiteSettings = {
       description: {
         bm: 'Bantuan kebajikan tanpa faedah bagi keperluan segera siswa guru.',
         en: 'Interest-free welfare assistance for student teachers’ immediate needs.',
+      },
+    },
+    kpk: {
+      eyebrow: { bm: 'Kelab & Persatuan', en: 'Clubs & Associations' },
+      title: { bm: 'KPK+', en: 'KPK+' },
+      description: {
+        bm: 'Kemudahan pinjaman kewangan khusus bagi kelab dan persatuan IPGKKB.',
+        en: 'Financial loan facility dedicated for IPGKKB clubs and associations.',
       },
     },
     donations: {

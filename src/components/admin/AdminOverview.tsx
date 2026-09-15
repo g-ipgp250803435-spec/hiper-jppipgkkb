@@ -4,12 +4,15 @@ import { Icon } from '../Icons'
 import { formatDate, formatMoney } from '../../lib/helpers'
 import type { Announcement, AssetApplication, AssetItem, Donation, FundDisbursement, IkesApplication, OrganizationMember } from '../../lib/types'
 
-type AdminTab = 'overview' | 'ikes' | 'assets-requests' | 'donations' | 'announcements' | 'catalogue' | 'organization' | 'fund' | 'site' | 'notifications'
+import type { KpkApplication } from '../../lib/types'
+
+type AdminTab = 'overview' | 'ikes' | 'kpk' | 'assets-requests' | 'donations' | 'announcements' | 'catalogue' | 'organization' | 'fund' | 'site' | 'notifications'
 
 interface AdminOverviewProps {
   language: 'bm' | 'en'
   t: (bm: string, en: string) => string
   ikes: IkesApplication[]
+  kpk?: KpkApplication[]
   assetRequests: AssetApplication[]
   donations: Donation[]
   announcements: Announcement[]
@@ -24,6 +27,7 @@ export default function AdminOverview({
   language,
   t,
   ikes,
+  kpk = [],
   assetRequests,
   donations,
   announcements,
@@ -35,11 +39,12 @@ export default function AdminOverview({
 }: AdminOverviewProps) {
   const counts = useMemo(() => {
     const pendingIkes = ikes.filter((item) => item.status === 'pending').length
+    const pendingKpk = kpk.filter((item) => item.status === 'pending').length
     const pendingAssets = assetRequests.filter((item) => item.status === 'pending').length
     const pendingDonations = donations.filter((item) => item.status === 'pending').length
     const verifiedDonations = donations.filter((item) => item.status === 'verified').reduce((sum, item) => sum + Number(item.amount), 0)
 
-    const totalPending = pendingIkes + pendingAssets + pendingDonations
+    const totalPending = pendingIkes + pendingKpk + pendingAssets + pendingDonations
     const lowStockAssets = catalogue.filter(
       (item) => item.active && item.stock_available <= Math.max(1, Math.ceil(item.stock_total * 0.2))
     ).length
@@ -47,6 +52,7 @@ export default function AdminOverview({
 
     return {
       pendingIkes,
+      pendingKpk,
       pendingAssets,
       pendingDonations,
       verifiedDonations,
@@ -54,7 +60,7 @@ export default function AdminOverview({
       lowStockAssets,
       unpublishedAnnouncements,
     }
-  }, [ikes, assetRequests, donations, catalogue, announcements])
+  }, [ikes, kpk, assetRequests, donations, catalogue, announcements])
 
   const recentActivity = useMemo(() => {
     const ikesAct = ikes.map((item) => ({
@@ -95,6 +101,7 @@ export default function AdminOverview({
       <div className="stats-grid admin-v2-stats-grid">
         <StatCard label={t('Jumlah tindakan menunggu', 'Total pending actions')} value={String(counts.totalPending)} />
         <StatCard label={t('iKES menunggu', 'Pending iKES')} value={String(counts.pendingIkes)} />
+        <StatCard label={t('KPK+ menunggu', 'Pending KPK+')} value={String(counts.pendingKpk)} />
         <StatCard label={t('e-Aset menunggu', 'Pending e-Asset')} value={String(counts.pendingAssets)} />
         <StatCard label={t('Derma menunggu', 'Pending donations')} value={String(counts.pendingDonations)} />
         <StatCard label={t('Derma disahkan', 'Verified donations')} value={formatMoney(counts.verifiedDonations)} />
@@ -108,6 +115,14 @@ export default function AdminOverview({
               <button onClick={() => onNavigateTab('ikes')} className="admin-v2-attention-item">
                 <span className="admin-v2-attention-count">{counts.pendingIkes}</span>
                 <span className="admin-v2-attention-label">{t('Permohonan iKES Menunggu', 'Pending iKES Applications')}</span>
+                <span className="admin-v2-attention-arrow">
+                  <Icon name="chevron-right" size={18} />
+                </span>
+              </button>
+
+              <button onClick={() => onNavigateTab('kpk')} className="admin-v2-attention-item">
+                <span className="admin-v2-attention-count">{counts.pendingKpk}</span>
+                <span className="admin-v2-attention-label">{t('Permohonan KPK+ Menunggu', 'Pending KPK+ Applications')}</span>
                 <span className="admin-v2-attention-arrow">
                   <Icon name="chevron-right" size={18} />
                 </span>
