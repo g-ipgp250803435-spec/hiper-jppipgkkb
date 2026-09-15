@@ -28,6 +28,7 @@ export function Layout({ children }: { children: ReactNode }) {
     { to: '/', label: settings.navigation.home, icon: 'dashboard' },
     { to: '/e-aset', label: settings.navigation.assets, icon: 'box' },
     { to: '/ikes', label: settings.navigation.ikes, icon: 'heart' },
+    { to: '/kpk', label: settings.navigation.kpk, icon: 'briefcase' },
     { to: '/tabung-jumaat', label: settings.navigation.fund, icon: 'fund' },
     { to: '/pengumuman', label: settings.navigation.announcements, icon: 'megaphone' },
     { to: '/kenali-pejabat', label: settings.navigation.office, icon: 'building' },

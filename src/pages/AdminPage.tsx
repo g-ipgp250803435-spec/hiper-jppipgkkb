@@ -4,11 +4,13 @@ import { Icon } from '../components/Icons'
 import SiteSettingsEditor from '../components/admin/SiteSettingsEditor'
 import AdminOverview from '../components/admin/AdminOverview'
 import AdminIkes from '../components/admin/AdminIkes'
+import AdminKpk from '../components/admin/AdminKpk'
 import AdminAssets from '../components/admin/AdminAssets'
 import AdminDonations from '../components/admin/AdminDonations'
 import AdminAnnouncements from '../components/admin/AdminAnnouncements'
 import AdminOrganization from '../components/admin/AdminOrganization'
 import AdminNotifications from '../components/admin/AdminNotifications'
+import { notifyUser } from '../lib/v3/notificationService'
 import { useAuth } from '../contexts/AuthContext'
 import { useUi } from '../contexts/UiContext'
 import { isSupabaseConfigured } from '../lib/config'
@@ -22,11 +24,13 @@ import type {
   DonationSettings,
   FundDisbursement,
   IkesApplication,
+  KpkApplication,
+  KpkBureau,
   Notification,
   OrganizationMember,
 } from '../lib/types'
 
-type AdminTab = 'overview' | 'ikes' | 'assets-requests' | 'donations' | 'announcements' | 'catalogue' | 'organization' | 'fund' | 'site' | 'notifications'
+type AdminTab = 'overview' | 'ikes' | 'kpk' | 'assets-requests' | 'donations' | 'announcements' | 'catalogue' | 'organization' | 'fund' | 'site' | 'notifications'
 
 export default function AdminPage() {
   const { language, t } = useUi()
@@ -34,6 +38,8 @@ export default function AdminPage() {
   const [tab, setTab] = useState<AdminTab>('overview')
 
   const [ikes, setIkes] = useState<IkesApplication[]>([])
+  const [kpkApplications, setKpkApplications] = useState<KpkApplication[]>([])
+  const [kpkBureaus, setKpkBureaus] = useState<KpkBureau[]>([])
   const [assetRequests, setAssetRequests] = useState<AssetApplication[]>([])
   const [donations, setDonations] = useState<Donation[]>([])
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
@@ -201,6 +207,8 @@ export default function AdminPage() {
     try {
       const results = await Promise.all([
         supabase.from('ikes_applications').select('*').order('created_at', { ascending: false }),
+        supabase.from('kpk_applications').select('*, kpk_bureaus(*)').order('created_at', { ascending: false }),
+        supabase.from('kpk_bureaus').select('*').order('display_order', { ascending: true }),
         supabase.from('asset_applications').select('*, asset_items(*)').order('created_at', { ascending: false }),
         supabase.from('donations').select('*').order('created_at', { ascending: false }),
         supabase.from('announcements').select('*').order('created_at', { ascending: false }),
@@ -213,14 +221,16 @@ export default function AdminPage() {
       const firstError = results.find((result) => result.error)?.error
       if (firstError) setNotice({ type: 'danger', text: firstError.message })
       setIkes((results[0].data as IkesApplication[]) || [])
-      setAssetRequests((results[1].data as AssetApplication[]) || [])
-      setDonations((results[2].data as Donation[]) || [])
-      setAnnouncements((results[3].data as Announcement[]) || [])
-      setCatalogue((results[4].data as AssetItem[]) || [])
-      setMembers((results[5].data as OrganizationMember[]) || [])
-      setDisbursements((results[6].data as FundDisbursement[]) || [])
-      setDonationSettings((results[7].data as DonationSettings | null) || null)
-      setNotifications((results[8].data as Notification[]) || [])
+      setKpkApplications((results[1].data as KpkApplication[]) || [])
+      setKpkBureaus((results[2].data as KpkBureau[]) || [])
+      setAssetRequests((results[3].data as AssetApplication[]) || [])
+      setDonations((results[4].data as Donation[]) || [])
+      setAnnouncements((results[5].data as Announcement[]) || [])
+      setCatalogue((results[6].data as AssetItem[]) || [])
+      setMembers((results[7].data as OrganizationMember[]) || [])
+      setDisbursements((results[8].data as FundDisbursement[]) || [])
+      setDonationSettings((results[9].data as DonationSettings | null) || null)
+      setNotifications((results[10].data as Notification[]) || [])
     } catch (err) {
       setNotice({
         type: 'danger',
@@ -283,7 +293,47 @@ export default function AdminPage() {
         repaid_at: item.repaid_at || null,
       }).eq('id', item.id)
       if (error) throw error
+
+      await notifyUser(
+        item.user_id,
+        `Status iKES Dikemas Kini`,
+        `Permohonan iKES anda telah dikemas kini kepada status: ${item.status.toUpperCase()}.`,
+        'ikes',
+        item.id
+      )
     }, 'Permohonan iKES dikemas kini.')
+  }
+
+  const updateKpkApplication = async (item: KpkApplication) => {
+    await runAction(async () => {
+      const { error } = await supabase.from('kpk_applications').update({
+        status: item.status,
+        admin_notes: item.admin_notes,
+        updated_at: new Date().toISOString(),
+      }).eq('id', item.id)
+      if (error) throw error
+
+      let statusMsg = `Permohonan pinjaman KPK+ bagi ${item.club_name} kini berstatus: ${item.status.toUpperCase()}.`
+      if (item.status === 'approved') statusMsg = `Tahniah! Permohonan KPK+ bagi ${item.club_name} telah diluluskan.`
+      else if (item.status === 'rejected') statusMsg = `Permohonan KPK+ bagi ${item.club_name} telah ditolak.`
+
+      await notifyUser(item.user_id, `Status KPK+ Dikemas Kini`, statusMsg, 'kpk', item.id)
+    }, 'Permohonan KPK+ dikemas kini.')
+  }
+
+  const saveKpkBureau = async (form: { id?: string; name: string; active: boolean; display_order: number }) => {
+    await runAction(async () => {
+      const payload = {
+        name: form.name,
+        active: form.active,
+        display_order: Number(form.display_order),
+      }
+      const query = form.id
+        ? supabase.from('kpk_bureaus').update(payload).eq('id', form.id)
+        : supabase.from('kpk_bureaus').insert(payload)
+      const { error } = await query
+      if (error) throw error
+    }, form.id ? 'Biro Angkat dikemas kini.' : 'Biro Angkat ditambah.')
   }
 
   const updateAssetRequest = async (item: AssetApplication) => {
@@ -294,6 +344,14 @@ export default function AdminPage() {
         returned_at: item.returned_at || null,
       }).eq('id', item.id)
       if (error) throw error
+
+      await notifyUser(
+        item.user_id,
+        `Status e-Aset Dikemas Kini`,
+        `Permohonan e-Aset anda telah dikemas kini kepada status: ${item.status.toUpperCase()}.`,
+        'e_aset',
+        item.id
+      )
     }, 'Permohonan e-Aset dikemas kini.')
   }
 
@@ -534,6 +592,7 @@ export default function AdminPage() {
   if (loading) return <section className="section"><div className="container"><LoadingBlock label="Memuatkan panel pentadbir…" /></div></section>
 
   const pendingIkesCount = ikes.filter((i) => i.status === 'pending').length
+  const pendingKpkCount = kpkApplications.filter((k) => k.status === 'pending').length
   const pendingAssetsCount = assetRequests.filter((a) => a.status === 'pending').length
   const pendingDonationsCount = donations.filter((d) => d.status === 'pending').length
   const unreadNotifsCount = notifications.filter((n) => !n.is_read).length
@@ -541,6 +600,7 @@ export default function AdminPage() {
   const tabs: { id: AdminTab; label: string }[] = [
     { id: 'overview', label: t('Ringkasan', 'Overview') },
     { id: 'ikes', label: `iKES (${pendingIkesCount})` },
+    { id: 'kpk', label: `KPK+ (${pendingKpkCount})` },
     { id: 'assets-requests', label: `${t('Permohonan Aset', 'Asset Requests')} (${pendingAssetsCount})` },
     { id: 'donations', label: `${t('Derma', 'Donations')} (${pendingDonationsCount})` },
     { id: 'announcements', label: t('Pengumuman', 'Announcements') },
@@ -590,6 +650,7 @@ export default function AdminPage() {
             language={language}
             t={t}
             ikes={ikes}
+            kpk={kpkApplications}
             assetRequests={assetRequests}
             donations={donations}
             announcements={announcements}
@@ -610,6 +671,22 @@ export default function AdminPage() {
             supabaseClient={supabase}
             setIkes={setIkes}
             onUpdateIkes={updateIkes}
+          />
+        )}
+
+        {tab === 'kpk' && (
+          <AdminKpk
+            t={t}
+            language={language}
+            applications={kpkApplications}
+            bureaus={kpkBureaus}
+            busy={busy}
+            supabaseClient={supabase}
+            setApplications={setKpkApplications}
+            setBureaus={setKpkBureaus}
+            onUpdateApplication={updateKpkApplication}
+            onSaveBureau={saveKpkBureau}
+            onDeleteBureau={(id) => deleteRow('kpk_bureaus', id, t('Biro Angkat', 'Bureau'))}
           />
         )}
 

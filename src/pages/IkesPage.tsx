@@ -9,7 +9,7 @@ import { isSupabaseConfigured } from '../lib/config'
 import { localise } from '../lib/siteSettings'
 import { uploadPrivateFile } from '../lib/helpers'
 import { supabase } from '../lib/supabase'
-import { createNotification } from '../lib/v3/notificationService'
+import { notifyAdmins, createNotification } from '../lib/v3/notificationService'
 
 export default function IkesPage() {
   const { language, t } = useUi()
@@ -73,7 +73,7 @@ export default function IkesPage() {
       let ticketPath: string | null = null
       if (ticket) ticketPath = await uploadPrivateFile(supabase, user.id, ticket, 'ikes-tickets')
 
-      const { error } = await supabase.from('ikes_applications').insert({
+      const { data: newIkes, error } = await supabase.from('ikes_applications').insert({
         user_id: user.id,
         applicant_name: name,
         class_name: className,
@@ -82,11 +82,12 @@ export default function IkesPage() {
         amount: numericAmount,
         reason,
         ticket_path: ticketPath,
-      })
+      }).select('id').single()
       if (error) throw error
 
-      // HiPER V3.1.1: notify user/admin foundation
-      await createNotification(user.id, 'Permohonan iKES diterima', 'Permohonan iKES anda telah diterima dan sedang diproses.', 'IKES_STATUS')
+      // Notify User and Admin
+      await createNotification(user.id, 'Permohonan iKES diterima', 'Permohonan iKES anda telah diterima dan sedang diproses.', 'ikes', newIkes?.id || null)
+      await notifyAdmins(`🔔 Permohonan iKES Baharu`, `${name} (${className}) memohon ${type === 'care' ? 'iKES Care' : 'iKES Go-Home'} sebanyak RM${numericAmount}.`, 'ikes', newIkes?.id || null)
 
       await supabase
         .from('profiles')

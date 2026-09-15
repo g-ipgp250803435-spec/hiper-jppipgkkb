@@ -9,6 +9,7 @@ import { isSupabaseConfigured } from '../lib/config'
 import { formatDate, formatMoney, uploadPrivateFile } from '../lib/helpers'
 import { localise } from '../lib/siteSettings'
 import { supabase } from '../lib/supabase'
+import { notifyAdmins } from '../lib/v3/notificationService'
 import type { DonationSettings, FundDisbursement, FundSummary } from '../lib/types'
 
 const emptySettings: DonationSettings = {
@@ -93,7 +94,7 @@ export default function DonationsPage() {
     try {
       let proofPath: string | null = null
       if (proof) proofPath = await uploadPrivateFile(supabase, user.id, proof, 'donation-proofs')
-      const { error } = await supabase.from('donations').insert({
+      const { data: newDonation, error } = await supabase.from('donations').insert({
         user_id: user.id,
         donor_name: donorName.trim() || null,
         amount: numericAmount,
@@ -101,8 +102,15 @@ export default function DonationsPage() {
         proof_path: proofPath,
         reference_no: referenceNo.trim() || null,
         message: messageText.trim() || null,
-      })
+      }).select('id').single()
       if (error) throw error
+
+      await notifyAdmins(
+        `🔔 Sumbangan Tabung Jumaat Baharu`,
+        `${donorName.trim() || 'Hamba Allah'} menyerahkan sumbangan sebanyak ${formatMoney(numericAmount)} (${method.toUpperCase()}).`,
+        'tabung_jumaat',
+        newDonation?.id || null
+      )
       setReferenceNo('')
       setMessageText('')
       setProof(null)

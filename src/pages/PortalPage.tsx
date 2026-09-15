@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useUi } from '../contexts/UiContext'
 import { formatDate, formatMoney } from '../lib/helpers'
 import { supabase } from '../lib/supabase'
-import type { AssetApplication, Donation, IkesApplication } from '../lib/types'
+import type { AssetApplication, Donation, IkesApplication, KpkApplication, Notification } from '../lib/types'
 
 function Detail({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -19,10 +19,12 @@ function Detail({ label, children }: { label: string; children: ReactNode }) {
 export default function PortalPage() {
   const { user, profile } = useAuth()
   const { language, t } = useUi()
-  const [tab, setTab] = useState<'ikes' | 'assets' | 'donations'>('ikes')
+  const [tab, setTab] = useState<'ikes' | 'kpk' | 'assets' | 'donations' | 'notifications'>('ikes')
   const [ikes, setIkes] = useState<IkesApplication[]>([])
+  const [kpk, setKpk] = useState<KpkApplication[]>([])
   const [assets, setAssets] = useState<AssetApplication[]>([])
   const [donations, setDonations] = useState<Donation[]>([])
+  const [notifications, setNotifications] = useState<Notification[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -30,21 +32,32 @@ export default function PortalPage() {
     if (!user) return
     void Promise.all([
       supabase.from('ikes_applications').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+      supabase.from('kpk_applications').select('*, kpk_bureaus(*)').eq('user_id', user.id).order('created_at', { ascending: false }),
       supabase.from('asset_applications').select('*, asset_items(*)').eq('user_id', user.id).order('created_at', { ascending: false }),
       supabase.from('donations').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
-    ]).then(([ikesResult, assetResult, donationResult]) => {
-      if (ikesResult.error || assetResult.error || donationResult.error) {
-        setError(ikesResult.error?.message || assetResult.error?.message || donationResult.error?.message || 'Data gagal dimuatkan.')
+      supabase.from('notifications').select('*').eq('recipient_id', user.id).order('created_at', { ascending: false }),
+    ]).then(([ikesResult, kpkResult, assetResult, donationResult, notifResult]) => {
+      if (ikesResult.error || kpkResult.error || assetResult.error || donationResult.error || notifResult.error) {
+        setError(ikesResult.error?.message || kpkResult.error?.message || assetResult.error?.message || donationResult.error?.message || notifResult.error?.message || 'Data gagal dimuatkan.')
       }
       setIkes((ikesResult.data as IkesApplication[]) || [])
+      setKpk((kpkResult.data as KpkApplication[]) || [])
       setAssets((assetResult.data as AssetApplication[]) || [])
       setDonations((donationResult.data as Donation[]) || [])
+      setNotifications((notifResult.data as Notification[]) || [])
       setLoading(false)
     }).catch((requestError) => {
       setError(requestError instanceof Error ? requestError.message : 'Data gagal dimuatkan.')
       setLoading(false)
     })
   }, [user])
+
+  const markNotificationRead = async (id: string) => {
+    const { error } = await supabase.from('notifications').update({ is_read: true }).eq('id', id)
+    if (!error) {
+      setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)))
+    }
+  }
 
   const repaymentText = (item: IkesApplication) =>
     item.repaid_at
@@ -63,6 +76,7 @@ export default function PortalPage() {
           actions={
             <div className="button-row portal-header-actions">
               <Link className="button button-secondary" to="/ikes">+ iKES</Link>
+              <Link className="button button-secondary" to="/kpk">+ KPK+</Link>
               <Link className="button button-secondary" to="/e-aset">+ e-Aset</Link>
             </div>
           }
@@ -73,14 +87,19 @@ export default function PortalPage() {
         <div className="portal-summary">
           <Card className="portal-summary-card"><span>{t('Kelas', 'Class')}</span><strong>{profile?.class_name || '—'}</strong></Card>
           <Card className="portal-summary-card"><span>{t('Permohonan iKES', 'iKES applications')}</span><strong>{ikes.length}</strong></Card>
+          <Card className="portal-summary-card"><span>{t('Permohonan KPK+', 'KPK+ applications')}</span><strong>{kpk.length}</strong></Card>
           <Card className="portal-summary-card"><span>{t('Permohonan e-Aset', 'e-Asset applications')}</span><strong>{assets.length}</strong></Card>
           <Card className="portal-summary-card"><span>{t('Rekod derma', 'Donation records')}</span><strong>{donations.length}</strong></Card>
         </div>
 
         <div className="tabs portal-tabs" role="tablist" aria-label={t('Jenis rekod', 'Record type')}>
           <Button variant={tab === 'ikes' ? 'primary' : 'ghost'} onClick={() => setTab('ikes')}>iKES</Button>
+          <Button variant={tab === 'kpk' ? 'primary' : 'ghost'} onClick={() => setTab('kpk')}>KPK+</Button>
           <Button variant={tab === 'assets' ? 'primary' : 'ghost'} onClick={() => setTab('assets')}>e-Aset</Button>
           <Button variant={tab === 'donations' ? 'primary' : 'ghost'} onClick={() => setTab('donations')}>{t('Derma', 'Donations')}</Button>
+          <Button variant={tab === 'notifications' ? 'primary' : 'ghost'} onClick={() => setTab('notifications')}>
+            🔔 {t('Notifikasi', 'Notifications')} {notifications.filter((n) => !n.is_read).length > 0 ? `(${notifications.filter((n) => !n.is_read).length})` : ''}
+          </Button>
         </div>
 
         {loading ? <LoadingBlock /> : (
@@ -91,6 +110,11 @@ export default function PortalPage() {
                   {ikes.map((item) => <tr key={item.id}><td>{formatDate(item.created_at, language)}</td><td>{item.ikes_type === 'care' ? 'iKES Care' : 'iKES Go-Home'}</td><td>{formatMoney(item.amount)}</td><td><StatusBadge status={item.status} /></td><td>{item.admin_notes || '—'}</td><td>{repaymentText(item)}</td></tr>)}
                 </tbody></table></div>
               ))}
+              {tab === 'kpk' && (kpk.length === 0 ? <EmptyState title={t('Belum ada permohonan KPK+', 'No KPK+ loan applications yet')} /> : (
+                <div className="responsive-table"><table><thead><tr><th>{t('Kelab / Persatuan', 'Club / Association')}</th><th>{t('Biro Angkat', 'Bureau')}</th><th>{t('Amaun', 'Amount')}</th><th>{t('Tarikh Mohon', 'Date Submitted')}</th><th>{t('Status', 'Status')}</th><th>{t('Nota Admin', 'Admin Remarks')}</th></tr></thead><tbody>
+                  {kpk.map((item) => <tr key={item.id}><td><strong>{item.club_name}</strong><br /><small>{item.department_unit}</small></td><td>{item.kpk_bureaus?.name || 'Biro'}</td><td><strong>{formatMoney(item.loan_amount)}</strong></td><td>{formatDate(item.created_at, language)}</td><td><StatusBadge status={item.status} /></td><td>{item.admin_notes || '—'}</td></tr>)}
+                </tbody></table></div>
+              ))}
               {tab === 'assets' && (assets.length === 0 ? <EmptyState title={t('Belum ada permohonan e-Aset', 'No e-Asset applications yet')} /> : (
                 <div className="responsive-table"><table><thead><tr><th>{t('Aset', 'Asset')}</th><th>{t('Kuantiti', 'Quantity')}</th><th>{t('Tempoh', 'Period')}</th><th>{t('Status', 'Status')}</th><th>{t('Nota admin', 'Admin note')}</th></tr></thead><tbody>
                   {assets.map((item) => <tr key={item.id}><td>{language === 'bm' ? item.asset_items?.name_bm : item.asset_items?.name_en || item.asset_items?.name_bm}</td><td>{item.quantity}</td><td>{formatDate(item.borrow_date, language)} – {formatDate(item.return_date, language)}</td><td><StatusBadge status={item.status} /></td><td>{item.admin_notes || '—'}</td></tr>)}
@@ -99,6 +123,11 @@ export default function PortalPage() {
               {tab === 'donations' && (donations.length === 0 ? <EmptyState title={t('Belum ada rekod sumbangan', 'No donation records yet')} /> : (
                 <div className="responsive-table"><table><thead><tr><th>{t('Tarikh', 'Date')}</th><th>{t('Amaun', 'Amount')}</th><th>{t('Kaedah', 'Method')}</th><th>{t('Rujukan', 'Reference')}</th><th>{t('Status', 'Status')}</th></tr></thead><tbody>
                   {donations.map((item) => <tr key={item.id}><td>{formatDate(item.created_at, language)}</td><td>{formatMoney(item.amount)}</td><td>{item.payment_method.replace('_', ' ')}</td><td>{item.reference_no || '—'}</td><td><StatusBadge status={item.status === 'verified' ? 'verified' : item.status} /></td></tr>)}
+                </tbody></table></div>
+              ))}
+              {tab === 'notifications' && (notifications.length === 0 ? <EmptyState title={t('Tiada notifikasi', 'No notifications')} /> : (
+                <div className="responsive-table"><table><thead><tr><th>{t('Tajuk', 'Title')}</th><th>{t('Mesej', 'Message')}</th><th>{t('Tarikh', 'Date')}</th><th>{t('Tindakan', 'Action')}</th></tr></thead><tbody>
+                  {notifications.map((item) => <tr key={item.id} style={{ opacity: item.is_read ? 0.7 : 1, fontWeight: item.is_read ? 'normal' : 'bold' }}><td>{item.title}</td><td>{item.message}</td><td>{formatDate(item.created_at, language)}</td><td>{!item.is_read && <Button variant="ghost" className="compact" onClick={() => void markNotificationRead(item.id)}>{t('Tanda Dibaca', 'Mark Read')}</Button>}</td></tr>)}
                 </tbody></table></div>
               ))}
             </Card>
@@ -116,6 +145,23 @@ export default function PortalPage() {
                   <div className="portal-mobile-details">
                     <Detail label={t('Tarikh permohonan', 'Application date')}>{formatDate(item.created_at, language)}</Detail>
                     <Detail label={t('Bayaran balik', 'Repayment')}>{repaymentText(item)}</Detail>
+                    <Detail label={t('Nota admin', 'Admin note')}>{item.admin_notes || '—'}</Detail>
+                  </div>
+                </article>
+              )))}
+
+              {tab === 'kpk' && (kpk.length === 0 ? <EmptyState title={t('Belum ada permohonan KPK+', 'No KPK+ loan applications yet')} /> : kpk.map((item) => (
+                <article className="portal-mobile-card" key={item.id}>
+                  <div className="portal-mobile-card-head">
+                    <div>
+                      <span className="portal-mobile-kicker">KPK+ Loan</span>
+                      <strong className="portal-mobile-value">{formatMoney(item.loan_amount)}</strong>
+                    </div>
+                    <StatusBadge status={item.status} />
+                  </div>
+                  <div className="portal-mobile-details">
+                    <Detail label={t('Kelab / Persatuan', 'Club / Association')}>{item.club_name}</Detail>
+                    <Detail label={t('Tarikh permohonan', 'Application date')}>{formatDate(item.created_at, language)}</Detail>
                     <Detail label={t('Nota admin', 'Admin note')}>{item.admin_notes || '—'}</Detail>
                   </div>
                 </article>

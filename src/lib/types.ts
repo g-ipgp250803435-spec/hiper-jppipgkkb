@@ -40,6 +40,7 @@ export interface SiteSettings {
     home: LocalisedText
     assets: LocalisedText
     ikes: LocalisedText
+    kpk: LocalisedText
     fund: LocalisedText
     announcements: LocalisedText
     office: LocalisedText
@@ -74,6 +75,7 @@ export interface SiteSettings {
   pages: {
     assets: { eyebrow: LocalisedText; title: LocalisedText; description: LocalisedText }
     ikes: { eyebrow: LocalisedText; title: LocalisedText; description: LocalisedText }
+    kpk: { eyebrow: LocalisedText; title: LocalisedText; description: LocalisedText }
     donations: { eyebrow: LocalisedText; title: LocalisedText; description: LocalisedText }
     announcements: { eyebrow: LocalisedText; title: LocalisedText; description: LocalisedText }
     office: { eyebrow: LocalisedText; title: LocalisedText; description: LocalisedText }
@@ -265,4 +267,30 @@ export interface Notification {
   reference_id: string | null
   is_read: boolean
   created_at: string
+}
+
+export interface KpkBureau {
+  id: string
+  name: string
+  active: boolean
+  display_order: number
+  created_at?: string
+}
+
+export interface KpkApplication {
+  id: string
+  user_id: string
+  club_name: string
+  applicant_name: string
+  phone: string
+  department_unit: string
+  bureau_id: string | null
+  loan_amount: number
+  purpose: string
+  supporting_document_path: string | null
+  status: RequestStatus
+  admin_notes: string | null
+  created_at: string
+  updated_at: string
+  kpk_bureaus?: KpkBureau | null
 }
