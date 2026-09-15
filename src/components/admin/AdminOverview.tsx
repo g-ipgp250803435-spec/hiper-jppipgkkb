@@ -6,7 +6,7 @@ import type { Announcement, AssetApplication, AssetItem, Donation, FundDisbursem
 
 import type { KpkApplication } from '../../lib/types'
 
-type AdminTab = 'overview' | 'ikes' | 'kpk' | 'assets-requests' | 'donations' | 'announcements' | 'catalogue' | 'organization' | 'fund' | 'site' | 'notifications'
+type AdminTab = 'overview' | 'ikes' | 'kpk' | 'assets-requests' | 'donations' | 'announcements' | 'catalogue' | 'organization' | 'fund' | 'site'
 
 interface AdminOverviewProps {
   language: 'bm' | 'en'
@@ -21,6 +21,7 @@ interface AdminOverviewProps {
   disbursements: FundDisbursement[]
   unreadNotificationsCount?: number
   onNavigateTab: (tab: AdminTab) => void
+  onOpenNotificationsPopup?: () => void
 }
 
 export default function AdminOverview({
@@ -36,6 +37,7 @@ export default function AdminOverview({
   disbursements,
   unreadNotificationsCount = 0,
   onNavigateTab,
+  onOpenNotificationsPopup,
 }: AdminOverviewProps) {
   const counts = useMemo(() => {
     const pendingIkes = ikes.filter((item) => item.status === 'pending').length
@@ -144,7 +146,7 @@ export default function AdminOverview({
                 </span>
               </button>
 
-              <button onClick={() => onNavigateTab('notifications')} className="admin-v2-attention-item">
+              <button onClick={() => onOpenNotificationsPopup ? onOpenNotificationsPopup() : undefined} className="admin-v2-attention-item">
                 <span className="admin-v2-attention-count">{unreadNotificationsCount}</span>
                 <span className="admin-v2-attention-label">{t('Notifikasi Belum Dibaca', 'Unread System Notifications')}</span>
                 <span className="admin-v2-attention-arrow">

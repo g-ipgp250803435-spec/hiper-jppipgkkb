@@ -9,7 +9,7 @@ import AdminAssets from '../components/admin/AdminAssets'
 import AdminDonations from '../components/admin/AdminDonations'
 import AdminAnnouncements from '../components/admin/AdminAnnouncements'
 import AdminOrganization from '../components/admin/AdminOrganization'
-import AdminNotifications from '../components/admin/AdminNotifications'
+import AdminNotificationDropdown from '../components/admin/AdminNotificationDropdown'
 import { notifyUser } from '../lib/v3/notificationService'
 import { useAuth } from '../contexts/AuthContext'
 import { useUi } from '../contexts/UiContext'
@@ -30,12 +30,13 @@ import type {
   OrganizationMember,
 } from '../lib/types'
 
-type AdminTab = 'overview' | 'ikes' | 'kpk' | 'assets-requests' | 'donations' | 'announcements' | 'catalogue' | 'organization' | 'fund' | 'site' | 'notifications'
+type AdminTab = 'overview' | 'ikes' | 'kpk' | 'assets-requests' | 'donations' | 'announcements' | 'catalogue' | 'organization' | 'fund' | 'site'
 
 export default function AdminPage() {
   const { language, t } = useUi()
   const { user } = useAuth()
   const [tab, setTab] = useState<AdminTab>('overview')
+  const [notifOpen, setNotifOpen] = useState(false)
 
   const [ikes, setIkes] = useState<IkesApplication[]>([])
   const [kpkApplications, setKpkApplications] = useState<KpkApplication[]>([])
@@ -193,11 +194,31 @@ export default function AdminPage() {
           id: 'mock-notif-1',
           recipient_id: null,
           title: 'Permohonan e-Aset Baharu',
-          message: 'Tan Wei Jin memohon Sistem PA Mudah Alih.',
+          message: 'Ahmad submitted an asset request.',
           notification_type: 'e_aset',
           reference_id: 'mock-asset-1',
           is_read: false,
-          created_at: new Date().toISOString(),
+          created_at: new Date(Date.now() - 120000).toISOString(),
+        },
+        {
+          id: 'mock-notif-2',
+          recipient_id: null,
+          title: 'Permohonan KPK+ Baharu',
+          message: 'Kelab ABC submitted a loan request.',
+          notification_type: 'kpk',
+          reference_id: 'mock-kpk-1',
+          is_read: false,
+          created_at: new Date(Date.now() - 600000).toISOString(),
+        },
+        {
+          id: 'mock-notif-3',
+          recipient_id: null,
+          title: 'Permohonan iKES Baharu',
+          message: 'Student XYZ submitted an application.',
+          notification_type: 'ikes',
+          reference_id: 'mock-ikes-1',
+          is_read: false,
+          created_at: new Date(Date.now() - 1800000).toISOString(),
         },
       ])
       setLoading(false)
@@ -577,6 +598,28 @@ export default function AdminPage() {
     }, 'Notifikasi ditanda dibaca.')
   }
 
+  const handleNotificationClick = async (notif: Notification) => {
+    if (!notif.is_read) {
+      await markNotificationRead(notif.id)
+    }
+    setNotifOpen(false)
+
+    const type = notif.notification_type?.toLowerCase() || ''
+    const title = notif.title?.toLowerCase() || ''
+
+    if (type.includes('asset') || type.includes('e_aset') || title.includes('aset')) {
+      setTab('assets-requests')
+    } else if (type.includes('kpk') || title.includes('kpk')) {
+      setTab('kpk')
+    } else if (type.includes('ikes') || title.includes('ikes')) {
+      setTab('ikes')
+    } else if (type.includes('donation') || type.includes('tabung') || title.includes('derma') || title.includes('tabung')) {
+      setTab('donations')
+    } else if (type.includes('announcement') || title.includes('pengumuman')) {
+      setTab('announcements')
+    }
+  }
+
   const clearAllNotifications = async () => {
     await runAction(async () => {
       if (!isSupabaseConfigured) {
@@ -607,7 +650,6 @@ export default function AdminPage() {
     { id: 'catalogue', label: t('Katalog Aset', 'Asset Catalogue') },
     { id: 'organization', label: t('Organisasi', 'Organisation') },
     { id: 'fund', label: t('Tabung', 'Fund') },
-    { id: 'notifications', label: `${t('Notifikasi', 'Notifications')} ${unreadNotifsCount > 0 ? `(${unreadNotifsCount})` : ''}` },
     { id: 'site', label: t('Identiti & Kandungan', 'Identity & Content') },
   ]
 
@@ -622,10 +664,32 @@ export default function AdminPage() {
             'Central control for HiPER applications, content and financial records.'
           )}
           actions={
-            <Button variant="secondary" onClick={() => void loadAll()} disabled={loading || busy} className="admin-v2-refresh-btn">
-              <Icon name="refresh" size={18} />
-              {t('Muat semula', 'Refresh')}
-            </Button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', position: 'relative' }}>
+              <button
+                type="button"
+                className="admin-notif-bell-btn"
+                onClick={() => setNotifOpen(!notifOpen)}
+                aria-label={t('Notifikasi', 'Notifications')}
+                title={t('Notifikasi', 'Notifications')}
+              >
+                <Icon name="bell" size={20} />
+                {unreadNotifsCount > 0 && <span className="admin-notif-badge">{unreadNotifsCount}</span>}
+              </button>
+              {notifOpen && (
+                <AdminNotificationDropdown
+                  notifications={notifications}
+                  language={language}
+                  t={t}
+                  onNotificationClick={handleNotificationClick}
+                  onClearAll={clearAllNotifications}
+                  onClose={() => setNotifOpen(false)}
+                />
+              )}
+              <Button variant="secondary" onClick={() => void loadAll()} disabled={loading || busy} className="admin-v2-refresh-btn">
+                <Icon name="refresh" size={18} />
+                {t('Muat semula', 'Refresh')}
+              </Button>
+            </div>
           }
         />
         {premiumDbReady === false && (
@@ -659,6 +723,7 @@ export default function AdminPage() {
             disbursements={disbursements}
             unreadNotificationsCount={unreadNotifsCount}
             onNavigateTab={setTab}
+            onOpenNotificationsPopup={() => setNotifOpen(true)}
           />
         )}
 
@@ -779,16 +844,6 @@ export default function AdminPage() {
             busy={busy}
             onSaveMember={saveMember}
             onDeleteMember={(id) => deleteRow('organization_members', id, t('ahli', 'member'))}
-          />
-        )}
-
-        {tab === 'notifications' && (
-          <AdminNotifications
-            t={t}
-            language={language}
-            notifications={notifications}
-            onMarkAsRead={markNotificationRead}
-            onClearAll={clearAllNotifications}
           />
         )}
 
