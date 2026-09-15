@@ -44,6 +44,7 @@ export type IconName =
   | 'briefcase'
   | 'shield'
   | 'chart'
+  | 'bell'
 
 const paths: Record<IconName, ReactNode> = {
   menu: <><path d="M4 7h16M4 12h16M4 17h16" /></>,
@@ -89,6 +90,7 @@ const paths: Record<IconName, ReactNode> = {
   briefcase: <><rect x="3" y="7" width="18" height="13" rx="2" /><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 12h18M10 12v2h4v-2" /></>,
   shield: <><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" /><path d="m9 12 2 2 4-4" /></>,
   chart: <><path d="M4 20V10M10 20V4M16 20v-7M22 20V8M2 20h22" /></>,
+  bell: <><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></>,
 }
 
 export function Icon({ name, size = 20, className = '', ...props }: SVGProps<SVGSVGElement> & { name: IconName; size?: number }) {

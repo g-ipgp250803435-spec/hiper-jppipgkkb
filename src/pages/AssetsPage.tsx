@@ -52,18 +52,19 @@ export default function AssetsPage() {
   const [loading, setLoading] = useState(isSupabaseConfigured)
   const [assetId, setAssetId] = useState('')
   const [name, setName] = useState('')
-  const [className, setClassName] = useState('')
+  const [departmentUnit, setDepartmentUnit] = useState('')
   const [phone, setPhone] = useState('')
   const [quantity, setQuantity] = useState('1')
   const [borrowDate, setBorrowDate] = useState('')
   const [returnDate, setReturnDate] = useState('')
   const [purpose, setPurpose] = useState('')
+  const [akuJanjiAgreed, setAkuJanjiAgreed] = useState(false)
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'danger'; text: string } | null>(null)
 
   useEffect(() => {
     setName(profile?.full_name || user?.user_metadata?.full_name || '')
-    setClassName(profile?.class_name || '')
+    setDepartmentUnit(profile?.class_name || '')
     setPhone(profile?.phone || '')
   }, [profile, user])
 
@@ -79,7 +80,6 @@ export default function AssetsPage() {
           .order('name_bm')
 
         if (error) {
-          // Older database versions do not have sort_order on asset_items.
           try {
             const { data: fallbackData, error: fallbackError } = await supabase
               .from('asset_items')
@@ -139,6 +139,10 @@ export default function AssetsPage() {
       setMessage({ type: 'danger', text: 'Supabase belum dikonfigurasi.' })
       return
     }
+    if (!akuJanjiAgreed) {
+      setMessage({ type: 'danger', text: t('Anda mesti bersetuju dengan pengakuan Aku Janji sebelum menghantar permohonan.', 'You must agree to the Aku Janji declaration before submitting.') })
+      return
+    }
     if (!borrowDate || !returnDate || returnDate < borrowDate) {
       setMessage({ type: 'danger', text: t('Tarikh pulang mesti selepas atau sama dengan tarikh pinjam.', 'Return date must be on or after the borrowing date.') })
       return
@@ -151,22 +155,44 @@ export default function AssetsPage() {
 
     setBusy(true)
     try {
-      const { error } = await supabase.from('asset_applications').insert({
+      const nowIso = new Date().toISOString()
+      const { data: newApplication, error } = await supabase.from('asset_applications').insert({
         user_id: user.id,
         applicant_name: name.trim(),
-        class_name: className.trim(),
+        class_name: departmentUnit.trim(),
+        department_unit: departmentUnit.trim(),
         phone: phone.trim(),
         asset_id: assetId,
         quantity: numericQuantity,
         borrow_date: borrowDate,
         return_date: returnDate,
         purpose: purpose.trim(),
-      })
+        aku_janji_agreed: true,
+        aku_janji_agreed_at: nowIso,
+      }).select('id').single()
+
       if (error) throw error
-      await supabase.from('profiles').update({ full_name: name.trim(), class_name: className.trim(), phone: phone.trim() }).eq('id', user.id)
+
+      // Post in-app notification for admin dashboard foundation
+      if (newApplication) {
+        try {
+          await supabase.from('notifications').insert({
+            recipient_id: null,
+            title: `Permohonan e-Aset Baharu: ${selectedAsset.name_bm}`,
+            message: `${name.trim()} (${departmentUnit.trim()}) memohon ${numericQuantity} unit ${selectedAsset.name_bm}.`,
+            notification_type: 'e_aset',
+            reference_id: newApplication.id,
+          })
+        } catch {
+          // ignore notification insertion failure gracefully
+        }
+      }
+
+      await supabase.from('profiles').update({ full_name: name.trim(), class_name: departmentUnit.trim(), phone: phone.trim() }).eq('id', user.id)
       await refreshProfile()
       setPurpose('')
       setQuantity('1')
+      setAkuJanjiAgreed(false)
       setMessage({ type: 'success', text: t('Permohonan e-Aset berjaya dihantar. Semak status dalam Permohonan Saya.', 'Your e-Asset request was submitted. Check its status under My Applications.') })
     } catch (error) {
       setMessage({ type: 'danger', text: error instanceof Error ? error.message : t('Permohonan gagal dihantar.', 'The request could not be submitted.') })
@@ -228,8 +254,8 @@ export default function AssetsPage() {
             <p>{t('Pilih aset, nyatakan tempoh penggunaan dan tunggu semakan pentadbir. Stok hanya ditolak selepas permohonan diluluskan.', 'Choose an asset, specify the usage period and await administrator review. Stock is deducted only after approval.')}</p>
             <ol className="numbered-process">
               <li><span>01</span>{t('Pilih aset dan kuantiti.', 'Choose an asset and quantity.')}</li>
-              <li><span>02</span>{t('Lengkapkan tarikh serta tujuan.', 'Complete the dates and purpose.')}</li>
-              <li><span>03</span>{t('Semak status dalam Permohonan Saya.', 'Track the status under My Applications.')}</li>
+              <li><span>02</span>{t('Isi Jabatan/Unit/Kelas/Kelab dan maklumat pemohon.', 'Enter Department/Unit/Class/Club and applicant details.')}</li>
+              <li><span>03</span>{t('Sahkan perakuan Aku Janji dan hantar.', 'Confirm Aku Janji declaration and submit.')}</li>
             </ol>
           </div>
 
@@ -253,15 +279,42 @@ export default function AssetsPage() {
                   </Field>
                 </div>
                 <Field label={t('Nama penuh', 'Full name')} required><input value={name} onChange={(event) => setName(event.target.value)} required /></Field>
-                <Field label={t('Kelas', 'Class')} required><input value={className} onChange={(event) => setClassName(event.target.value)} required /></Field>
+                <Field label={t('Jabatan / Unit / Kelas / Kelab', 'Department / Unit / Class / Club')} required>
+                  <input value={departmentUnit} onChange={(event) => setDepartmentUnit(event.target.value)} placeholder="Cth: Jabatan Bahasa / PISMP BM SK 1" required />
+                </Field>
                 <Field label={t('Nombor telefon', 'Phone number')} required><input type="tel" value={phone} onChange={(event) => setPhone(event.target.value)} required /></Field>
                 <Field label={t('Kuantiti', 'Quantity')} hint={selectedAsset ? `${selectedAsset.stock_available} ${t('unit tersedia', 'units available')}` : undefined} required>
                   <input type="number" min="1" max={selectedAsset?.stock_available || 1} value={quantity} onChange={(event) => setQuantity(event.target.value)} required />
                 </Field>
                 <Field label={t('Tarikh pinjam', 'Borrow date')} required><input type="date" value={borrowDate} onChange={(event) => setBorrowDate(event.target.value)} required /></Field>
                 <Field label={t('Tarikh pulang', 'Return date')} required><input type="date" min={borrowDate || undefined} value={returnDate} onChange={(event) => setReturnDate(event.target.value)} required /></Field>
-                <div className="full-span"><Field label={t('Tujuan penggunaan', 'Purpose')} required><textarea rows={4} value={purpose} onChange={(event) => setPurpose(event.target.value)} required /></Field></div>
-                <div className="full-span form-actions"><Button type="submit" disabled={busy || !assetId || (selectedAsset?.stock_available || 0) < 1}>{busy ? t('Menghantar…', 'Submitting…') : t('Hantar permohonan', 'Submit request')}</Button></div>
+                <div className="full-span">
+                  <Field label={t('Tujuan penggunaan', 'Purpose')} required>
+                    <textarea rows={3} value={purpose} onChange={(event) => setPurpose(event.target.value)} required />
+                  </Field>
+                </div>
+
+                <div className="full-span" style={{ marginTop: '12px', background: 'var(--bg-card-highlight, rgba(160,20,40,0.04))', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                  <h4 style={{ margin: '0 0 8px 0', fontSize: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Icon name="shield" size={18} /> {t('Aku Janji', 'Aku Janji Declaration')}
+                  </h4>
+                  <p style={{ margin: '0 0 12px 0', fontSize: '13px', lineHeight: '1.5', color: 'var(--ink-body)' }}>
+                    {t(
+                      'Saya mengaku bahawa semua maklumat yang diberikan adalah benar dan saya bertanggungjawab terhadap permohonan dan penjagaan aset ini.',
+                      'I declare that all information provided is true and I take full responsibility for the request and care of this asset.'
+                    )}
+                  </p>
+                  <label className="checkbox-field" style={{ cursor: 'pointer', fontWeight: 'bold', fontSize: '14px' }}>
+                    <input type="checkbox" checked={akuJanjiAgreed} onChange={(e) => setAkuJanjiAgreed(e.target.checked)} required />
+                    <span>{t('Saya bersetuju dengan Aku Janji di atas.', 'I agree to the above Aku Janji declaration.')}</span>
+                  </label>
+                </div>
+
+                <div className="full-span form-actions">
+                  <Button type="submit" disabled={busy || !akuJanjiAgreed || !assetId || (selectedAsset?.stock_available || 0) < 1}>
+                    {busy ? t('Menghantar…', 'Submitting…') : t('Hantar permohonan', 'Submit request')}
+                  </Button>
+                </div>
               </form>
             )}
           </Card>
