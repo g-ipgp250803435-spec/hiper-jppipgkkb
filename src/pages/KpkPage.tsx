@@ -165,7 +165,7 @@ export default function KpkPage() {
               </p>
             </Card>
 
-            <Card title={t('Penerangan & Kelayakan Loan', 'Loan Explanation & Eligibility')}>
+            <Card title={t('Penerangan & Kelayakan Pinjaman', 'Loan Explanation & Eligibility')}>
               <ul className="rules-list">
                 <li>{t('Terbuka kepada semua Kelab/Persatuan dan Biro JPP yang berdaftar di IPGKKB.', 'Open to all registered Clubs/Associations and JPP Bureaus in IPGKKB.')}</li>
                 <li>{t('Pilihan amaun pinjaman: RM500.00, RM800.00, dan RM1,000.00.', 'Loan amount options: RM500.00, RM800.00, and RM1,000.00.')}</li>
@@ -268,7 +268,7 @@ export default function KpkPage() {
 
                 <div className="full-span form-actions">
                   <Button type="submit" disabled={busy}>
-                    {busy ? t('Menghantar…', 'Submitting…') : t('Hantar permohonan KPK+', 'Submit KPK+ Application')}
+                    {busy ? t('Menghantar…', 'Submitting…') : t('Hantar permohonan', 'Submit application')}
                   </Button>
                 </div>
               </form>
