@@ -250,7 +250,7 @@ export default function AssetsPage() {
             <p>{t('Pilih aset, nyatakan tempoh penggunaan dan tunggu semakan pentadbir. Stok hanya ditolak selepas permohonan diluluskan.', 'Choose an asset, specify the usage period and await administrator review. Stock is deducted only after approval.')}</p>
             <ol className="numbered-process">
               <li><span>01</span>{t('Pilih aset dan kuantiti.', 'Choose an asset and quantity.')}</li>
-              <li><span>02</span>{t('Isi maklumat pemohon.', 'Enter Department/Unit/Class/Club and applicant details.')}</li>
+              <li><span>02</span>{t('Isi maklumat pemohon.', 'Enter applicant details.')}</li>
               <li><span>03</span>{t('Sahkan perakuan Aku Janji dan hantar.', 'Confirm Aku Janji declaration and submit.')}</li>
             </ol>
           </div>
