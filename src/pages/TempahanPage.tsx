@@ -49,6 +49,19 @@ const defaultServices: BookingService[] = [
   },
 ]
 
+const OFFICIAL_BUREAUS = [
+  'Biro Akademik',
+  'Biro Kerohanian',
+  'Biro Kebajikan',
+  'Biro Sukan',
+  'Biro Multimedia',
+  'Biro Protokol',
+  'Biro Keusahawanan',
+  'Biro Kebudayaan',
+  'Biro Pengantarabangsaan',
+  'Biro Khas',
+]
+
 const mockRoomBookings: RoomBooking[] = [
   {
     id: 'rb-mock-1',
@@ -106,7 +119,9 @@ export default function TempahanPage() {
   useEffect(() => {
     if (profile) {
       setApplicantName(profile.full_name || '')
-      setBureauName(profile.class_name || '')
+      if (OFFICIAL_BUREAUS.includes(profile.class_name || '')) {
+        setBureauName(profile.class_name || '')
+      }
     } else if (user) {
       setApplicantName(user.user_metadata?.full_name || '')
     }
@@ -492,7 +507,7 @@ export default function TempahanPage() {
                           <strong>{booking.name}</strong>
                           <StatusBadge status={booking.status} />
                         </div>
-                        <p style={{ margin: '4px 0', fontSize: '14px' }}><b>Biro / Unit:</b> {booking.bureau}</p>
+                        <p style={{ margin: '4px 0', fontSize: '14px' }}><b>Biro Angkat:</b> {booking.bureau}</p>
                         <p style={{ margin: '4px 0', fontSize: '14px' }}><b>Tujuan:</b> {booking.purpose}</p>
                         {booking.remarks && <p style={{ margin: '4px 0', fontSize: '13px', color: 'var(--ink-muted)' }}><b>Catatan:</b> {booking.remarks}</p>}
                       </div>
@@ -535,14 +550,28 @@ export default function TempahanPage() {
                     />
                   </Field>
 
-                  <Field label={t('Biro / Kelab / Unit', 'Bureau / Club / Unit')} required>
-                    <input
+                  <Field label={t('Biro Angkat', 'Endorsing Bureau')} required>
+                    <select
                       value={bureauName}
                       onChange={(e) => setBureauName(e.target.value)}
-                      placeholder="Cth: Biro Keusahawanan / PISMP BM SK 1"
                       required
-                    />
+                    >
+                      <option value="">{t('Pilih Biro Angkat', 'Select Bureau')}</option>
+                      {OFFICIAL_BUREAUS.map((bureau) => (
+                        <option value={bureau} key={bureau}>
+                          {bureau}
+                        </option>
+                      ))}
+                    </select>
                   </Field>
+                  <div className="full-span" style={{ marginTop: '-6px', marginBottom: '4px' }}>
+                    <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--ink-soft)', fontStyle: 'italic', lineHeight: 1.4 }}>
+                      {t(
+                        'Nota: Sebarang Kelab / Persatuan yang ingin membuat tempahan Bilik JPP hendaklah membuat tempahan menggunakan nama Biro Angkat yang telah ditetapkan.',
+                        'Note: Any Club / Association wishing to book the JPP Room must submit the reservation using the appointed Bureau name.'
+                      )}
+                    </p>
+                  </div>
 
                   <div className="full-span">
                     <Field label={t('Tujuan Tempahan Bilik', 'Purpose of Room Booking')} required>

@@ -314,7 +314,7 @@ export default function PortalPage() {
                           <StatusBadge status={item.status} />
                         </div>
                         <div className="app-card-body">
-                          <p><strong>{t('Biro / Unit', 'Bureau / Unit')}:</strong> {item.bureau}</p>
+                          <p><strong>{t('Biro Angkat', 'Bureau')}:</strong> {item.bureau}</p>
                           <p><strong>{t('Tujuan', 'Purpose')}:</strong> {item.purpose}</p>
                           {item.remarks && <p><strong>{t('Catatan', 'Remarks')}:</strong> {item.remarks}</p>}
                           {item.admin_notes && <p className="app-admin-note"><strong>{t('Nota Admin', 'Admin Note')}:</strong> {item.admin_notes}</p>}
@@ -326,7 +326,7 @@ export default function PortalPage() {
                               <div className="modal-detail-stack">
                                 <p><b>Tarikh Tempahan:</b> {formatDate(item.booking_date, language)}</p>
                                 <p><b>Nama Pemohon:</b> {item.name}</p>
-                                <p><b>Biro / Unit:</b> {item.bureau}</p>
+                                <p><b>Biro Angkat:</b> {item.bureau}</p>
                                 <p><b>Tujuan:</b> {item.purpose}</p>
                                 {item.remarks && <p><b>Catatan Tambahan:</b> {item.remarks}</p>}
                                 <p><b>Status:</b> {item.status.toUpperCase()}</p>

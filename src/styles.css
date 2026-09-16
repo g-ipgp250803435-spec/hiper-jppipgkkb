@@ -763,32 +763,30 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--g
 .asset-card-footer code { color: var(--ink-soft); word-break: break-word; }
 .premium-card-link { border: 0; padding: 0; background: transparent; cursor: pointer; }
 
-/* Premium e-Aset CTA Button & Supporting Text */
+/* Corporate e-Aset CTA Button & Supporting Text */
 .button-premium-easet {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  min-height: 50px;
-  padding: 0 28px;
-  background: linear-gradient(135deg, var(--maroon-900), var(--maroon-800));
-  color: var(--gold-300, #f3e5ab);
-  border: 1px solid var(--gold-500);
-  border-radius: var(--radius-sm, 10px);
+  gap: 8px;
+  min-height: 46px;
+  padding: 0 22px;
+  background: var(--maroon-800);
+  color: #ffffff;
+  border: 1px solid var(--maroon-800);
+  border-radius: 999px;
   font-family: inherit;
-  font-weight: 800;
-  font-size: .98rem;
-  letter-spacing: .03em;
-  box-shadow: 0 8px 20px rgba(40, 5, 13, 0.25);
+  font-weight: 750;
+  font-size: .94rem;
   cursor: pointer;
-  transition: all var(--transition, 180ms ease);
+  transition: transform var(--transition, 180ms ease), background var(--transition, 180ms ease), border-color var(--transition, 180ms ease), box-shadow var(--transition, 180ms ease);
 }
 .button-premium-easet:hover:not(:disabled) {
-  background: linear-gradient(135deg, var(--maroon-800), var(--maroon-700));
-  border-color: var(--gold-300);
+  background: var(--maroon-700);
+  border-color: var(--maroon-700);
   color: #ffffff;
-  transform: translateY(-2px);
-  box-shadow: 0 12px 28px rgba(40, 5, 13, 0.35);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(40, 5, 13, 0.15);
 }
 .button-premium-easet:disabled {
   opacity: 0.55;
@@ -800,10 +798,6 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--g
   padding: 0 16px;
   font-size: .84rem;
   gap: 6px;
-}
-.premium-easet-star {
-  color: var(--gold-500);
-  font-size: 1rem;
 }
 .premium-easet-arrow {
   font-size: 1rem;
