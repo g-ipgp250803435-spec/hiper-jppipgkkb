@@ -388,6 +388,7 @@ export interface BookingService {
   description_en: string | null
   image_url: string | null
   booking_type: string
+  external_link?: string | null
   active: boolean
   instructions_bm?: string | null
   instructions_en?: string | null

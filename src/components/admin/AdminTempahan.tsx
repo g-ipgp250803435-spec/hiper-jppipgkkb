@@ -22,6 +22,7 @@ interface AdminTempahanProps {
       instructions_bm: string
       instructions_en: string
       booking_type: string
+      external_link: string | null
       active: boolean
       image_url: string | null
     },
@@ -56,6 +57,7 @@ export default function AdminTempahan({
   const [instrBm, setInstrBm] = useState('')
   const [instrEn, setInstrEn] = useState('')
   const [bookingType, setBookingType] = useState('custom')
+  const [externalLink, setExternalLink] = useState('')
   const [active, setActive] = useState(true)
   const [imageUrl, setImageUrl] = useState('')
 
@@ -68,6 +70,7 @@ export default function AdminTempahan({
     setInstrBm(service.instructions_bm || '')
     setInstrEn(service.instructions_en || '')
     setBookingType(service.booking_type || 'custom')
+    setExternalLink(service.external_link || '')
     setActive(service.active)
     setImageUrl(service.image_url || '')
   }
@@ -81,6 +84,7 @@ export default function AdminTempahan({
     setInstrBm('')
     setInstrEn('')
     setBookingType('custom')
+    setExternalLink('')
     setActive(true)
     setImageUrl('')
   }
@@ -98,6 +102,7 @@ export default function AdminTempahan({
         instructions_bm: instrBm.trim(),
         instructions_en: instrEn.trim(),
         booking_type: bookingType,
+        external_link: externalLink.trim() || null,
         active,
         image_url: imageUrl.trim() || null,
       },
@@ -163,6 +168,10 @@ export default function AdminTempahan({
                   <option value="nametag">Tanda Nama / Name Tag</option>
                   <option value="custom">Lain-lain / Custom</option>
                 </select>
+              </Field>
+
+              <Field label={t('Pautan Tempahan (Google Form URL)', 'Booking Link (Google Form URL)')} hint={t('Tidak terpakai untuk Tempahan Bilik JPP', 'Not applicable for JPP Room Booking')}>
+                <input value={externalLink} onChange={(e) => setExternalLink(e.target.value)} placeholder="https://forms.google.com/..." />
               </Field>
 
               <Field label={t('URL Gambar (Pilihan)', 'Image URL (Optional)')}>

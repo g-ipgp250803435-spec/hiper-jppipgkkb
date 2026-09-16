@@ -417,6 +417,7 @@ export default function AdminPage() {
       instructions_bm: string
       instructions_en: string
       booking_type: string
+      external_link: string | null
       active: boolean
       image_url: string | null
     },
@@ -431,6 +432,7 @@ export default function AdminPage() {
         instructions_bm: form.instructions_bm || null,
         instructions_en: form.instructions_en || null,
         booking_type: form.booking_type,
+        external_link: form.external_link || null,
         active: form.active,
         image_url: form.image_url,
       }

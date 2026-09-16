@@ -353,30 +353,37 @@ export default function TempahanPage() {
           <div>
             <div className="services-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginTop: '16px' }}>
               {services.map((svc) => (
-                <Card key={svc.id} className="service-card-item">
-                  <div className="service-card-image-wrap" style={{ height: '140px', background: 'var(--maroon-dark)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--gold-primary)', marginBottom: '16px' }}>
-                    {svc.image_url ? (
-                      <img src={svc.image_url} alt={svc.title_bm} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px' }} />
-                    ) : (
-                      <Icon name={svc.booking_type === 'room_booking' ? 'calendar' : svc.booking_type === 'apparel' ? 'box' : 'user'} size={48} />
-                    )}
+                <Card key={svc.id} className="service-card-item" style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
+                  <div>
+                    <div className="service-card-image-wrap" style={{ height: '160px', width: '100%', background: 'var(--maroon-dark)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--gold-primary)', marginBottom: '16px', overflow: 'hidden' }}>
+                      {svc.image_url ? (
+                        <img src={svc.image_url} alt={svc.title_bm} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <Icon name={svc.booking_type === 'room_booking' ? 'calendar' : svc.booking_type === 'apparel' ? 'box' : 'user'} size={48} />
+                      )}
+                    </div>
+                    <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '8px', color: 'var(--ink)' }}>
+                      {language === 'bm' ? svc.title_bm : svc.title_en || svc.title_bm}
+                    </h3>
+                    <p style={{ color: 'var(--ink-muted)', fontSize: '14px', lineHeight: '1.5', marginBottom: '20px', minHeight: '60px', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                      {language === 'bm' ? svc.description_bm : svc.description_en || svc.description_bm}
+                    </p>
                   </div>
-                  <h3 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px' }}>
-                    {language === 'bm' ? svc.title_bm : svc.title_en || svc.title_bm}
-                  </h3>
-                  <p style={{ color: 'var(--ink-muted)', fontSize: '14px', lineHeight: '1.5', minHeight: '60px', marginBottom: '16px' }}>
-                    {language === 'bm' ? svc.description_bm : svc.description_en || svc.description_bm}
-                  </p>
-                  <div style={{ display: 'flex', gap: '8px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: 'auto' }}>
                     {svc.booking_type === 'room_booking' ? (
                       <Link className="button button-primary" to="/tempahan/bilik-jpp" style={{ width: '100%', justifyContent: 'center' }}>
                         <Icon name="calendar" size={18} />
-                        {t('Tempah Sekarang', 'Book Now')}
+                        {t('Buat Tempahan', 'Make Booking')}
                       </Link>
+                    ) : svc.external_link ? (
+                      <a href={svc.external_link} target="_blank" rel="noopener noreferrer" className="button button-primary" style={{ width: '100%', justifyContent: 'center' }}>
+                        <Icon name="external-link" size={18} />
+                        {t('Buat Tempahan', 'Make Booking')}
+                      </a>
                     ) : (
-                      <Button variant="secondary" style={{ width: '100%' }} onClick={() => setSelectedServiceDetail(svc)}>
-                        <Icon name="search" size={18} />
-                        {t('Lihat Butiran', 'View Details')}
+                      <Button variant="primary" style={{ width: '100%', justifyContent: 'center' }} onClick={() => setSelectedServiceDetail(svc)}>
+                        <Icon name="calendar" size={18} />
+                        {t('Buat Tempahan', 'Make Booking')}
                       </Button>
                     )}
                   </div>

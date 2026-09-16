@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Button, Card, EmptyState, Field, StatusBadge } from '../UI'
 import { Icon } from '../Icons'
 import { formatDate } from '../../lib/helpers'
+import { generateAndPrintPdfReport, type PdfReportItem } from '../../lib/pdfExport'
 import type { RequestStatus, RoomBooking } from '../../lib/types'
 
 interface AdminRoomBookingsProps {
@@ -27,6 +28,7 @@ export default function AdminRoomBookings({
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [dateFilter, setDateFilter] = useState('')
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
 
   const filteredBookings = useMemo(() => {
     return roomBookings.filter((item) => {
@@ -46,6 +48,34 @@ export default function AdminRoomBookings({
   return (
     <Card className="table-card" title={t('Pengurusan Tempahan Bilik JPP', 'JPP Room Booking Management')}>
       <div className="admin-v2-filter-toolbar">
+        {selectedIds.length > 0 && (
+          <Button
+            variant="secondary"
+            className="compact"
+            onClick={() => {
+              const selectedItems = roomBookings.filter((b) => selectedIds.includes(b.id))
+              const pdfItems: PdfReportItem[] = selectedItems.map((item) => ({
+                id: item.id,
+                title: `Laporan Tempahan Bilik JPP #${item.id.slice(0, 8)}`,
+                status: item.status,
+                details: [
+                  { label: 'Nama Pemohon', value: item.name },
+                  { label: 'Biro / Unit', value: item.bureau },
+                  { label: 'Tarikh Tempahan Bilik', value: formatDate(item.booking_date, language) },
+                  { label: 'Tujuan Tempahan', value: item.purpose },
+                  { label: 'Catatan Pemohon', value: item.remarks || '—' },
+                  { label: 'Nota Admin', value: item.admin_notes || '—' },
+                  { label: 'Tarikh Permohonan Dibuat', value: formatDate(item.created_at, language) },
+                ],
+              }))
+              generateAndPrintPdfReport('Laporan Tempahan Bilik JPP (Pukal)', pdfItems)
+            }}
+          >
+            <Icon name="download" size={16} />
+            {t(`Export Selected PDF (${selectedIds.length})`, `Export Selected PDF (${selectedIds.length})`)}
+          </Button>
+        )}
+
         <div className="admin-v2-search-wrap">
           <Icon name="search" size={18} className="admin-v2-search-icon" />
           <input
@@ -101,6 +131,16 @@ export default function AdminRoomBookings({
           <table>
             <thead>
               <tr>
+                <th style={{ width: '36px' }}>
+                  <input
+                    type="checkbox"
+                    checked={filteredBookings.length > 0 && selectedIds.length === filteredBookings.length}
+                    onChange={(e) => {
+                      if (e.target.checked) setSelectedIds(filteredBookings.map((b) => b.id))
+                      else setSelectedIds([])
+                    }}
+                  />
+                </th>
                 <th>{t('Tarikh & Pemohon', 'Date & Applicant')}</th>
                 <th>{t('Biro & Tujuan', 'Bureau & Purpose')}</th>
                 <th>{t('Catatan Pemohon', 'Applicant Remarks')}</th>
@@ -111,6 +151,16 @@ export default function AdminRoomBookings({
             <tbody>
               {filteredBookings.map((item) => (
                 <tr key={item.id}>
+                  <td>
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.includes(item.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) setSelectedIds([...selectedIds, item.id])
+                        else setSelectedIds(selectedIds.filter((id) => id !== item.id))
+                      }}
+                    />
+                  </td>
                   <td>
                     <div style={{ marginBottom: '4px' }}>
                       <Field label={t('Tarikh Tempahan', 'Booking Date')}>
@@ -174,6 +224,32 @@ export default function AdminRoomBookings({
                       <Button disabled={busy} onClick={() => void onUpdateRoomBooking(item)}>
                         <Icon name="save" size={16} />
                         {t('Simpan', 'Save')}
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        className="compact"
+                        onClick={() => {
+                          const pdfItems: PdfReportItem[] = [
+                            {
+                              id: item.id,
+                              title: `Laporan Tempahan Bilik JPP #${item.id.slice(0, 8)}`,
+                              status: item.status,
+                              details: [
+                                { label: 'Nama Pemohon', value: item.name },
+                                { label: 'Biro / Unit', value: item.bureau },
+                                { label: 'Tarikh Tempahan Bilik', value: formatDate(item.booking_date, language) },
+                                { label: 'Tujuan Tempahan', value: item.purpose },
+                                { label: 'Catatan Pemohon', value: item.remarks || '—' },
+                                { label: 'Nota Admin', value: item.admin_notes || '—' },
+                                { label: 'Tarikh Permohonan Dibuat', value: formatDate(item.created_at, language) },
+                              ],
+                            },
+                          ]
+                          generateAndPrintPdfReport(`Tempahan Bilik JPP #${item.id.slice(0, 8)}`, pdfItems)
+                        }}
+                      >
+                        <Icon name="download" size={15} />
+                        {t('Export PDF', 'Export PDF')}
                       </Button>
                       <Button variant="ghost" className="compact danger" disabled={busy} onClick={() => void onDeleteRoomBooking(item.id)}>
                         <Icon name="trash" size={16} />

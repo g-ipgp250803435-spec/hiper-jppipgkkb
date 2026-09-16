@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Button, Card, EmptyState, Field, StatusBadge } from '../UI'
 import { Icon } from '../Icons'
 import { formatDate, formatMoney, openPrivateFile } from '../../lib/helpers'
+import { generateAndPrintPdfReport, type PdfReportItem } from '../../lib/pdfExport'
 import type { KpkApplication, KpkBureau, RequestStatus } from '../../lib/types'
 
 interface AdminKpkProps {
@@ -34,6 +35,7 @@ export default function AdminKpk({
   const [subTab, setSubTab] = useState<'applications' | 'bureaus'>('applications')
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
 
   // Bureau Form State
   const [editingBureauId, setEditingBureauId] = useState<string | null>(null)
@@ -100,6 +102,36 @@ export default function AdminKpk({
         <Card className="table-card" title={t('Pengurusan Permohonan KPK+', 'KPK+ Loan Application Management')}>
           {applications.length > 0 && (
             <div className="admin-v2-filter-toolbar">
+              {selectedIds.length > 0 && (
+                <Button
+                  variant="secondary"
+                  className="compact"
+                  onClick={() => {
+                    const selectedItems = applications.filter((k) => selectedIds.includes(k.id))
+                    const pdfItems: PdfReportItem[] = selectedItems.map((item) => ({
+                      id: item.id,
+                      title: `Laporan Permohonan KPK+ #${item.id.slice(0, 8)}`,
+                      status: item.status,
+                      details: [
+                        { label: 'Nama Kelab / Persatuan', value: item.club_name },
+                        { label: 'Nama Pemohon', value: item.applicant_name },
+                        { label: 'No. Telefon', value: item.phone },
+                        { label: 'Jabatan / Unit', value: item.department_unit },
+                        { label: 'Biro Angkat', value: item.kpk_bureaus?.name || 'Biro Khas' },
+                        { label: 'Amaun Pinjaman (RM)', value: formatMoney(item.loan_amount) },
+                        { label: 'Tujuan Pinjaman', value: item.purpose },
+                        { label: 'Nota Admin', value: item.admin_notes || '—' },
+                        { label: 'Tarikh Permohonan', value: formatDate(item.created_at, language) },
+                      ],
+                    }))
+                    generateAndPrintPdfReport('Laporan Permohonan KPK+ (Pukal)', pdfItems)
+                  }}
+                >
+                  <Icon name="download" size={16} />
+                  {t(`Export Selected PDF (${selectedIds.length})`, `Export Selected PDF (${selectedIds.length})`)}
+                </Button>
+              )}
+
               <div className="admin-v2-search-wrap">
                 <Icon name="search" size={18} className="admin-v2-search-icon" />
                 <input
@@ -145,6 +177,16 @@ export default function AdminKpk({
               <table>
                 <thead>
                   <tr>
+                    <th style={{ width: '36px' }}>
+                      <input
+                        type="checkbox"
+                        checked={filteredApplications.length > 0 && selectedIds.length === filteredApplications.length}
+                        onChange={(e) => {
+                          if (e.target.checked) setSelectedIds(filteredApplications.map((k) => k.id))
+                          else setSelectedIds([])
+                        }}
+                      />
+                    </th>
                     <th>{t('Kelab / Pemohon', 'Club / Applicant')}</th>
                     <th>{t('Biro & Amaun', 'Bureau & Amount')}</th>
                     <th>{t('Tujuan & Dokumen', 'Purpose & Document')}</th>
@@ -157,6 +199,16 @@ export default function AdminKpk({
                     const bureau = item.kpk_bureaus || bureaus.find((b) => b.id === item.bureau_id)
                     return (
                       <tr key={item.id}>
+                        <td>
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.includes(item.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) setSelectedIds([...selectedIds, item.id])
+                              else setSelectedIds(selectedIds.filter((id) => id !== item.id))
+                            }}
+                          />
+                        </td>
                         <td>
                           <strong style={{ fontSize: '15px' }}>{item.club_name}</strong>
                           <small style={{ display: 'block', marginTop: '4px', lineHeight: '1.4' }}>
@@ -219,10 +271,38 @@ export default function AdminKpk({
                           />
                         </td>
                         <td>
-                          <div className="admin-action-buttons">
+                          <div className="admin-action-buttons" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                             <Button disabled={busy} onClick={() => void onUpdateApplication(item)}>
                               <Icon name="save" size={17} />
                               {t('Simpan', 'Save')}
+                            </Button>
+                            <Button
+                              variant="secondary"
+                              className="compact"
+                              onClick={() => {
+                                const pdfItems: PdfReportItem[] = [
+                                  {
+                                    id: item.id,
+                                    title: `Laporan Permohonan KPK+ #${item.id.slice(0, 8)}`,
+                                    status: item.status,
+                                    details: [
+                                      { label: 'Nama Kelab / Persatuan', value: item.club_name },
+                                      { label: 'Nama Pemohon', value: item.applicant_name },
+                                      { label: 'No. Telefon', value: item.phone },
+                                      { label: 'Jabatan / Unit', value: item.department_unit },
+                                      { label: 'Biro Angkat', value: bureau?.name || 'Biro Khas' },
+                                      { label: 'Amaun Pinjaman (RM)', value: formatMoney(item.loan_amount) },
+                                      { label: 'Tujuan Pinjaman', value: item.purpose },
+                                      { label: 'Nota Admin', value: item.admin_notes || '—' },
+                                      { label: 'Tarikh Permohonan', value: formatDate(item.created_at, language) },
+                                    ],
+                                  },
+                                ]
+                                generateAndPrintPdfReport(`Permohonan KPK+ #${item.id.slice(0, 8)}`, pdfItems)
+                              }}
+                            >
+                              <Icon name="download" size={15} />
+                              {t('Export PDF', 'Export PDF')}
                             </Button>
                           </div>
                         </td>

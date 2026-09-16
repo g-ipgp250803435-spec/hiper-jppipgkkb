@@ -32,14 +32,16 @@ export function Card({
   className = '',
   title,
   action,
+  style,
 }: {
   children: ReactNode
   className?: string
   title?: string
   action?: ReactNode
+  style?: React.CSSProperties
 }) {
   return (
-    <section className={`card ${className}`.trim()}>
+    <section className={`card ${className}`.trim()} style={style}>
       {(title || action) && (
         <div className="card-header">
           {title && <h2>{title}</h2>}

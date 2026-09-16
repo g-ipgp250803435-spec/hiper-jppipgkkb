@@ -49,6 +49,7 @@ export default function App() {
           <Route path="/e-aset" element={<AssetsPage />} />
           <Route path="/tabung-jumaat" element={<DonationsPage />} />
           <Route path="/pengumuman" element={<AnnouncementsPage />} />
+          <Route path="/organisasi" element={<OfficePage />} />
           <Route path="/kenali-pejabat" element={<OfficePage />} />
           <Route path="/page/:slug" element={<DynamicPage />} />
           <Route path="/dasar-privasi" element={<DynamicPage />} />
