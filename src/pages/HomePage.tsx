@@ -156,13 +156,13 @@ function RoomBookingCalendarSection() {
 
             <div className="room-calendar-legend">
               <span className="legend-item available">
-                <span className="legend-symbol">✓</span> {t('Sedia (Available)', 'Available')}
+                <span className="legend-symbol">✓</span> {t('Tersedia', 'Available')}
               </span>
               <span className="legend-item pending">
-                <span className="legend-symbol">◐</span> {t('Menunggu (Pending)', 'Pending')}
+                <span className="legend-symbol">◐</span> {t('Menunggu', 'Pending')}
               </span>
               <span className="legend-item booked">
-                <span className="legend-symbol">●</span> {t('Ditempah (Booked)', 'Booked')}
+                <span className="legend-symbol">●</span> {t('Ditempah', 'Booked')}
               </span>
             </div>
           </div>
