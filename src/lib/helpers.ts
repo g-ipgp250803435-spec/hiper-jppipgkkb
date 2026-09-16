@@ -34,6 +34,20 @@ export const formatDateTime = (value: string | null | undefined, language: Langu
   }).format(date)
 }
 
+export const formatTimeAgo = (value: string | null | undefined, language: Language = 'bm') => {
+  if (!value) return '—'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '—'
+  const diffMinutes = Math.floor((Date.now() - date.getTime()) / 60000)
+  if (diffMinutes < 1) return language === 'bm' ? 'Baru sahaja' : 'Just now'
+  if (diffMinutes < 60) return language === 'bm' ? `${diffMinutes} minit lalu` : `${diffMinutes} mins ago`
+  const diffHours = Math.floor(diffMinutes / 60)
+  if (diffHours < 24) return language === 'bm' ? `${diffHours} jam lalu` : `${diffHours} hours ago`
+  const diffDays = Math.floor(diffHours / 24)
+  if (diffDays < 7) return language === 'bm' ? `${diffDays} hari lalu` : `${diffDays} days ago`
+  return formatDate(value, language)
+}
+
 export const getStatusLabel = (status: RequestStatus | DonationStatus, language: Language) => {
   const labels: Record<string, [string, string]> = {
     pending: ['Menunggu', 'Pending'],
