@@ -5,10 +5,10 @@ import { useSiteSettings } from '../contexts/SiteSettingsContext'
 import { supabase } from '../lib/supabase'
 import { isSupabaseConfigured } from '../lib/config'
 import { localise } from '../lib/siteSettings'
-import type { Announcement, FundSummary } from '../lib/types'
+import type { Announcement } from '../lib/types'
 import { Card, PageHeader } from '../components/UI'
 import { Icon } from '../components/Icons'
-import { formatDate, formatMoney } from '../lib/helpers'
+import { formatDate } from '../lib/helpers'
 
 const sampleAnnouncements: Announcement[] = [
   {
@@ -25,75 +25,158 @@ const sampleAnnouncements: Announcement[] = [
   },
 ]
 
-function HomepageMiniCalendarCard({ language, t }: { language: 'bm' | 'en'; t: (bm: string, en: string) => string }) {
-  const [bookedDates, setBookedDates] = useState<Set<string>>(new Set())
+type BookingStatus = 'available' | 'booked' | 'pending'
+
+function RoomBookingCalendarSection() {
+  const { language, t } = useUi()
+  const [bookingMap, setBookingMap] = useState<Record<string, BookingStatus>>({})
 
   useEffect(() => {
-    if (!isSupabaseConfigured) return
-    const fetchBookings = async () => {
+    if (!isSupabaseConfigured) {
+      // Mock calendar status for local offline testing
+      const now = new Date()
+      const y = now.getFullYear()
+      const m = String(now.getMonth() + 1).padStart(2, '0')
+      setBookingMap({
+        [`${y}-${m}-02`]: 'booked',
+        [`${y}-${m}-05`]: 'pending',
+        [`${y}-${m}-12`]: 'booked',
+        [`${y}-${m}-18`]: 'pending',
+        [`${y}-${m}-22`]: 'booked',
+      })
+      return
+    }
+
+    const fetchRoomBookings = async () => {
       try {
         const { data, error } = await supabase
           .from('room_bookings')
           .select('booking_date, status')
           .not('status', 'in', '("rejected","cancelled")')
+
         if (!error && data) {
-          const dates = new Set(data.map((b) => b.booking_date))
-          setBookedDates(dates)
+          const map: Record<string, BookingStatus> = {}
+          data.forEach((item: { booking_date: string; status: string }) => {
+            if (item.status === 'pending') {
+              map[item.booking_date] = 'pending'
+            } else if (item.status === 'approved' || item.status === 'completed') {
+              map[item.booking_date] = 'booked'
+            }
+          })
+          setBookingMap(map)
         }
       } catch (err) {
-        console.warn('Failed to load room bookings for homepage mini calendar:', err)
+        console.warn('Failed to fetch room bookings preview for homepage:', err)
       }
     }
-    void fetchBookings()
+
+    void fetchRoomBookings()
   }, [])
 
   const now = new Date()
   const year = now.getFullYear()
   const month = now.getMonth()
 
+  const firstDayOfMonth = new Date(year, month, 1).getDay()
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+
   const monthNamesBm = ['Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun', 'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember']
   const monthNamesEn = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
   const monthLabel = language === 'bm' ? `${monthNamesBm[month]} ${year}` : `${monthNamesEn[month]} ${year}`
 
-  const daysInMonth = new Date(year, month + 1, 0).getDate()
-  const previewDaysCount = Math.min(daysInMonth, 7)
-  const sampleDays = []
+  const daysGrid = []
+  for (let i = 0; i < firstDayOfMonth; i++) {
+    daysGrid.push(<div key={`blank-${i}`} className="room-cal-day blank" />)
+  }
 
-  for (let d = 1; d <= previewDaysCount; d++) {
+  for (let d = 1; d <= daysInMonth; d++) {
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
-    const isBooked = bookedDates.has(dateStr)
-    sampleDays.push({ day: d, isBooked })
+    const status = bookingMap[dateStr] || 'available'
+
+    daysGrid.push(
+      <div key={`day-${d}`} className={`room-cal-day ${status}`} title={status === 'booked' ? 'Booked' : status === 'pending' ? 'Pending' : 'Available'}>
+        <span className="room-cal-num">{d}</span>
+        <span className={`room-cal-symbol symbol-${status}`}>
+          {status === 'available' ? '✓' : status === 'booked' ? '●' : '◐'}
+        </span>
+      </div>
+    )
   }
 
   return (
-    <div className="premium-service-card mini-calendar-card">
-      <span className="premium-service-icon"><Icon name="calendar" size={24} /></span>
-      <span className="premium-service-eyebrow">{t('TEMPAHAN BILIK', 'ROOM BOOKING')}</span>
-      <h2>{t('Tempahan Bilik JPP', 'JPP Room Booking')}</h2>
-      <p style={{ marginBottom: '12px' }}>{t('Semak ketersediaan bilik dan tempah bilik JPP.', 'Check room availability and reserve the JPP room.')}</p>
+    <section className="section room-booking-showcase-section">
+      <div className="container">
+        <PageHeader
+          eyebrow={t('TEMPAHAN BILIK JPP', 'JPP ROOM BOOKING')}
+          title={t('Tempahan Bilik JPP', 'JPP Room Booking')}
+          description={t('Semak ketersediaan bilik JPP dan buat tempahan dengan mudah melalui sistem kalendar HiPER.', 'Check JPP room availability and book easily through the HiPER calendar system.')}
+        />
 
-      <div className="mini-calendar-preview">
-        <div className="mini-calendar-month">{monthLabel}</div>
-        <div className="mini-calendar-grid">
-          <div className="mini-calendar-days-header">
-            <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span>
+        <div className="room-booking-showcase-grid">
+          {/* Left Side: Information Card */}
+          <div className="room-booking-info-card">
+            <div className="room-booking-info-content">
+              <span className="room-booking-card-icon"><Icon name="calendar" size={28} /></span>
+              <h2>{t('Tempahan Bilik JPP', 'JPP Room Booking')}</h2>
+              <p>
+                {t(
+                  'Gunakan kemudahan bilik JPP untuk mesyuarat, perbincangan, program, dan aktiviti rasmi.',
+                  'Utilise the JPP room facilities for official meetings, discussions, programs, and activities.'
+                )}
+              </p>
+            </div>
+            <Link to="/tempahan/bilik-jpp" className="button button-primary room-booking-cta-btn">
+              <Icon name="calendar" size={18} />
+              {t('Semak Kalendar', 'Check Calendar')}
+            </Link>
           </div>
-          <div className="mini-calendar-days-row">
-            {sampleDays.map(({ day, isBooked }) => (
-              <div key={day} className={`mini-calendar-cell ${isBooked ? 'booked' : 'available'}`}>
-                <span className="mini-day-num">{day}</span>
-                <span className={`mini-day-status ${isBooked ? 'booked-dot' : 'avail-check'}`}>{isBooked ? '●' : '✓'}</span>
-              </div>
-            ))}
+
+          {/* Right Side: Compact Calendar Preview */}
+          <div className="room-booking-calendar-card">
+            <div className="room-calendar-header">
+              <span className="room-calendar-month-title">{monthLabel}</span>
+              <span className="room-calendar-privacy-badge">
+                <Icon name="shield" size={14} /> {t('Status Sahaja', 'Status Only')}
+              </span>
+            </div>
+
+            <div className="room-calendar-weekdays">
+              <span>Aha</span>
+              <span>Isn</span>
+              <span>Sel</span>
+              <span>Rab</span>
+              <span>Kha</span>
+              <span>Jum</span>
+              <span>Sab</span>
+            </div>
+
+            <div className="room-calendar-days-grid">
+              {daysGrid}
+            </div>
+
+            <div className="room-calendar-legend">
+              <span className="legend-item available">
+                <span className="legend-symbol">✓</span> {t('Sedia (Available)', 'Available')}
+              </span>
+              <span className="legend-item pending">
+                <span className="legend-symbol">◐</span> {t('Menunggu (Pending)', 'Pending')}
+              </span>
+              <span className="legend-item booked">
+                <span className="legend-symbol">●</span> {t('Ditempah (Booked)', 'Booked')}
+              </span>
+            </div>
+          </div>
+
+          {/* Mobile Only Action Button */}
+          <div className="room-booking-mobile-cta">
+            <Link to="/tempahan/bilik-jpp" className="button button-primary room-booking-cta-btn">
+              <Icon name="calendar" size={18} />
+              {t('Semak Kalendar', 'Check Calendar')}
+            </Link>
           </div>
         </div>
       </div>
-
-      <Link to="/tempahan/bilik-jpp" className="button button-primary button-semak-kalendar" style={{ width: '100%', marginTop: '16px', justifyContent: 'center' }}>
-        <Icon name="calendar" size={17} />
-        {t('Semak Kalendar', 'Check Calendar')}
-      </Link>
-    </div>
+    </section>
   )
 }
 
@@ -101,36 +184,31 @@ export default function HomePage() {
   const { language, t } = useUi()
   const { settings } = useSiteSettings()
   const [announcements, setAnnouncements] = useState<Announcement[]>(isSupabaseConfigured ? [] : sampleAnnouncements)
-  const [fund, setFund] = useState<FundSummary>({ total_verified: 0, total_disbursed: 0, balance: 0 })
 
   useEffect(() => {
     if (!isSupabaseConfigured) return
-    void Promise.all([
-      supabase
-        .from('announcements')
-        .select('*')
-        .eq('published', true)
-        .order('pinned', { ascending: false })
-        .order('created_at', { ascending: false })
-        .limit(3),
-      supabase.rpc('get_public_fund_summary'),
-    ]).then(([announcementResult, fundResult]) => {
-      if (announcementResult.error) {
-        console.warn('HiPER announcements could not be loaded:', announcementResult.error.message)
+    const fetchAnnouncements = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('announcements')
+          .select('*')
+          .eq('published', true)
+          .order('pinned', { ascending: false })
+          .order('created_at', { ascending: false })
+          .limit(3)
+
+        if (error) {
+          console.warn('HiPER announcements could not be loaded:', error.message)
+          setAnnouncements([])
+        } else {
+          setAnnouncements((data as Announcement[]) || [])
+        }
+      } catch (err) {
+        console.warn('HiPER homepage data request failed:', err)
         setAnnouncements([])
-      } else {
-        setAnnouncements((announcementResult.data as Announcement[]) || [])
       }
-      if (fundResult.error) {
-        console.warn('HiPER fund summary could not be loaded:', fundResult.error.message)
-        return
-      }
-      const summary = Array.isArray(fundResult.data) ? fundResult.data[0] : fundResult.data
-      if (summary) setFund(summary as FundSummary)
-    }).catch((error) => {
-      console.warn('HiPER homepage data request failed:', error)
-      setAnnouncements([])
-    })
+    }
+    void fetchAnnouncements()
   }, [])
 
   const services = settings.home.services
@@ -173,61 +251,20 @@ export default function HomePage() {
             description={localise(settings.home.servicesDescription, language)}
           />
           <div className="premium-service-grid">
-            {services.map((service) => {
-              if (service.href === '/tempahan/bilik-jpp' || service.href === '/tempahan') {
-                return <HomepageMiniCalendarCard key={service.href} language={language} t={t} />
-              }
-              return (
-                <Link to={service.href} className="premium-service-card" key={service.href}>
-                  <span className="premium-service-icon"><Icon name={service.icon} size={24} /></span>
-                  <span className="premium-service-eyebrow">{localise(service.eyebrow, language)}</span>
-                  <h2>{localise(service.title, language)}</h2>
-                  <p>{localise(service.description, language)}</p>
-                  <span className="premium-card-link">{t('Buka perkhidmatan', 'Open service')} <Icon name="chevron-right" size={17} /></span>
-                </Link>
-              )
-            })}
+            {services.map((service) => (
+              <Link to={service.href} className="premium-service-card" key={service.href}>
+                <span className="premium-service-icon"><Icon name={service.icon} size={24} /></span>
+                <span className="premium-service-eyebrow">{localise(service.eyebrow, language)}</span>
+                <h2>{localise(service.title, language)}</h2>
+                <p>{localise(service.description, language)}</p>
+                <span className="premium-card-link">{t('Buka perkhidmatan', 'Open service')} <Icon name="chevron-right" size={17} /></span>
+              </Link>
+            ))}
           </div>
         </div>
       </section>
 
-      <section className="section fund-showcase-section">
-        <div className="container">
-          <PageHeader
-            eyebrow={localise(settings.home.transparencyEyebrow, language)}
-            title={localise(settings.home.transparencyTitle, language)}
-          />
-          <div className="fund-showcase-grid">
-            <div className="fund-feature-card">
-              <span>{t('BAKI SEMASA', 'CURRENT BALANCE')}</span>
-              <strong>{formatMoney(fund.balance)}</strong>
-              <p>{t('Dikemas kini daripada kutipan disahkan dan rekod agihan.', 'Updated from verified collections and distribution records.')}</p>
-              <div className="fund-progress"><span style={{ width: fund.total_verified > 0 ? `${Math.min(100, Math.max(8, (fund.balance / fund.total_verified) * 100))}%` : '0%' }} /></div>
-              <small>{t('Rekod kewangan dipaparkan secara telus', 'Financial records are displayed transparently')}</small>
-            </div>
-            <div className="fund-metric-card">
-              <Icon name="chart" size={22} />
-              <span>{t('KUTIPAN · DISAHKAN', 'COLLECTIONS · VERIFIED')}</span>
-              <strong>{formatMoney(fund.total_verified)}</strong>
-            </div>
-            <div className="fund-metric-card">
-              <Icon name="wallet" size={22} />
-              <span>{t('AGIHAN · DIREKODKAN', 'DISTRIBUTIONS · RECORDED')}</span>
-              <strong>{formatMoney(fund.total_disbursed)}</strong>
-            </div>
-            <div className="fund-metric-card">
-              <Icon name="shield" size={22} />
-              <span>{t('STATUS REKOD', 'RECORD STATUS')}</span>
-              <strong className="fund-status-value">{t('TELUS', 'TRANSPARENT')}</strong>
-            </div>
-          </div>
-          <div className="section-action">
-            <Link className="button button-secondary" to="/tabung-jumaat">
-              {t('Lihat ketelusan awam', 'View public transparency')} <Icon name="chevron-right" size={17} />
-            </Link>
-          </div>
-        </div>
-      </section>
+      <RoomBookingCalendarSection />
 
       <section className="section premium-announcements-section">
         <div className="container">

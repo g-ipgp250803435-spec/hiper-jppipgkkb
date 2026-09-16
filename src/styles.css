@@ -366,70 +366,202 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--g
 .premium-service-card p { color: var(--ink-soft); }
 .premium-card-link { display: inline-flex; align-items: center; gap: 7px; margin-top: auto; color: var(--gold-700); font-weight: 800; }
 
-/* Homepage Mini Calendar Preview Styles */
-.mini-calendar-card {
+/* Homepage Tempahan Bilik JPP Calendar Showcase Section */
+.room-booking-showcase-section {
+  background: var(--surface-muted);
+}
+.room-booking-showcase-grid {
+  display: grid;
+  grid-template-columns: minmax(300px, 0.9fr) minmax(360px, 1.1fr);
+  gap: 28px;
+  align-items: stretch;
+}
+.room-booking-info-card {
+  padding: clamp(28px, 4vw, 36px);
+  background: linear-gradient(135deg, var(--maroon-950), #170307 70%, #4d3b35 140%);
+  color: #fff;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+}
+.room-booking-info-card::after {
+  content: "";
+  position: absolute;
+  width: 210px;
+  height: 360px;
+  right: -140px;
+  top: -80px;
+  transform: rotate(20deg);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15));
+  filter: blur(12px);
+}
+.room-booking-info-content {
+  position: relative;
+  z-index: 1;
+}
+.room-booking-card-icon {
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 24px;
+  color: var(--gold-300);
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  border: 1px solid rgba(231, 207, 140, 0.3);
+}
+.room-booking-info-card h2 {
+  font-size: clamp(1.8rem, 3vw, 2.3rem);
+  color: #fff;
+  margin-bottom: 14px;
+}
+.room-booking-info-card p {
+  color: #e7dddd;
+  font-size: 1rem;
+  line-height: 1.6;
+  margin: 0;
+}
+.room-booking-cta-btn {
+  position: relative;
+  z-index: 1;
+  margin-top: 28px;
+  width: fit-content;
+}
+
+.room-booking-calendar-card {
+  padding: clamp(24px, 3.5vw, 32px);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
   display: flex;
   flex-direction: column;
 }
-.mini-calendar-preview {
-  margin-top: 6px;
-  padding: 10px;
-  background: var(--surface-muted);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  width: 100%;
+.room-calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
 }
-.mini-calendar-month {
-  font-weight: 800;
-  font-size: .78rem;
+.room-calendar-month-title {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.35rem;
+  font-weight: 700;
   color: var(--gold-700);
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  margin-bottom: 8px;
-  text-align: center;
 }
-.mini-calendar-days-header {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
-  text-align: center;
-  font-size: .68rem;
-  font-weight: 800;
+.room-calendar-privacy-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background: var(--surface-muted);
+  border-radius: 999px;
   color: var(--ink-soft);
-  margin-bottom: 6px;
+  font-size: 0.75rem;
+  font-weight: 750;
 }
-.mini-calendar-days-row {
+.room-calendar-weekdays {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
+  gap: 6px;
   text-align: center;
+  font-weight: 800;
+  font-size: 0.76rem;
+  color: var(--gold-700);
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
-.mini-calendar-cell {
+.room-calendar-days-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  margin-bottom: 20px;
+}
+.room-cal-day {
+  min-height: 52px;
+  padding: 6px 2px;
+  background: var(--canvas);
+  border: 1px solid var(--line);
+  border-radius: 8px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 4px 2px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  font-size: .75rem;
+  justify-content: space-between;
+  transition: var(--transition);
 }
-.mini-day-num {
+.room-cal-day.blank {
+  background: transparent;
+  border-color: transparent;
+}
+.room-cal-num {
+  font-size: 0.8rem;
   font-weight: 700;
-  font-size: .72rem;
+  color: var(--ink);
   line-height: 1;
 }
-.mini-day-status {
-  font-size: .68rem;
-  margin-top: 2px;
+.room-cal-symbol {
+  font-size: 0.72rem;
   line-height: 1;
+  font-weight: 800;
 }
-.mini-calendar-cell.booked .mini-day-status {
-  color: var(--danger);
+.symbol-available { color: var(--success); }
+.symbol-booked { color: var(--danger); }
+.symbol-pending { color: var(--warning); }
+
+.room-calendar-legend {
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
 }
-.mini-calendar-cell.available .mini-day-status {
-  color: var(--success);
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 650;
+}
+.legend-symbol {
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+.legend-item.available .legend-symbol { color: var(--success); }
+.legend-item.pending .legend-symbol { color: var(--warning); }
+.legend-item.booked .legend-symbol { color: var(--danger); }
+
+.room-booking-mobile-cta {
+  display: none;
+}
+
+@media (max-width: 980px) {
+  .room-booking-showcase-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .room-booking-info-card .room-booking-cta-btn {
+    display: none;
+  }
+  .room-booking-mobile-cta {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+  }
+  .room-booking-mobile-cta .room-booking-cta-btn {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 /* Fund cards */
