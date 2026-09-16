@@ -2,6 +2,7 @@ import { useMemo, useState, type FormEvent } from 'react'
 import { Button, Card, EmptyState, Field, StatusBadge } from '../UI'
 import { Icon } from '../Icons'
 import { formatDate } from '../../lib/helpers'
+import { generateAndPrintPdfReport, type PdfReportItem } from '../../lib/pdfExport'
 import type { AssetApplication, AssetItem, RequestStatus } from '../../lib/types'
 
 interface AdminAssetsProps {
@@ -51,6 +52,7 @@ export default function AdminAssets({
 }: AdminAssetsProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
 
   const [assetForm, setAssetForm] = useState(initialAsset)
   const [assetImage, setAssetImage] = useState<File | null>(null)
@@ -213,6 +215,36 @@ export default function AdminAssets({
     <Card className="table-card" title={t('Semakan permohonan e-Aset', 'Review e-Asset requests')}>
       {assetRequests.length > 0 && (
         <div className="admin-v2-filter-toolbar">
+          {selectedIds.length > 0 && (
+            <Button
+              variant="secondary"
+              className="compact"
+              onClick={() => {
+                const selectedItems = assetRequests.filter((a) => selectedIds.includes(a.id))
+                const pdfItems: PdfReportItem[] = selectedItems.map((item) => ({
+                  id: item.id,
+                  title: `Laporan Permohonan e-Aset #${item.id.slice(0, 8)}`,
+                  status: item.status,
+                  details: [
+                    { label: 'Nama Pemohon', value: item.applicant_name },
+                    { label: 'Jabatan / Unit', value: item.department_unit || item.class_name },
+                    { label: 'No. Telefon', value: item.phone },
+                    { label: 'Aset Dipinjam', value: `${item.asset_items?.name_bm || 'Aset'} (x${item.quantity})` },
+                    { label: 'Tarikh Pinjam', value: formatDate(item.borrow_date, language) },
+                    { label: 'Tarikh Pulang', value: formatDate(item.return_date, language) },
+                    { label: 'Tujuan Pinjaman', value: item.purpose },
+                    { label: 'Persetujuan Aku Janji', value: item.aku_janji_agreed ? 'Bersetuju' : 'Tidak' },
+                    { label: 'Nota Admin', value: item.admin_notes || '—' },
+                  ],
+                }))
+                generateAndPrintPdfReport('Laporan Permohonan e-Aset (Pukal)', pdfItems)
+              }}
+            >
+              <Icon name="download" size={16} />
+              {t(`Export Selected PDF (${selectedIds.length})`, `Export Selected PDF (${selectedIds.length})`)}
+            </Button>
+          )}
+
           <div className="admin-v2-search-wrap">
             <Icon name="search" size={18} className="admin-v2-search-icon" />
             <input
@@ -258,6 +290,16 @@ export default function AdminAssets({
           <table>
             <thead>
               <tr>
+                <th style={{ width: '36px' }}>
+                  <input
+                    type="checkbox"
+                    checked={filteredAssetRequests.length > 0 && selectedIds.length === filteredAssetRequests.length}
+                    onChange={(e) => {
+                      if (e.target.checked) setSelectedIds(filteredAssetRequests.map((a) => a.id))
+                      else setSelectedIds([])
+                    }}
+                  />
+                </th>
                 <th>{t('Pemohon', 'Applicant')}</th>
                 <th>{t('Aset & tempoh', 'Asset & period')}</th>
                 <th>{t('Status', 'Status')}</th>
@@ -268,6 +310,16 @@ export default function AdminAssets({
             <tbody>
               {filteredAssetRequests.map((item) => (
                 <tr key={item.id}>
+                  <td>
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.includes(item.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) setSelectedIds([...selectedIds, item.id])
+                        else setSelectedIds(selectedIds.filter((id) => id !== item.id))
+                      }}
+                    />
+                  </td>
                   <td>
                     <strong>{item.applicant_name}</strong>
                     <small style={{ display: 'block', marginTop: '4px', lineHeight: '1.4' }}>
@@ -327,10 +379,38 @@ export default function AdminAssets({
                     </label>
                   </td>
                   <td>
-                    <div className="admin-action-buttons">
+                    <div className="admin-action-buttons" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                       <Button disabled={busy} onClick={() => void onUpdateAssetRequest(item)}>
                         <Icon name="save" size={17} />
                         {t('Simpan', 'Save')}
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        className="compact"
+                        onClick={() => {
+                          const pdfItems: PdfReportItem[] = [
+                            {
+                              id: item.id,
+                              title: `Laporan Permohonan e-Aset #${item.id.slice(0, 8)}`,
+                              status: item.status,
+                              details: [
+                                { label: 'Nama Pemohon', value: item.applicant_name },
+                                { label: 'Jabatan / Unit', value: item.department_unit || item.class_name },
+                                { label: 'No. Telefon', value: item.phone },
+                                { label: 'Aset Dipinjam', value: `${item.asset_items?.name_bm || 'Aset'} (x${item.quantity})` },
+                                { label: 'Tarikh Pinjam', value: formatDate(item.borrow_date, language) },
+                                { label: 'Tarikh Pulang', value: formatDate(item.return_date, language) },
+                                { label: 'Tujuan Pinjaman', value: item.purpose },
+                                { label: 'Persetujuan Aku Janji', value: item.aku_janji_agreed ? 'Bersetuju' : 'Tidak' },
+                                { label: 'Nota Admin', value: item.admin_notes || '—' },
+                              ],
+                            },
+                          ]
+                          generateAndPrintPdfReport(`Permohonan e-Aset #${item.id.slice(0, 8)}`, pdfItems)
+                        }}
+                      >
+                        <Icon name="download" size={15} />
+                        {t('Export PDF', 'Export PDF')}
                       </Button>
                     </div>
                   </td>

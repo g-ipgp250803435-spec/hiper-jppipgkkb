@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Button, Card, EmptyState, StatusBadge } from '../UI'
 import { Icon } from '../Icons'
 import { formatDate, formatMoney, openPrivateFile } from '../../lib/helpers'
+import { generateAndPrintPdfReport, type PdfReportItem } from '../../lib/pdfExport'
 import type { IkesApplication, RequestStatus } from '../../lib/types'
 
 interface AdminIkesProps {
@@ -25,6 +26,7 @@ export default function AdminIkes({
 }: AdminIkesProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
 
   const filteredIkes = useMemo(() => {
     return ikes.filter((item) => {
@@ -46,6 +48,35 @@ export default function AdminIkes({
     <Card className="table-card" title={t('Semakan permohonan iKES', 'Review iKES applications')}>
       {ikes.length > 0 && (
         <div className="admin-v2-filter-toolbar">
+          {selectedIds.length > 0 && (
+            <Button
+              variant="secondary"
+              className="compact"
+              onClick={() => {
+                const selectedItems = ikes.filter((i) => selectedIds.includes(i.id))
+                const pdfItems: PdfReportItem[] = selectedItems.map((item) => ({
+                  id: item.id,
+                  title: `Laporan Permohonan iKES #${item.id.slice(0, 8)}`,
+                  status: item.status,
+                  details: [
+                    { label: 'Nama Pemohon', value: item.applicant_name },
+                    { label: 'Kelas / Unit', value: item.class_name },
+                    { label: 'No. Telefon', value: item.phone },
+                    { label: 'Jenis iKES', value: item.ikes_type === 'care' ? 'iKES Care' : 'iKES Go-Home' },
+                    { label: 'Jumlah (RM)', value: formatMoney(item.amount) },
+                    { label: 'Sebab Permohonan', value: item.reason },
+                    { label: 'Tarikh Permohonan', value: formatDate(item.created_at, language) },
+                    { label: 'Nota Admin', value: item.admin_notes || '—' },
+                  ],
+                }))
+                generateAndPrintPdfReport('Laporan Permohonan iKES (Pukal)', pdfItems)
+              }}
+            >
+              <Icon name="download" size={16} />
+              {t(`Export Selected PDF (${selectedIds.length})`, `Export Selected PDF (${selectedIds.length})`)}
+            </Button>
+          )}
+
           <div className="admin-v2-search-wrap">
             <Icon name="search" size={18} className="admin-v2-search-icon" />
             <input
@@ -91,6 +122,16 @@ export default function AdminIkes({
           <table>
             <thead>
               <tr>
+                <th style={{ width: '36px' }}>
+                  <input
+                    type="checkbox"
+                    checked={filteredIkes.length > 0 && selectedIds.length === filteredIkes.length}
+                    onChange={(e) => {
+                      if (e.target.checked) setSelectedIds(filteredIkes.map((i) => i.id))
+                      else setSelectedIds([])
+                    }}
+                  />
+                </th>
                 <th>{t('Pemohon', 'Applicant')}</th>
                 <th>{t('Butiran', 'Details')}</th>
                 <th>{t('Status', 'Status')}</th>
@@ -101,6 +142,16 @@ export default function AdminIkes({
             <tbody>
               {filteredIkes.map((item) => (
                 <tr key={item.id}>
+                  <td>
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.includes(item.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) setSelectedIds([...selectedIds, item.id])
+                        else setSelectedIds(selectedIds.filter((id) => id !== item.id))
+                      }}
+                    />
+                  </td>
                   <td>
                     <strong>{item.applicant_name}</strong>
                     <small style={{ display: 'block', marginTop: '4px', lineHeight: '1.4' }}>
@@ -172,10 +223,37 @@ export default function AdminIkes({
                     </label>
                   </td>
                   <td>
-                    <div className="admin-action-buttons">
+                    <div className="admin-action-buttons" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                       <Button disabled={busy} onClick={() => void onUpdateIkes(item)}>
                         <Icon name="save" size={17} />
                         {t('Simpan', 'Save')}
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        className="compact"
+                        onClick={() => {
+                          const pdfItems: PdfReportItem[] = [
+                            {
+                              id: item.id,
+                              title: `Laporan Permohonan iKES #${item.id.slice(0, 8)}`,
+                              status: item.status,
+                              details: [
+                                { label: 'Nama Pemohon', value: item.applicant_name },
+                                { label: 'Kelas / Unit', value: item.class_name },
+                                { label: 'No. Telefon', value: item.phone },
+                                { label: 'Jenis iKES', value: item.ikes_type === 'care' ? 'iKES Care' : 'iKES Go-Home' },
+                                { label: 'Jumlah (RM)', value: formatMoney(item.amount) },
+                                { label: 'Sebab Permohonan', value: item.reason },
+                                { label: 'Tarikh Permohonan', value: formatDate(item.created_at, language) },
+                                { label: 'Nota Admin', value: item.admin_notes || '—' },
+                              ],
+                            },
+                          ]
+                          generateAndPrintPdfReport(`Permohonan iKES #${item.id.slice(0, 8)}`, pdfItems)
+                        }}
+                      >
+                        <Icon name="download" size={15} />
+                        {t('Export PDF', 'Export PDF')}
                       </Button>
                     </div>
                   </td>

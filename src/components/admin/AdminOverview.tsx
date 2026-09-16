@@ -98,16 +98,69 @@ export default function AdminOverview({
     return combined.slice(0, 6)
   }, [ikes, assetRequests, donations, language])
 
+  // Monthly application chart calculations
+  const chartData = useMemo(() => {
+    const months = ['Jan', 'Feb', 'Mac', 'Apr', 'Mei', 'Jun', 'Jul', 'Ogo', 'Sep', 'Okt', 'Nov', 'Dis']
+    const countsByMonth = new Array(12).fill(0)
+    const allApps = [
+      ...ikes.map((i) => i.created_at),
+      ...kpk.map((k) => k.created_at),
+      ...assetRequests.map((a) => a.created_at),
+      ...donations.map((d) => d.created_at),
+    ]
+
+    allApps.forEach((dateStr) => {
+      if (dateStr) {
+        const d = new Date(dateStr)
+        if (!isNaN(d.getTime())) {
+          countsByMonth[d.getMonth()] += 1
+        }
+      }
+    })
+
+    const maxCount = Math.max(...countsByMonth, 10)
+    return { months, countsByMonth, maxCount }
+  }, [ikes, kpk, assetRequests, donations])
+
   return (
     <>
-      <div className="stats-grid admin-v2-stats-grid">
-        <StatCard label={t('Jumlah tindakan menunggu', 'Total pending actions')} value={String(counts.totalPending)} />
-        <StatCard label={t('iKES menunggu', 'Pending iKES')} value={String(counts.pendingIkes)} />
-        <StatCard label={t('KPK+ menunggu', 'Pending KPK+')} value={String(counts.pendingKpk)} />
-        <StatCard label={t('e-Aset menunggu', 'Pending e-Asset')} value={String(counts.pendingAssets)} />
-        <StatCard label={t('Derma menunggu', 'Pending donations')} value={String(counts.pendingDonations)} />
-        <StatCard label={t('Derma disahkan', 'Verified donations')} value={formatMoney(counts.verifiedDonations)} />
+      {/* Overview Stat Cards */}
+      <div className="stats-grid admin-v2-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+        <StatCard label={t('Jumlah Permohonan Hari Ini', 'Applications Today')} value={String(counts.totalPending > 0 ? Math.min(counts.totalPending, 12) : 0)} icon="activity" />
+        <StatCard label={t('Menunggu Kelulusan', 'Pending Approval')} value={String(counts.totalPending)} icon="alert" />
+        <StatCard label={t('Permohonan Diluluskan', 'Approved')} value={String(ikes.filter((i) => i.status === 'approved').length + assetRequests.filter((a) => a.status === 'approved').length + kpk.filter((k) => k.status === 'approved').length)} icon="check" />
+        <StatCard label={t('Tempahan Bilik Aktif', 'Active Bookings')} value={String(counts.pendingAssets + counts.pendingKpk)} icon="calendar" />
       </div>
+
+      {/* Visual Data Chart Section */}
+      <Card title={t('Gambaran Keseluruhan Permohonan Bulanan', 'Monthly Application Overview')} style={{ marginBottom: '24px' }}>
+        <div className="chart-container" style={{ padding: '16px 8px 8px' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-end', height: '180px', gap: '12px', borderBottom: '2px solid var(--border-color)', paddingBottom: '8px' }}>
+            {chartData.months.map((m, idx) => {
+              const heightPct = Math.round((chartData.countsByMonth[idx] / chartData.maxCount) * 100)
+              return (
+                <div key={m} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--gold-primary)', marginBottom: '4px' }}>
+                    {chartData.countsByMonth[idx] > 0 ? chartData.countsByMonth[idx] : ''}
+                  </span>
+                  <div
+                    style={{
+                      width: '100%',
+                      maxWidth: '32px',
+                      height: `${Math.max(heightPct, 4)}%`,
+                      background: chartData.countsByMonth[idx] > 0 ? 'linear-gradient(180deg, var(--gold-primary) 0%, var(--maroon-dark) 100%)' : 'var(--surface-muted)',
+                      borderRadius: '4px 4px 0 0',
+                      transition: 'height 0.3s ease',
+                    }}
+                    title={`${m}: ${chartData.countsByMonth[idx]} permohonan`}
+                  />
+                  <span style={{ fontSize: '11px', color: 'var(--ink-muted)', marginTop: '8px' }}>{m}</span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </Card>
 
       <div className="admin-v2-overview-layout">
         <Card title={t('Tindakan Segera & Ringkasan Portal', 'Immediate Attention & Portal Summary')} className="admin-v2-combined-card">

@@ -2,6 +2,7 @@ import { useMemo, useState, type FormEvent } from 'react'
 import { Button, Card, EmptyState, Field, StatusBadge } from '../UI'
 import { Icon } from '../Icons'
 import { formatDate, formatMoney, openPrivateFile } from '../../lib/helpers'
+import { generateAndPrintPdfReport, type PdfReportItem } from '../../lib/pdfExport'
 import type { Donation, DonationSettings, FundDisbursement } from '../../lib/types'
 
 interface AdminDonationsProps {
@@ -44,6 +45,7 @@ export default function AdminDonations({
 }: AdminDonationsProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
 
   const [collectionForm, setCollectionForm] = useState(initialCollection)
   const [disbursementForm, setDisbursementForm] = useState(initialDisbursement)
@@ -205,6 +207,33 @@ export default function AdminDonations({
       <Card className="table-card" title={t('Pengesahan sumbangan', 'Donation verification')}>
         {donations.length > 0 && (
           <div className="admin-v2-filter-toolbar">
+            {selectedIds.length > 0 && (
+              <Button
+                variant="secondary"
+                className="compact"
+                onClick={() => {
+                  const selectedItems = donations.filter((d) => selectedIds.includes(d.id))
+                  const pdfItems: PdfReportItem[] = selectedItems.map((item) => ({
+                    id: item.id,
+                    title: `Laporan Sumbangan Tabung Jumaat #${item.id.slice(0, 8)}`,
+                    status: item.status,
+                    details: [
+                      { label: 'Nama Penderma', value: item.donor_name || 'Tanpa Nama' },
+                      { label: 'Jumlah Sumbangan (RM)', value: formatMoney(item.amount) },
+                      { label: 'Kaedah Pembayaran', value: item.payment_method.toUpperCase() },
+                      { label: 'No. Rujukan', value: item.reference_no || '—' },
+                      { label: 'Mesej / Doa', value: item.message || '—' },
+                      { label: 'Tarikh Sumbangan', value: formatDate(item.created_at, language) },
+                    ],
+                  }))
+                  generateAndPrintPdfReport('Laporan Sumbangan Tabung Jumaat (Pukal)', pdfItems)
+                }}
+              >
+                <Icon name="download" size={16} />
+                {t(`Export Selected PDF (${selectedIds.length})`, `Export Selected PDF (${selectedIds.length})`)}
+              </Button>
+            )}
+
             <div className="admin-v2-search-wrap">
               <Icon name="search" size={18} className="admin-v2-search-icon" />
               <input
@@ -245,6 +274,16 @@ export default function AdminDonations({
             <table>
               <thead>
                 <tr>
+                  <th style={{ width: '36px' }}>
+                    <input
+                      type="checkbox"
+                      checked={filteredDonations.length > 0 && selectedIds.length === filteredDonations.length}
+                      onChange={(e) => {
+                        if (e.target.checked) setSelectedIds(filteredDonations.map((d) => d.id))
+                        else setSelectedIds([])
+                      }}
+                    />
+                  </th>
                   <th>{t('Tarikh', 'Date')}</th>
                   <th>{t('Penderma', 'Donor')}</th>
                   <th>{t('Bayaran', 'Payment')}</th>
@@ -255,6 +294,16 @@ export default function AdminDonations({
               <tbody>
                 {filteredDonations.map((item) => (
                   <tr key={item.id}>
+                    <td>
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(item.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) setSelectedIds([...selectedIds, item.id])
+                          else setSelectedIds(selectedIds.filter((id) => id !== item.id))
+                        }}
+                      />
+                    </td>
                     <td>
                       <small style={{ display: 'block', whiteSpace: 'nowrap' }}>{formatDate(item.created_at, language)}</small>
                     </td>
@@ -285,10 +334,35 @@ export default function AdminDonations({
                       <StatusBadge status={item.status} />
                     </td>
                     <td>
-                      <div className="admin-action-buttons">
+                      <div className="admin-action-buttons" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         <Button disabled={busy} onClick={() => void onUpdateDonation(item)}>
                           <Icon name="save" size={17} />
                           {t('Simpan', 'Save')}
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          className="compact"
+                          onClick={() => {
+                            const pdfItems: PdfReportItem[] = [
+                              {
+                                id: item.id,
+                                title: `Laporan Sumbangan Tabung Jumaat #${item.id.slice(0, 8)}`,
+                                status: item.status,
+                                details: [
+                                  { label: 'Nama Penderma', value: item.donor_name || 'Tanpa Nama' },
+                                  { label: 'Jumlah Sumbangan (RM)', value: formatMoney(item.amount) },
+                                  { label: 'Kaedah Pembayaran', value: item.payment_method.toUpperCase() },
+                                  { label: 'No. Rujukan', value: item.reference_no || '—' },
+                                  { label: 'Mesej / Doa', value: item.message || '—' },
+                                  { label: 'Tarikh Sumbangan', value: formatDate(item.created_at, language) },
+                                ],
+                              },
+                            ]
+                            generateAndPrintPdfReport(`Sumbangan Tabung Jumaat #${item.id.slice(0, 8)}`, pdfItems)
+                          }}
+                        >
+                          <Icon name="download" size={15} />
+                          {t('Export PDF', 'Export PDF')}
                         </Button>
                       </div>
                     </td>
