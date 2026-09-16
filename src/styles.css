@@ -2028,3 +2028,80 @@ tbody tr:hover { background: color-mix(in srgb, var(--gold-500) 3%, var(--surfac
   font-size: 11px;
   color: var(--ink-soft);
 }
+
+/* Tempahan Bilik JPP Calendar Styles */
+.calendar-grid-container {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+.calendar-day {
+  background: var(--surface-muted, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  border-radius: 8px;
+  padding: 8px 4px;
+  min-height: 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--ink-base);
+}
+
+.calendar-day:hover {
+  border-color: var(--gold-primary);
+  background: rgba(212, 175, 55, 0.08);
+}
+
+.calendar-day.blank {
+  background: transparent;
+  border-color: transparent;
+  cursor: default;
+  pointer-events: none;
+}
+
+.calendar-day.selected {
+  border: 2px solid var(--gold-primary);
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+}
+
+.calendar-day-number {
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.calendar-status-dot {
+  font-size: 10px;
+  padding: 2px 5px;
+  border-radius: 4px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-dot-available {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.status-dot-pending {
+  background: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+}
+
+.status-dot-approved {
+  background: rgba(59, 130, 246, 0.2);
+  color: #3b82f6;
+}
+
+.status-dot-completed {
+  background: rgba(107, 114, 128, 0.2);
+  color: #9ca3af;
+}
+
+.status-dot-past {
+  background: rgba(156, 163, 175, 0.1);
+  color: #6b7280;
+}

@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useUi } from '../contexts/UiContext'
 import { formatDate, formatMoney } from '../lib/helpers'
 import { supabase } from '../lib/supabase'
-import type { AssetApplication, Donation, IkesApplication, KpkApplication, Notification } from '../lib/types'
+import type { AssetApplication, Donation, IkesApplication, KpkApplication, Notification, RoomBooking } from '../lib/types'
 
 function Detail({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -19,9 +19,10 @@ function Detail({ label, children }: { label: string; children: ReactNode }) {
 export default function PortalPage() {
   const { user, profile } = useAuth()
   const { language, t } = useUi()
-  const [tab, setTab] = useState<'ikes' | 'kpk' | 'assets' | 'donations' | 'notifications'>('ikes')
+  const [tab, setTab] = useState<'ikes' | 'kpk' | 'tempahan' | 'assets' | 'donations' | 'notifications'>('ikes')
   const [ikes, setIkes] = useState<IkesApplication[]>([])
   const [kpk, setKpk] = useState<KpkApplication[]>([])
+  const [roomBookings, setRoomBookings] = useState<RoomBooking[]>([])
   const [assets, setAssets] = useState<AssetApplication[]>([])
   const [donations, setDonations] = useState<Donation[]>([])
   const [notifications, setNotifications] = useState<Notification[]>([])
@@ -33,15 +34,17 @@ export default function PortalPage() {
     void Promise.all([
       supabase.from('ikes_applications').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
       supabase.from('kpk_applications').select('*, kpk_bureaus(*)').eq('user_id', user.id).order('created_at', { ascending: false }),
+      supabase.from('room_bookings').select('*').eq('user_id', user.id).order('booking_date', { ascending: false }),
       supabase.from('asset_applications').select('*, asset_items(*)').eq('user_id', user.id).order('created_at', { ascending: false }),
       supabase.from('donations').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
       supabase.from('notifications').select('*').eq('recipient_id', user.id).order('created_at', { ascending: false }),
-    ]).then(([ikesResult, kpkResult, assetResult, donationResult, notifResult]) => {
-      if (ikesResult.error || kpkResult.error || assetResult.error || donationResult.error || notifResult.error) {
-        setError(ikesResult.error?.message || kpkResult.error?.message || assetResult.error?.message || donationResult.error?.message || notifResult.error?.message || 'Data gagal dimuatkan.')
+    ]).then(([ikesResult, kpkResult, roomResult, assetResult, donationResult, notifResult]) => {
+      if (ikesResult.error || kpkResult.error || roomResult.error || assetResult.error || donationResult.error || notifResult.error) {
+        setError(ikesResult.error?.message || kpkResult.error?.message || roomResult.error?.message || assetResult.error?.message || donationResult.error?.message || notifResult.error?.message || 'Data gagal dimuatkan.')
       }
       setIkes((ikesResult.data as IkesApplication[]) || [])
       setKpk((kpkResult.data as KpkApplication[]) || [])
+      setRoomBookings((roomResult.data as RoomBooking[]) || [])
       setAssets((assetResult.data as AssetApplication[]) || [])
       setDonations((donationResult.data as Donation[]) || [])
       setNotifications((notifResult.data as Notification[]) || [])
@@ -77,6 +80,7 @@ export default function PortalPage() {
             <div className="button-row portal-header-actions">
               <Link className="button button-secondary" to="/ikes">+ iKES</Link>
               <Link className="button button-secondary" to="/kpk">+ KPK+</Link>
+              <Link className="button button-secondary" to="/tempahan/bilik-jpp">+ Bilik JPP</Link>
               <Link className="button button-secondary" to="/e-aset">+ e-Aset</Link>
             </div>
           }
@@ -88,6 +92,7 @@ export default function PortalPage() {
           <Card className="portal-summary-card"><span>{t('Kelas', 'Class')}</span><strong>{profile?.class_name || '—'}</strong></Card>
           <Card className="portal-summary-card"><span>{t('Permohonan iKES', 'iKES applications')}</span><strong>{ikes.length}</strong></Card>
           <Card className="portal-summary-card"><span>{t('Permohonan KPK+', 'KPK+ applications')}</span><strong>{kpk.length}</strong></Card>
+          <Card className="portal-summary-card"><span>{t('Tempahan Bilik JPP', 'Room Bookings')}</span><strong>{roomBookings.length}</strong></Card>
           <Card className="portal-summary-card"><span>{t('Permohonan e-Aset', 'e-Asset applications')}</span><strong>{assets.length}</strong></Card>
           <Card className="portal-summary-card"><span>{t('Rekod derma', 'Donation records')}</span><strong>{donations.length}</strong></Card>
         </div>
@@ -95,6 +100,7 @@ export default function PortalPage() {
         <div className="tabs portal-tabs" role="tablist" aria-label={t('Jenis rekod', 'Record type')}>
           <Button variant={tab === 'ikes' ? 'primary' : 'ghost'} onClick={() => setTab('ikes')}>iKES</Button>
           <Button variant={tab === 'kpk' ? 'primary' : 'ghost'} onClick={() => setTab('kpk')}>KPK+</Button>
+          <Button variant={tab === 'tempahan' ? 'primary' : 'ghost'} onClick={() => setTab('tempahan')}>{t('Tempahan', 'Bookings')}</Button>
           <Button variant={tab === 'assets' ? 'primary' : 'ghost'} onClick={() => setTab('assets')}>e-Aset</Button>
           <Button variant={tab === 'donations' ? 'primary' : 'ghost'} onClick={() => setTab('donations')}>{t('Derma', 'Donations')}</Button>
           <Button variant={tab === 'notifications' ? 'primary' : 'ghost'} onClick={() => setTab('notifications')}>
@@ -113,6 +119,11 @@ export default function PortalPage() {
               {tab === 'kpk' && (kpk.length === 0 ? <EmptyState title={t('Belum ada permohonan KPK+', 'No KPK+ loan applications yet')} /> : (
                 <div className="responsive-table"><table><thead><tr><th>{t('Kelab / Persatuan', 'Club / Association')}</th><th>{t('Biro Angkat', 'Bureau')}</th><th>{t('Amaun', 'Amount')}</th><th>{t('Tarikh Mohon', 'Date Submitted')}</th><th>{t('Status', 'Status')}</th><th>{t('Nota Admin', 'Admin Remarks')}</th></tr></thead><tbody>
                   {kpk.map((item) => <tr key={item.id}><td><strong>{item.club_name}</strong><br /><small>{item.department_unit}</small></td><td>{item.kpk_bureaus?.name || 'Biro'}</td><td><strong>{formatMoney(item.loan_amount)}</strong></td><td>{formatDate(item.created_at, language)}</td><td><StatusBadge status={item.status} /></td><td>{item.admin_notes || '—'}</td></tr>)}
+                </tbody></table></div>
+              ))}
+              {tab === 'tempahan' && (roomBookings.length === 0 ? <EmptyState title={t('Belum ada tempahan bilik JPP', 'No JPP room bookings yet')} /> : (
+                <div className="responsive-table"><table><thead><tr><th>{t('Perkhidmatan', 'Service')}</th><th>{t('Tarikh Tempahan', 'Booking Date')}</th><th>{t('Biro / Unit', 'Bureau / Unit')}</th><th>{t('Tujuan', 'Purpose')}</th><th>{t('Status', 'Status')}</th><th>{t('Nota Admin', 'Admin Note')}</th></tr></thead><tbody>
+                  {roomBookings.map((item) => <tr key={item.id}><td><strong>Tempahan Bilik JPP</strong></td><td>{formatDate(item.booking_date, language)}</td><td>{item.bureau}</td><td>{item.purpose}</td><td><StatusBadge status={item.status} /></td><td>{item.admin_notes || '—'}</td></tr>)}
                 </tbody></table></div>
               ))}
               {tab === 'assets' && (assets.length === 0 ? <EmptyState title={t('Belum ada permohonan e-Aset', 'No e-Asset applications yet')} /> : (
@@ -145,6 +156,23 @@ export default function PortalPage() {
                   <div className="portal-mobile-details">
                     <Detail label={t('Tarikh permohonan', 'Application date')}>{formatDate(item.created_at, language)}</Detail>
                     <Detail label={t('Bayaran balik', 'Repayment')}>{repaymentText(item)}</Detail>
+                    <Detail label={t('Nota admin', 'Admin note')}>{item.admin_notes || '—'}</Detail>
+                  </div>
+                </article>
+              )))}
+
+              {tab === 'tempahan' && (roomBookings.length === 0 ? <EmptyState title={t('Belum ada tempahan bilik JPP', 'No JPP room bookings yet')} /> : roomBookings.map((item) => (
+                <article className="portal-mobile-card" key={item.id}>
+                  <div className="portal-mobile-card-head">
+                    <div>
+                      <span className="portal-mobile-kicker">Tempahan Bilik JPP</span>
+                      <strong className="portal-mobile-value">{formatDate(item.booking_date, language)}</strong>
+                    </div>
+                    <StatusBadge status={item.status} />
+                  </div>
+                  <div className="portal-mobile-details">
+                    <Detail label={t('Biro / Unit', 'Bureau / Unit')}>{item.bureau}</Detail>
+                    <Detail label={t('Tujuan', 'Purpose')}>{item.purpose}</Detail>
                     <Detail label={t('Nota admin', 'Admin note')}>{item.admin_notes || '—'}</Detail>
                   </div>
                 </article>

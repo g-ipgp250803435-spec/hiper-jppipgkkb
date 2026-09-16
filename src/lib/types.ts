@@ -41,6 +41,7 @@ export interface SiteSettings {
     assets: LocalisedText
     ikes: LocalisedText
     kpk: LocalisedText
+    tempahan: LocalisedText
     fund: LocalisedText
     announcements: LocalisedText
     office: LocalisedText
@@ -293,4 +294,34 @@ export interface KpkApplication {
   created_at: string
   updated_at: string
   kpk_bureaus?: KpkBureau | null
+}
+
+export interface BookingService {
+  id: string
+  title_bm: string
+  title_en: string | null
+  description_bm: string | null
+  description_en: string | null
+  image_url: string | null
+  booking_type: string
+  active: boolean
+  instructions_bm?: string | null
+  instructions_en?: string | null
+  created_at?: string
+  updated_at?: string
+}
+
+export interface RoomBooking {
+  id: string
+  user_id: string | null
+  booking_date: string
+  name: string
+  bureau: string
+  purpose: string
+  remarks: string | null
+  status: RequestStatus
+  admin_notes: string | null
+  created_at: string
+  updated_at: string
+  profiles?: Profile | null
 }

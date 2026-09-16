@@ -6,6 +6,7 @@ import LoginPage from './pages/LoginPage'
 import AuthCallbackPage from './pages/AuthCallbackPage'
 import IkesPage from './pages/IkesPage'
 import KpkPage from './pages/KpkPage'
+import TempahanPage from './pages/TempahanPage'
 import AssetsPage from './pages/AssetsPage'
 import DonationsPage from './pages/DonationsPage'
 import AnnouncementsPage from './pages/AnnouncementsPage'
@@ -42,6 +43,8 @@ export default function App() {
           <Route path="/auth/callback" element={<AuthCallbackPage />} />
           <Route path="/ikes" element={<IkesPage />} />
           <Route path="/kpk" element={<KpkPage />} />
+          <Route path="/tempahan" element={<TempahanPage />} />
+          <Route path="/tempahan/bilik-jpp" element={<TempahanPage />} />
           <Route path="/e-aset" element={<AssetsPage />} />
           <Route path="/tabung-jumaat" element={<DonationsPage />} />
           <Route path="/pengumuman" element={<AnnouncementsPage />} />

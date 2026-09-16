@@ -5,6 +5,7 @@ import SiteSettingsEditor from '../components/admin/SiteSettingsEditor'
 import AdminOverview from '../components/admin/AdminOverview'
 import AdminIkes from '../components/admin/AdminIkes'
 import AdminKpk from '../components/admin/AdminKpk'
+import AdminTempahan from '../components/admin/AdminTempahan'
 import AdminAssets from '../components/admin/AdminAssets'
 import AdminDonations from '../components/admin/AdminDonations'
 import AdminAnnouncements from '../components/admin/AdminAnnouncements'
@@ -28,9 +29,11 @@ import type {
   KpkBureau,
   Notification,
   OrganizationMember,
+  BookingService,
+  RoomBooking,
 } from '../lib/types'
 
-type AdminTab = 'overview' | 'ikes' | 'kpk' | 'assets-requests' | 'donations' | 'announcements' | 'catalogue' | 'organization' | 'fund' | 'site'
+type AdminTab = 'overview' | 'ikes' | 'kpk' | 'tempahan' | 'assets-requests' | 'donations' | 'announcements' | 'catalogue' | 'organization' | 'fund' | 'site'
 
 export default function AdminPage() {
   const { language, t } = useUi()
@@ -41,6 +44,8 @@ export default function AdminPage() {
   const [ikes, setIkes] = useState<IkesApplication[]>([])
   const [kpkApplications, setKpkApplications] = useState<KpkApplication[]>([])
   const [kpkBureaus, setKpkBureaus] = useState<KpkBureau[]>([])
+  const [bookingServices, setBookingServices] = useState<BookingService[]>([])
+  const [roomBookings, setRoomBookings] = useState<RoomBooking[]>([])
   const [assetRequests, setAssetRequests] = useState<AssetApplication[]>([])
   const [donations, setDonations] = useState<Donation[]>([])
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
@@ -238,6 +243,8 @@ export default function AdminPage() {
         supabase.from('fund_disbursements').select('*').order('disbursed_at', { ascending: false }),
         supabase.from('donation_settings').select('*').eq('id', 1).maybeSingle(),
         supabase.from('notifications').select('*').order('created_at', { ascending: false }),
+        supabase.from('booking_services').select('*').order('created_at', { ascending: true }),
+        supabase.from('room_bookings').select('*').order('booking_date', { ascending: false }),
       ])
       const firstError = results.find((result) => result.error)?.error
       if (firstError) setNotice({ type: 'danger', text: firstError.message })
@@ -252,6 +259,8 @@ export default function AdminPage() {
       setDisbursements((results[8].data as FundDisbursement[]) || [])
       setDonationSettings((results[9].data as DonationSettings | null) || null)
       setNotifications((results[10].data as Notification[]) || [])
+      setBookingServices((results[11].data as BookingService[]) || [])
+      setRoomBookings((results[12].data as RoomBooking[]) || [])
     } catch (err) {
       setNotice({
         type: 'danger',
@@ -340,6 +349,60 @@ export default function AdminPage() {
 
       await notifyUser(item.user_id, `Status KPK+ Dikemas Kini`, statusMsg, 'kpk', item.id)
     }, 'Permohonan KPK+ dikemas kini.')
+  }
+
+  const updateRoomBooking = async (item: RoomBooking) => {
+    await runAction(async () => {
+      const { error } = await supabase.from('room_bookings').update({
+        booking_date: item.booking_date,
+        status: item.status,
+        admin_notes: item.admin_notes,
+        updated_at: new Date().toISOString(),
+      }).eq('id', item.id)
+      if (error) throw error
+
+      if (item.user_id) {
+        let msg = `Status Tempahan Bilik JPP anda bagi tarikh ${item.booking_date} kini berstatus: ${item.status.toUpperCase()}.`
+        if (item.status === 'approved') msg = `Tahniah! Tempahan Bilik JPP anda bagi tarikh ${item.booking_date} telah DILULUSKAN.`
+        else if (item.status === 'rejected') msg = `Maaf, Tempahan Bilik JPP anda bagi tarikh ${item.booking_date} telah DITOLAK.`
+
+        await notifyUser(item.user_id, `Status Tempahan Bilik JPP Dikemas Kini`, msg, 'tempahan', item.id)
+      }
+    }, 'Tempahan bilik JPP dikemas kini.')
+  }
+
+  const saveBookingService = async (
+    form: {
+      title_bm: string
+      title_en: string
+      description_bm: string
+      description_en: string
+      instructions_bm: string
+      instructions_en: string
+      booking_type: string
+      active: boolean
+      image_url: string | null
+    },
+    editingId: string | null
+  ) => {
+    await runAction(async () => {
+      const payload = {
+        title_bm: form.title_bm,
+        title_en: form.title_en || null,
+        description_bm: form.description_bm || null,
+        description_en: form.description_en || null,
+        instructions_bm: form.instructions_bm || null,
+        instructions_en: form.instructions_en || null,
+        booking_type: form.booking_type,
+        active: form.active,
+        image_url: form.image_url,
+      }
+      const query = editingId
+        ? supabase.from('booking_services').update(payload).eq('id', editingId)
+        : supabase.from('booking_services').insert(payload)
+      const { error } = await query
+      if (error) throw error
+    }, editingId ? 'Perkhidmatan tempahan dikemas kini.' : 'Perkhidmatan tempahan ditambah.')
   }
 
   const saveKpkBureau = async (form: { id?: string; name: string; active: boolean; display_order: number }) => {
@@ -570,6 +633,8 @@ export default function AdminPage() {
         else if (table === 'asset_items') setCatalogue((rows) => rows.filter((r) => r.id !== id))
         else if (table === 'organization_members') setMembers((rows) => rows.filter((r) => r.id !== id))
         else if (table === 'fund_disbursements') setDisbursements((rows) => rows.filter((r) => r.id !== id))
+        else if (table === 'booking_services') setBookingServices((rows) => rows.filter((r) => r.id !== id))
+        else if (table === 'room_bookings') setRoomBookings((rows) => rows.filter((r) => r.id !== id))
         return
       }
 
@@ -583,6 +648,8 @@ export default function AdminPage() {
       else if (table === 'asset_items') setCatalogue((rows) => rows.filter((r) => r.id !== id))
       else if (table === 'organization_members') setMembers((rows) => rows.filter((r) => r.id !== id))
       else if (table === 'fund_disbursements') setDisbursements((rows) => rows.filter((r) => r.id !== id))
+      else if (table === 'booking_services') setBookingServices((rows) => rows.filter((r) => r.id !== id))
+      else if (table === 'room_bookings') setRoomBookings((rows) => rows.filter((r) => r.id !== id))
     }, `${label} dipadam.`)
   }
 
@@ -611,6 +678,8 @@ export default function AdminPage() {
       setTab('assets-requests')
     } else if (type.includes('kpk') || title.includes('kpk')) {
       setTab('kpk')
+    } else if (type.includes('tempahan') || title.includes('tempahan') || title.includes('bilik')) {
+      setTab('tempahan')
     } else if (type.includes('ikes') || title.includes('ikes')) {
       setTab('ikes')
     } else if (type.includes('donation') || type.includes('tabung') || title.includes('derma') || title.includes('tabung')) {
@@ -636,6 +705,7 @@ export default function AdminPage() {
 
   const pendingIkesCount = ikes.filter((i) => i.status === 'pending').length
   const pendingKpkCount = kpkApplications.filter((k) => k.status === 'pending').length
+  const pendingTempahanCount = roomBookings.filter((b) => b.status === 'pending').length
   const pendingAssetsCount = assetRequests.filter((a) => a.status === 'pending').length
   const pendingDonationsCount = donations.filter((d) => d.status === 'pending').length
   const unreadNotifsCount = notifications.filter((n) => !n.is_read).length
@@ -644,6 +714,7 @@ export default function AdminPage() {
     { id: 'overview', label: t('Ringkasan', 'Overview') },
     { id: 'ikes', label: `iKES (${pendingIkesCount})` },
     { id: 'kpk', label: `KPK+ (${pendingKpkCount})` },
+    { id: 'tempahan', label: `Tempahan (${pendingTempahanCount})` },
     { id: 'assets-requests', label: `${t('Permohonan Aset', 'Asset Requests')} (${pendingAssetsCount})` },
     { id: 'donations', label: `${t('Derma', 'Donations')} (${pendingDonationsCount})` },
     { id: 'announcements', label: t('Pengumuman', 'Announcements') },
@@ -752,6 +823,23 @@ export default function AdminPage() {
             onUpdateApplication={updateKpkApplication}
             onSaveBureau={saveKpkBureau}
             onDeleteBureau={(id) => deleteRow('kpk_bureaus', id, t('Biro Angkat', 'Bureau'))}
+          />
+        )}
+
+        {tab === 'tempahan' && (
+          <AdminTempahan
+            t={t}
+            language={language}
+            services={bookingServices}
+            roomBookings={roomBookings}
+            busy={busy}
+            supabaseClient={supabase}
+            setServices={setBookingServices}
+            setRoomBookings={setRoomBookings}
+            onSaveService={saveBookingService}
+            onDeleteService={(id) => deleteRow('booking_services', id, t('perkhidmatan tempahan', 'booking service'))}
+            onUpdateRoomBooking={updateRoomBooking}
+            onDeleteRoomBooking={(id) => deleteRow('room_bookings', id, t('tempahan bilik', 'room booking'))}
           />
         )}
 

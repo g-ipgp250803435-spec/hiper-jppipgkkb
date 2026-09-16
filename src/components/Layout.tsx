@@ -29,6 +29,7 @@ export function Layout({ children }: { children: ReactNode }) {
     { to: '/e-aset', label: settings.navigation.assets, icon: 'box' },
     { to: '/ikes', label: settings.navigation.ikes, icon: 'heart' },
     { to: '/kpk', label: settings.navigation.kpk, icon: 'briefcase' },
+    { to: '/tempahan', label: settings.navigation.tempahan || { bm: 'Tempahan', en: 'Tempahan' }, icon: 'calendar' },
     { to: '/tabung-jumaat', label: settings.navigation.fund, icon: 'fund' },
     { to: '/pengumuman', label: settings.navigation.announcements, icon: 'megaphone' },
     { to: '/kenali-pejabat', label: settings.navigation.office, icon: 'building' },
