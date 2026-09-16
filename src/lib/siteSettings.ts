@@ -34,6 +34,7 @@ export const defaultSiteSettings: SiteSettings = {
     assets: { bm: 'e-Aset', en: 'e-Asset' },
     ikes: { bm: 'iKES', en: 'iKES' },
     kpk: { bm: 'KPK+', en: 'KPK+' },
+    tempahan: { bm: 'Tempahan', en: 'Bookings' },
     fund: { bm: 'Tabung Jumaat', en: 'Friday Fund' },
     announcements: { bm: 'Pengumuman', en: 'Announcements' },
     office: { bm: 'Organisasi', en: 'Organisation' },
