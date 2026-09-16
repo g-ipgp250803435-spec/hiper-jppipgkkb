@@ -11,6 +11,7 @@ import AdminDonations from '../components/admin/AdminDonations'
 import AdminAnnouncements from '../components/admin/AdminAnnouncements'
 import AdminOrganization from '../components/admin/AdminOrganization'
 import AdminNotificationDropdown from '../components/admin/AdminNotificationDropdown'
+import AdminCMS from '../components/admin/AdminCMS'
 import { notifyUser } from '../lib/v3/notificationService'
 import { useAuth } from '../contexts/AuthContext'
 import { useUi } from '../contexts/UiContext'
@@ -33,7 +34,7 @@ import type {
   RoomBooking,
 } from '../lib/types'
 
-type AdminTab = 'overview' | 'ikes' | 'kpk' | 'tempahan' | 'assets-requests' | 'donations' | 'announcements' | 'catalogue' | 'organization' | 'fund' | 'site'
+type AdminTab = 'overview' | 'ikes' | 'kpk' | 'tempahan' | 'assets-requests' | 'donations' | 'announcements' | 'catalogue' | 'organization' | 'fund' | 'cms' | 'site'
 
 export default function AdminPage() {
   const { language, t } = useUi()
@@ -54,6 +55,8 @@ export default function AdminPage() {
   const [disbursements, setDisbursements] = useState<FundDisbursement[]>([])
   const [donationSettings, setDonationSettings] = useState<DonationSettings | null>(null)
   const [notifications, setNotifications] = useState<Notification[]>([])
+  const [cmsPages, setCmsPages] = useState<import('../lib/types').CmsPage[]>([])
+  const [cmsBlocks, setCmsBlocks] = useState<import('../lib/types').CmsPageBlock[]>([])
 
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
@@ -226,6 +229,36 @@ export default function AdminPage() {
           created_at: new Date(Date.now() - 1800000).toISOString(),
         },
       ])
+      setCmsPages([
+        {
+          id: 'mock-cms-1',
+          title_bm: 'Dasar Privasi',
+          title_en: 'Privacy Policy',
+          slug: 'dasar-privasi',
+          description_bm: 'Dasar privasi dan perlindungan data bagi HiPER.',
+          description_en: 'Privacy policy and data protection for HiPER.',
+          status: 'published',
+          is_public: true,
+          show_in_navigation: false,
+          navigation_order: 10,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+      ])
+      setCmsBlocks([
+        {
+          id: 'mock-block-1',
+          page_id: 'mock-cms-1',
+          block_type: 'rich_text',
+          content: {
+            heading_bm: '1. Pengenalan',
+            heading_en: '1. Introduction',
+            body_bm: 'Hab Perbendaharaan Digital (HiPER) dikendalikan oleh Pejabat Bendahari Agung Kehormat JPP IPG Kampus Kota Bharu.',
+            body_en: 'The Digital Treasury Hub (HiPER) is managed by the Office of the Honorary Treasurer General JPP IPG Kampus Kota Bharu.',
+          },
+          display_order: 1,
+        },
+      ])
       setLoading(false)
       return
     }
@@ -245,6 +278,8 @@ export default function AdminPage() {
         supabase.from('notifications').select('*').order('created_at', { ascending: false }),
         supabase.from('booking_services').select('*').order('created_at', { ascending: true }),
         supabase.from('room_bookings').select('*').order('booking_date', { ascending: false }),
+        supabase.from('cms_pages').select('*').order('navigation_order', { ascending: true }),
+        supabase.from('cms_page_blocks').select('*').order('display_order', { ascending: true }),
       ])
       const firstError = results.find((result) => result.error)?.error
       if (firstError) setNotice({ type: 'danger', text: firstError.message })
@@ -261,6 +296,8 @@ export default function AdminPage() {
       setNotifications((results[10].data as Notification[]) || [])
       setBookingServices((results[11].data as BookingService[]) || [])
       setRoomBookings((results[12].data as RoomBooking[]) || [])
+      setCmsPages((results[13].data as import('../lib/types').CmsPage[]) || [])
+      setCmsBlocks((results[14].data as import('../lib/types').CmsPageBlock[]) || [])
     } catch (err) {
       setNotice({
         type: 'danger',
@@ -612,6 +649,109 @@ export default function AdminPage() {
     }, 'Rekod agihan ditambah.')
   }
 
+  const saveCmsPage = async (
+    form: {
+      id?: string
+      title_bm: string
+      title_en: string
+      slug: string
+      description_bm: string
+      description_en: string
+      status: import('../lib/types').CmsPageStatus
+      is_public: boolean
+      show_in_navigation: boolean
+      navigation_order: number
+    },
+    notifySubscribers = false
+  ) => {
+    await runAction(async () => {
+      const payload = {
+        title_bm: form.title_bm,
+        title_en: form.title_en || null,
+        slug: form.slug,
+        description_bm: form.description_bm || null,
+        description_en: form.description_en || null,
+        status: form.status,
+        is_public: form.is_public,
+        show_in_navigation: form.show_in_navigation,
+        navigation_order: Number(form.navigation_order),
+        created_by: user?.id || null,
+        updated_at: new Date().toISOString(),
+      }
+
+      if (!isSupabaseConfigured) {
+        if (form.id) {
+          setCmsPages((prev) => prev.map((p) => (p.id === form.id ? { ...p, ...payload } : p)))
+        } else {
+          setCmsPages((prev) => [
+            ...prev,
+            { ...payload, id: `mock-cms-${Date.now()}`, created_at: new Date().toISOString() },
+          ])
+        }
+        return
+      }
+
+      const query = form.id
+        ? supabase.from('cms_pages').update(payload).eq('id', form.id)
+        : supabase.from('cms_pages').insert(payload)
+      const { error } = await query
+      if (error) throw error
+
+      if (notifySubscribers && form.status === 'published') {
+        await notifyUser(
+          'all',
+          'Halaman Baharu Diterbitkan',
+          `Maklumat baharu telah diterbitkan: ${form.title_bm}`,
+          'cms_page',
+          form.slug
+        )
+      }
+    }, form.id ? 'Halaman CMS dikemas kini.' : 'Halaman CMS dicipta.')
+  }
+
+  const deleteCmsPage = async (id: string, title: string) => {
+    if (!window.confirm(`Padam halaman CMS "${title}"?`)) return
+    await runAction(async () => {
+      if (!isSupabaseConfigured) {
+        setCmsPages((prev) => prev.filter((p) => p.id !== id))
+        setCmsBlocks((prev) => prev.filter((b) => b.page_id !== id))
+        return
+      }
+      const { error } = await supabase.from('cms_pages').delete().eq('id', id)
+      if (error) throw error
+      setCmsPages((prev) => prev.filter((p) => p.id !== id))
+      setCmsBlocks((prev) => prev.filter((b) => b.page_id !== id))
+    }, 'Halaman CMS dipadam.')
+  }
+
+  const saveCmsBlocks = async (pageId: string, blocksList: import('../lib/types').CmsPageBlock[]) => {
+    await runAction(async () => {
+      if (!isSupabaseConfigured) {
+        setCmsBlocks((prev) => [
+          ...prev.filter((b) => b.page_id !== pageId),
+          ...blocksList.map((b, idx) => ({ ...b, display_order: idx + 1 })),
+        ])
+        return
+      }
+
+      // Delete existing blocks for this page
+      const { error: delError } = await supabase.from('cms_page_blocks').delete().eq('page_id', pageId)
+      if (delError) throw delError
+
+      // Insert new blocks
+      if (blocksList.length > 0) {
+        const payload = blocksList.map((b, idx) => ({
+          page_id: pageId,
+          block_type: b.block_type,
+          content: b.content,
+          display_order: idx + 1,
+        }))
+        const { error: insError } = await supabase.from('cms_page_blocks').insert(payload)
+        if (insError) throw insError
+      }
+    }, 'Blok kandungan disimpan.')
+  }
+
   const saveDonationSettings = async (qrFile: File | null) => {
     if (!donationSettings) return
     await runAction(async () => {
@@ -686,6 +826,8 @@ export default function AdminPage() {
       setTab('donations')
     } else if (type.includes('announcement') || title.includes('pengumuman')) {
       setTab('announcements')
+    } else if (type.includes('cms') || title.includes('halaman') || title.includes('cms')) {
+      setTab('cms')
     }
   }
 
@@ -721,6 +863,7 @@ export default function AdminPage() {
     { id: 'catalogue', label: t('Katalog Aset', 'Asset Catalogue') },
     { id: 'organization', label: t('Organisasi', 'Organisation') },
     { id: 'fund', label: t('Tabung', 'Fund') },
+    { id: 'cms', label: `CMS (${cmsPages.length})` },
     { id: 'site', label: t('Identiti & Kandungan', 'Identity & Content') },
   ]
 
@@ -932,6 +1075,22 @@ export default function AdminPage() {
             busy={busy}
             onSaveMember={saveMember}
             onDeleteMember={(id) => deleteRow('organization_members', id, t('ahli', 'member'))}
+          />
+        )}
+
+        {tab === 'cms' && (
+          <AdminCMS
+            t={t}
+            language={language}
+            pages={cmsPages}
+            blocks={cmsBlocks}
+            busy={busy}
+            supabaseClient={supabase}
+            setPages={setCmsPages}
+            setBlocks={setCmsBlocks}
+            onSavePage={saveCmsPage}
+            onDeletePage={deleteCmsPage}
+            onSaveBlocks={saveCmsBlocks}
           />
         )}
 

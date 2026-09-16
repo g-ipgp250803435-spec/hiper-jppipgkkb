@@ -164,7 +164,7 @@ export const defaultSiteSettings: SiteSettings = {
     address: 'Bangunan Jawatankuasa Perwakilan Pelajar\nIPG Kampus Kota Bharu\nJalan Maktab, Pengkalan Chepa\n16109 Kota Bharu\nKelantan',
     email: 'jppipgkkb.rasmi@ipg.edu.my',
     privacyLabel: { bm: 'Dasar Privasi', en: 'Privacy Policy' },
-    privacyUrl: '#',
+    privacyUrl: '/page/dasar-privasi',
     copyright: {
       bm: 'Hak cipta terpelihara Pejabat Bendahari Agung Kehormat JPP IPGKKB.',
       en: 'All rights reserved by the Honorary Treasurer General Office, JPP IPGKKB.',
