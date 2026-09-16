@@ -50,16 +50,16 @@ const defaultServices: BookingService[] = [
 ]
 
 const OFFICIAL_BUREAUS = [
+  'Biro Perhubungan Domestik dan Antarabangsa',
   'Biro Akademik',
-  'Biro Kerohanian. Moral dan Disiplin',
+  'Biro Kediaman Pelajar',
   'Biro Kebajikan dan Sosial',
-  'Biro Sukan dan Rekreasi',
+  'Biro Kerohanian, Moral dan Disiplin',
+  'Biro Kebudayaan dan Kesenian',
   'Biro Teknologi Maklumat dan Penerbitan',
+  'Biro Sukan dan Rekreasi',
   'Biro Hal Ehwal Wanita',
   'Biro Keusahawanan',
-  'Biro Kebudayaan dan Kesenian',
-  'Biro Perhubungan Domestik dan Antarabangsa',
-  'Biro Kediaman Pelajar',
 ]
 
 const mockRoomBookings: RoomBooking[] = [
