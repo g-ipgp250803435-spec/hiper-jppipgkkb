@@ -60,7 +60,7 @@ export default function AdminRoomBookings({
                 status: item.status,
                 details: [
                   { label: 'Nama Pemohon', value: item.name },
-                  { label: 'Biro / Unit', value: item.bureau },
+                  { label: 'Biro Angkat', value: item.bureau },
                   { label: 'Tarikh Tempahan Bilik', value: formatDate(item.booking_date, language) },
                   { label: 'Tujuan Tempahan', value: item.purpose },
                   { label: 'Catatan Pemohon', value: item.remarks || '—' },
@@ -142,7 +142,7 @@ export default function AdminRoomBookings({
                   />
                 </th>
                 <th>{t('Tarikh & Pemohon', 'Date & Applicant')}</th>
-                <th>{t('Biro & Tujuan', 'Bureau & Purpose')}</th>
+                <th>{t('Biro Angkat & Tujuan', 'Bureau & Purpose')}</th>
                 <th>{t('Catatan Pemohon', 'Applicant Remarks')}</th>
                 <th>{t('Status & Nota Admin', 'Status & Admin Notes')}</th>
                 <th>{t('Tindakan', 'Action')}</th>
@@ -236,7 +236,7 @@ export default function AdminRoomBookings({
                               status: item.status,
                               details: [
                                 { label: 'Nama Pemohon', value: item.name },
-                                { label: 'Biro / Unit', value: item.bureau },
+                                { label: 'Biro Angkat', value: item.bureau },
                                 { label: 'Tarikh Tempahan Bilik', value: formatDate(item.booking_date, language) },
                                 { label: 'Tujuan Tempahan', value: item.purpose },
                                 { label: 'Catatan Pemohon', value: item.remarks || '—' },

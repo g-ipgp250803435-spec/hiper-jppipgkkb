@@ -230,7 +230,6 @@ export default function AssetsPage() {
                       <div className="asset-card-footer">
                         <span>{asset.asset_code || `AST-${asset.id.slice(0, 6).toUpperCase()}`}</span>
                         <button type="button" className="button-premium-easet compact-easet-btn" onClick={() => chooseAsset(asset.id)} disabled={!available}>
-                          <span className="premium-easet-star">✦</span>
                           {available ? t('Mohon e-Aset', 'Apply for e-Asset') : t('Tidak tersedia', 'Unavailable')}
                           {available && <span className="premium-easet-arrow">→</span>}
                         </button>
@@ -310,7 +309,6 @@ export default function AssetsPage() {
 
                 <div className="full-span form-actions asset-form-actions-wrap">
                   <Button type="submit" className="button-premium-easet" disabled={busy || !akuJanjiAgreed || !assetId || (selectedAsset?.stock_available || 0) < 1}>
-                    <span className="premium-easet-star">✦</span>
                     {busy ? t('Menghantar…', 'Submitting…') : t('Mohon e-Aset', 'Apply for e-Asset')}
                     <span className="premium-easet-arrow">→</span>
                   </Button>
