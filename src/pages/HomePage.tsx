@@ -25,6 +25,78 @@ const sampleAnnouncements: Announcement[] = [
   },
 ]
 
+function HomepageMiniCalendarCard({ language, t }: { language: 'bm' | 'en'; t: (bm: string, en: string) => string }) {
+  const [bookedDates, setBookedDates] = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    if (!isSupabaseConfigured) return
+    const fetchBookings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('room_bookings')
+          .select('booking_date, status')
+          .not('status', 'in', '("rejected","cancelled")')
+        if (!error && data) {
+          const dates = new Set(data.map((b) => b.booking_date))
+          setBookedDates(dates)
+        }
+      } catch (err) {
+        console.warn('Failed to load room bookings for homepage mini calendar:', err)
+      }
+    }
+    void fetchBookings()
+  }, [])
+
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = now.getMonth()
+
+  const monthNamesBm = ['Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun', 'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember']
+  const monthNamesEn = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+  const monthLabel = language === 'bm' ? `${monthNamesBm[month]} ${year}` : `${monthNamesEn[month]} ${year}`
+
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+  const previewDaysCount = Math.min(daysInMonth, 7)
+  const sampleDays = []
+
+  for (let d = 1; d <= previewDaysCount; d++) {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+    const isBooked = bookedDates.has(dateStr)
+    sampleDays.push({ day: d, isBooked })
+  }
+
+  return (
+    <div className="premium-service-card mini-calendar-card">
+      <span className="premium-service-icon"><Icon name="calendar" size={24} /></span>
+      <span className="premium-service-eyebrow">{t('TEMPAHAN BILIK', 'ROOM BOOKING')}</span>
+      <h2>{t('Tempahan Bilik JPP', 'JPP Room Booking')}</h2>
+      <p style={{ marginBottom: '12px' }}>{t('Semak ketersediaan bilik dan tempah bilik JPP.', 'Check room availability and reserve the JPP room.')}</p>
+
+      <div className="mini-calendar-preview">
+        <div className="mini-calendar-month">{monthLabel}</div>
+        <div className="mini-calendar-grid">
+          <div className="mini-calendar-days-header">
+            <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span>
+          </div>
+          <div className="mini-calendar-days-row">
+            {sampleDays.map(({ day, isBooked }) => (
+              <div key={day} className={`mini-calendar-cell ${isBooked ? 'booked' : 'available'}`}>
+                <span className="mini-day-num">{day}</span>
+                <span className={`mini-day-status ${isBooked ? 'booked-dot' : 'avail-check'}`}>{isBooked ? '●' : '✓'}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <Link to="/tempahan/bilik-jpp" className="button button-primary button-semak-kalendar" style={{ width: '100%', marginTop: '16px', justifyContent: 'center' }}>
+        <Icon name="calendar" size={17} />
+        {t('Semak Kalendar', 'Check Calendar')}
+      </Link>
+    </div>
+  )
+}
+
 export default function HomePage() {
   const { language, t } = useUi()
   const { settings } = useSiteSettings()
@@ -62,7 +134,6 @@ export default function HomePage() {
   }, [])
 
   const services = settings.home.services
-
 
   return (
     <>
@@ -102,15 +173,20 @@ export default function HomePage() {
             description={localise(settings.home.servicesDescription, language)}
           />
           <div className="premium-service-grid">
-            {services.map((service) => (
-              <Link to={service.href} className="premium-service-card" key={service.href}>
-                <span className="premium-service-icon"><Icon name={service.icon} size={24} /></span>
-                <span className="premium-service-eyebrow">{localise(service.eyebrow, language)}</span>
-                <h2>{localise(service.title, language)}</h2>
-                <p>{localise(service.description, language)}</p>
-                <span className="premium-card-link">{t('Buka perkhidmatan', 'Open service')} <Icon name="chevron-right" size={17} /></span>
-              </Link>
-            ))}
+            {services.map((service) => {
+              if (service.href === '/tempahan/bilik-jpp' || service.href === '/tempahan') {
+                return <HomepageMiniCalendarCard key={service.href} language={language} t={t} />
+              }
+              return (
+                <Link to={service.href} className="premium-service-card" key={service.href}>
+                  <span className="premium-service-icon"><Icon name={service.icon} size={24} /></span>
+                  <span className="premium-service-eyebrow">{localise(service.eyebrow, language)}</span>
+                  <h2>{localise(service.title, language)}</h2>
+                  <p>{localise(service.description, language)}</p>
+                  <span className="premium-card-link">{t('Buka perkhidmatan', 'Open service')} <Icon name="chevron-right" size={17} /></span>
+                </Link>
+              )
+            })}
           </div>
         </div>
       </section>

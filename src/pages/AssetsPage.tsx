@@ -229,8 +229,10 @@ export default function AssetsPage() {
                       <p>{language === 'bm' ? asset.description_bm : asset.description_en || asset.description_bm}</p>
                       <div className="asset-card-footer">
                         <span>{asset.asset_code || `AST-${asset.id.slice(0, 6).toUpperCase()}`}</span>
-                        <button type="button" onClick={() => chooseAsset(asset.id)} disabled={!available}>
-                          {available ? t('Mohon sekarang', 'Request now') : t('Tidak tersedia', 'Unavailable')} <Icon name="chevron-right" size={16} />
+                        <button type="button" className="button-premium-easet compact-easet-btn" onClick={() => chooseAsset(asset.id)} disabled={!available}>
+                          <span className="premium-easet-star">✦</span>
+                          {available ? t('Mohon e-Aset', 'Apply for e-Asset') : t('Tidak tersedia', 'Unavailable')}
+                          {available && <span className="premium-easet-arrow">→</span>}
                         </button>
                       </div>
                     </div>
@@ -306,10 +308,15 @@ export default function AssetsPage() {
                   </label>
                 </div>
 
-                <div className="full-span form-actions">
-                  <Button type="submit" disabled={busy || !akuJanjiAgreed || !assetId || (selectedAsset?.stock_available || 0) < 1}>
-                    {busy ? t('Menghantar…', 'Submitting…') : t('Hantar permohonan', 'Submit request')}
+                <div className="full-span form-actions asset-form-actions-wrap">
+                  <Button type="submit" className="button-premium-easet" disabled={busy || !akuJanjiAgreed || !assetId || (selectedAsset?.stock_available || 0) < 1}>
+                    <span className="premium-easet-star">✦</span>
+                    {busy ? t('Menghantar…', 'Submitting…') : t('Mohon e-Aset', 'Apply for e-Asset')}
+                    <span className="premium-easet-arrow">→</span>
                   </Button>
+                  <p className="easet-supporting-text">
+                    {t('Permohonan penggunaan aset secara rasmi melalui sistem HiPER.', 'Official asset usage request through the HiPER system.')}
+                  </p>
                 </div>
               </form>
             )}

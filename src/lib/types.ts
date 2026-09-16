@@ -96,7 +96,7 @@ export interface LocalisedText {
 }
 
 export interface SiteServiceCard {
-  icon: 'box' | 'heart' | 'fund' | 'megaphone'
+  icon: 'box' | 'heart' | 'fund' | 'megaphone' | 'calendar'
   title: LocalisedText
   eyebrow: LocalisedText
   description: LocalisedText
@@ -309,7 +309,7 @@ export interface Donation {
   proof_path: string | null
   reference_no: string | null
   message: string | null
-  status: 'pending' | 'verified' | 'rejected'
+  status: 'pending' | 'verified' | 'rejected' | 'cancelled'
   created_at: string
   updated_at: string
 }
