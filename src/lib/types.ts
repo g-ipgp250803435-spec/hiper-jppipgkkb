@@ -4,7 +4,91 @@ export type UserRole = 'user' | 'admin'
 export type RequestStatus = 'pending' | 'approved' | 'rejected' | 'cancelled' | 'completed'
 export type OrganizationNodeType = 'leadership' | 'unit' | 'member'
 export type AnnouncementPinType = 'none' | 'penting' | 'terkini'
-export type NotificationType = 'e_aset' | 'ikes' | 'tabung_jumaat' | 'kpk' | 'tempahan' | 'announcement'
+export type NotificationType = 'e_aset' | 'ikes' | 'tabung_jumaat' | 'kpk' | 'tempahan' | 'announcement' | 'cms_page'
+
+export type CmsPageStatus = 'draft' | 'published' | 'archived'
+export type CmsBlockType = 'rich_text' | 'image' | 'button' | 'link' | 'gallery' | 'spacer'
+
+export interface CmsPage {
+  id: string
+  title_bm: string
+  title_en: string | null
+  slug: string
+  description_bm: string | null
+  description_en: string | null
+  status: CmsPageStatus
+  is_public: boolean
+  show_in_navigation: boolean
+  navigation_order: number
+  created_by?: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface RichTextBlockContent {
+  heading_bm?: string
+  heading_en?: string
+  body_bm?: string
+  body_en?: string
+}
+
+export interface ImageBlockContent {
+  image_url?: string
+  caption_bm?: string
+  caption_en?: string
+  alignment?: 'left' | 'center' | 'right'
+  size?: 'small' | 'medium' | 'full'
+}
+
+export interface ButtonBlockContent {
+  label_bm?: string
+  label_en?: string
+  url?: string
+  variant?: 'primary' | 'secondary' | 'gold' | 'outline'
+  open_new_tab?: boolean
+}
+
+export interface LinkBlockContent {
+  title_bm?: string
+  title_en?: string
+  url?: string
+  description_bm?: string
+  description_en?: string
+}
+
+export interface GalleryImageItem {
+  id: string
+  image_url: string
+  caption_bm?: string
+  caption_en?: string
+}
+
+export interface GalleryBlockContent {
+  items?: GalleryImageItem[]
+}
+
+export interface SpacerBlockContent {
+  height_px?: number
+  show_line?: boolean
+}
+
+export type CmsBlockContent =
+  | RichTextBlockContent
+  | ImageBlockContent
+  | ButtonBlockContent
+  | LinkBlockContent
+  | GalleryBlockContent
+  | SpacerBlockContent
+  | Record<string, unknown>
+
+export interface CmsPageBlock {
+  id: string
+  page_id: string
+  block_type: CmsBlockType
+  content: CmsBlockContent
+  display_order: number
+  created_at?: string
+}
 
 export interface LocalisedText {
   bm: string

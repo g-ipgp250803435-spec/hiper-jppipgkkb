@@ -2,11 +2,13 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { isSupabaseConfigured } from '../lib/config'
 import { localise } from '../lib/siteSettings'
+import { supabase } from '../lib/supabase'
 import { useUi } from '../contexts/UiContext'
 import { useAuth } from '../contexts/AuthContext'
 import { useSiteSettings } from '../contexts/SiteSettingsContext'
 import { Button, Notice } from './UI'
 import { Icon, type IconName } from './Icons'
+import type { CmsPage } from '../lib/types'
 
 type NavigationItem = {
   to: string
@@ -19,12 +21,36 @@ export function Layout({ children }: { children: ReactNode }) {
   const { settings } = useSiteSettings()
   const { user, isAdmin, signOut } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [dynamicNavPages, setDynamicNavPages] = useState<CmsPage[]>([])
   const navigate = useNavigate()
   const location = useLocation()
   const menuButtonRef = useRef<HTMLButtonElement>(null)
   const closeButtonRef = useRef<HTMLButtonElement>(null)
 
-  const publicNavItems: NavigationItem[] = [
+  useEffect(() => {
+    async function fetchCmsNavPages() {
+      if (!isSupabaseConfigured) return
+      try {
+        const { data, error } = await supabase
+          .from('cms_pages')
+          .select('*')
+          .eq('status', 'published')
+          .eq('is_public', true)
+          .eq('show_in_navigation', true)
+          .order('navigation_order', { ascending: true })
+
+        if (!error && data) {
+          setDynamicNavPages(data as CmsPage[])
+        }
+      } catch (err) {
+        console.error('Error fetching CMS navigation pages:', err)
+      }
+    }
+
+    void fetchCmsNavPages()
+  }, [])
+
+  const baseNavItems: NavigationItem[] = [
     { to: '/', label: settings.navigation.home, icon: 'dashboard' },
     { to: '/e-aset', label: settings.navigation.assets, icon: 'box' },
     { to: '/ikes', label: settings.navigation.ikes, icon: 'heart' },
@@ -34,6 +60,14 @@ export function Layout({ children }: { children: ReactNode }) {
     { to: '/pengumuman', label: settings.navigation.announcements, icon: 'megaphone' },
     { to: '/kenali-pejabat', label: settings.navigation.office, icon: 'building' },
   ]
+
+  const cmsNavItems: NavigationItem[] = dynamicNavPages.map((page) => ({
+    to: `/page/${page.slug}`,
+    label: { bm: page.title_bm, en: page.title_en || page.title_bm },
+    icon: 'file-text' as IconName,
+  }))
+
+  const publicNavItems: NavigationItem[] = [...baseNavItems, ...cmsNavItems]
 
   const accountNavItems: NavigationItem[] = [
     ...(user ? [{ to: '/portal', label: settings.navigation.portal, icon: 'briefcase' as IconName }] : []),

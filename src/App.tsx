@@ -13,6 +13,7 @@ import AnnouncementsPage from './pages/AnnouncementsPage'
 import OfficePage from './pages/OfficePage'
 import PortalPage from './pages/PortalPage'
 import AdminPage from './pages/AdminPage'
+import DynamicPage from './pages/DynamicPage'
 import { Card } from './components/UI'
 import { useUi } from './contexts/UiContext'
 
@@ -49,6 +50,8 @@ export default function App() {
           <Route path="/tabung-jumaat" element={<DonationsPage />} />
           <Route path="/pengumuman" element={<AnnouncementsPage />} />
           <Route path="/kenali-pejabat" element={<OfficePage />} />
+          <Route path="/page/:slug" element={<DynamicPage />} />
+          <Route path="/dasar-privasi" element={<DynamicPage />} />
           <Route path="/portal" element={<ProtectedRoute><PortalPage /></ProtectedRoute>} />
           <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
           <Route path="*" element={<NotFoundPage />} />
