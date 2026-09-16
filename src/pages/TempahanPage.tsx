@@ -51,15 +51,15 @@ const defaultServices: BookingService[] = [
 
 const OFFICIAL_BUREAUS = [
   'Biro Akademik',
-  'Biro Kerohanian',
-  'Biro Kebajikan',
-  'Biro Sukan',
-  'Biro Multimedia',
-  'Biro Protokol',
+  'Biro Kerohanian. Moral dan Disiplin',
+  'Biro Kebajikan dan Sosial',
+  'Biro Sukan dan Rekreasi',
+  'Biro Teknologi Maklumat dan Penerbitan',
+  'Biro Hal Ehwal Wanita',
   'Biro Keusahawanan',
-  'Biro Kebudayaan',
-  'Biro Pengantarabangsaan',
-  'Biro Khas',
+  'Biro Kebudayaan dan Kesenian',
+  'Biro Perhubungan Domestik dan Antarabangsa',
+  'Biro Kediaman Pelajar',
 ]
 
 const mockRoomBookings: RoomBooking[] = [
@@ -67,12 +67,12 @@ const mockRoomBookings: RoomBooking[] = [
     id: 'rb-mock-1',
     user_id: 'mock-u-1',
     booking_date: new Date(Date.now() + 86400000 * 2).toISOString().split('T')[0],
-    name: 'Muhammad Faris Bin Husin',
+    name: 'Muhammad Azim Bin Hakimi',
     bureau: 'Biro Keusahawanan',
-    purpose: 'Mesyuarat Persiapan Minggu Keusahawanan PBAK',
+    purpose: 'Mesyuarat Persiapan Minggu Keusahawanan',
     remarks: 'Memerlukan sistem pembesar suara dan projektor',
     status: 'approved',
-    admin_notes: 'Diluluskan. Kunci boleh diambil dari Pengerusi JPP.',
+    admin_notes: 'Diluluskan. Kunci boleh diambil dari AMT Angkat.',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   },
@@ -81,7 +81,7 @@ const mockRoomBookings: RoomBooking[] = [
     user_id: 'mock-u-2',
     booking_date: new Date(Date.now() + 86400000 * 5).toISOString().split('T')[0],
     name: 'Tan Wei Jin',
-    bureau: 'Biro Multimedia',
+    bureau: 'Biro Teknologi Maklumat dan Penerbitan',
     purpose: 'Bengkel Rekabentuk Poster & Publisiti',
     remarks: null,
     status: 'pending',
@@ -191,7 +191,7 @@ export default function TempahanPage() {
     if (existing) {
       setMessage({
         type: 'danger',
-        text: t('Maaf, bilik JPP telah ditempah pada tarikh tersebut.', 'Sorry, JPP room is already booked on that date.')
+        text: t('Maaf, Bilik JPP telah ditempah pada tarikh tersebut.', 'Sorry, JPP Room is already booked on that date.')
       })
       setSelectedDate(dateStr)
       return
@@ -225,7 +225,7 @@ export default function TempahanPage() {
     if (existingBooking) {
       setMessage({
         type: 'danger',
-        text: 'Maaf, bilik JPP telah ditempah pada tarikh tersebut.'
+        text: 'Maaf, Bilik JPP telah ditempah pada tarikh tersebut.'
       })
       return
     }
@@ -249,7 +249,7 @@ export default function TempahanPage() {
       setRoomBookings((prev) => [...prev, newMockBooking])
       setMessage({
         type: 'success',
-        text: t('Permohonan tempahan bilik JPP berjaya dihantar!', 'JPP room booking request submitted successfully!')
+        text: t('Permohonan tempahan Bilik JPP berjaya dihantar!', 'JPP Room booking request submitted successfully!')
       })
       setPurpose('')
       setRemarks('')
@@ -280,7 +280,7 @@ export default function TempahanPage() {
 
       setMessage({
         type: 'success',
-        text: t('Permohonan tempahan bilik JPP berjaya dihantar dan sedang menunggu kelulusan admin.', 'JPP room booking request submitted and pending admin approval.')
+        text: t('Permohonan tempahan Bilik JPP berjaya dihantar dan sedang menunggu kelulusan admin.', 'JPP Room booking request submitted and pending admin approval.')
       })
       setPurpose('')
       setRemarks('')
@@ -348,7 +348,7 @@ export default function TempahanPage() {
       <div className="container">
         <PageHeader
           eyebrow={isRoomBookingModule ? t('TEMPAHAN BILIK JPP', 'JPP ROOM BOOKING') : t('PERKHIDMATAN TEMPAHAN', 'BOOKING SERVICES')}
-          title={isRoomBookingModule ? t('Kalendar & Tempahan Bilik JPP', 'JPP Room Calendar & Booking') : t('Tempahan Pejabat Bendahari Agung Kehormat', 'Honorary Treasurer General Office Bookings')}
+          title={isRoomBookingModule ? t('Kalendar & Tempahan Bilik JPP', 'JPP Room Calendar & Booking') : t('Tempahan Pejabat Bendahari Agung Kehormat', 'Honorary Treasurer-General Office Bookings')}
           description={isRoomBookingModule
             ? t('Semak ketersediaan tarikh dan hantar permohonan tempahan bilik mesyuarat / perbincangan JPP.', 'Check date availability and submit booking request for JPP meeting / discussion room.')
             : t('Pusat perkhidmatan tempahan rasmi PBAK JPP IPGKKB – Tempahan baju korporat, tanda nama dan bilik mesyuarat.', 'Official PBAK JPP IPGKKB booking service centre – Corporate apparel, name tags and meeting room bookings.')
@@ -507,7 +507,7 @@ export default function TempahanPage() {
                           <strong>{booking.name}</strong>
                           <StatusBadge status={booking.status} />
                         </div>
-                        <p style={{ margin: '4px 0', fontSize: '14px' }}><b>Biro Angkat:</b> {booking.bureau}</p>
+                        <p style={{ margin: '4px 0', fontSize: '14px' }}><b>Biro:</b> {booking.bureau}</p>
                         <p style={{ margin: '4px 0', fontSize: '14px' }}><b>Tujuan:</b> {booking.purpose}</p>
                         {booking.remarks && <p style={{ margin: '4px 0', fontSize: '13px', color: 'var(--ink-muted)' }}><b>Catatan:</b> {booking.remarks}</p>}
                       </div>
@@ -523,7 +523,7 @@ export default function TempahanPage() {
                 <div className="locked-panel">
                   <Icon name="lock" size={34} />
                   <h3>{t('Log masuk diperlukan', 'Sign in required')}</h3>
-                  <p>{t('Sila log masuk menggunakan akaun DELIMa untuk membuat tempahan bilik JPP.', 'Please sign in with your DELIMa account to book the JPP room.')}</p>
+                  <p>{t('Sila log masuk menggunakan akaun DELIMa untuk membuat tempahan Bilik JPP.', 'Please sign in with your DELIMa account to book the JPP Room.')}</p>
                   <Link className="button button-primary" to="/login">{t('Log masuk DELIMa', 'DELIMa sign in')}</Link>
                 </div>
               ) : (
@@ -545,18 +545,18 @@ export default function TempahanPage() {
                     <input
                       value={applicantName}
                       onChange={(e) => setApplicantName(e.target.value)}
-                      placeholder="Cth: Muhammad Faris Bin Husin"
+                      placeholder="Cth: Muhammad Azim Bin Hakimi"
                       required
                     />
                   </Field>
 
-                  <Field label={t('Biro Angkat', 'Endorsing Bureau')} required>
+                  <Field label={t('Biro', 'Bureau')} required>
                     <select
                       value={bureauName}
                       onChange={(e) => setBureauName(e.target.value)}
                       required
                     >
-                      <option value="">{t('Pilih Biro Angkat', 'Select Bureau')}</option>
+                      <option value="">{t('Pilih Biro', 'Select Bureau')}</option>
                       {OFFICIAL_BUREAUS.map((bureau) => (
                         <option value={bureau} key={bureau}>
                           {bureau}
@@ -579,7 +579,7 @@ export default function TempahanPage() {
                         rows={3}
                         value={purpose}
                         onChange={(e) => setPurpose(e.target.value)}
-                        placeholder="Cth: Mesyuarat persediaan Minggu Keusahawanan PBAK"
+                        placeholder="Cth: Mesyuarat persediaan Minggu Keusahawanan"
                         required
                       />
                     </Field>
