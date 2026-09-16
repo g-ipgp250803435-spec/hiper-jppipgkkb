@@ -390,7 +390,7 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--g
 }
 .mini-calendar-days-header {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 4px;
   text-align: center;
   font-size: .68rem;
@@ -400,7 +400,7 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--g
 }
 .mini-calendar-days-row {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 4px;
   text-align: center;
 }

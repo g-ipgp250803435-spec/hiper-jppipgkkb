@@ -71,7 +71,7 @@ export const defaultSiteSettings: SiteSettings = {
     services: [
       { icon: 'box', eyebrow: { bm: 'PINJAMAN ASET', en: 'ASSET LOANS' }, title: { bm: 'e-Aset', en: 'e-Asset' }, description: { bm: 'Semak ketersediaan aset dan hantar permohonan dalam talian.', en: 'Check asset availability and submit an online request.' }, href: '/e-aset' },
       { icon: 'heart', eyebrow: { bm: 'KEBAJIKAN SISWA', en: 'STUDENT WELFARE' }, title: { bm: 'iKES', en: 'iKES' }, description: { bm: 'Bantuan kebajikan tanpa faedah untuk keperluan segera.', en: 'Interest-free welfare assistance for immediate needs.' }, href: '/ikes' },
-      { icon: 'calendar', eyebrow: { bm: 'TEMPAHAN BILIK', en: 'ROOM BOOKING' }, title: { bm: 'Tempahan Bilik JPP', en: 'JPP Room Booking' }, description: { bm: 'Semak ketersediaan bilik dan buat tempahan bilik mesyuarat JPP.', en: 'Check room availability and reserve the JPP room.' }, href: '/tempahan/bilik-jpp' },
+      { icon: 'calendar', eyebrow: { bm: 'TEMPAHAN BILIK', en: 'ROOM BOOKING' }, title: { bm: 'Tempahan Bilik JPP', en: 'JPP Room Booking' }, description: { bm: 'Semak ketersediaan bilik JPP dan buat tempahan penggunaan ruang secara mudah melalui kalendar interaktif HiPER.', en: 'Check JPP room availability and reserve space easily via HiPER interactive calendar.' }, href: '/tempahan/bilik-jpp' },
       { icon: 'megaphone', eyebrow: { bm: 'HEBAHAN RASMI', en: 'OFFICIAL NOTICES' }, title: { bm: 'Pengumuman', en: 'Announcements' }, description: { bm: 'Dapatkan makluman terkini berkaitan kebajikan dan urusan PBAK.', en: 'Get the latest welfare and PBAK operational updates.' }, href: '/pengumuman' },
     ],
     transparencyEyebrow: { bm: 'Tabung Jumaat', en: 'Friday Fund' },

@@ -70,16 +70,21 @@ function HomepageMiniCalendarCard({ language, t }: { language: 'bm' | 'en'; t: (
       <span className="premium-service-icon"><Icon name="calendar" size={24} /></span>
       <span className="premium-service-eyebrow">{t('TEMPAHAN BILIK', 'ROOM BOOKING')}</span>
       <h2>{t('Tempahan Bilik JPP', 'JPP Room Booking')}</h2>
-      <p style={{ marginBottom: '12px' }}>{t('Semak ketersediaan bilik dan tempah bilik JPP.', 'Check room availability and reserve the JPP room.')}</p>
+      <p style={{ marginBottom: '12px' }}>
+        {t(
+          'Semak ketersediaan bilik JPP dan buat tempahan penggunaan ruang secara mudah melalui kalendar interaktif HiPER.',
+          'Check JPP room availability and reserve space easily via HiPER interactive calendar.'
+        )}
+      </p>
 
       <div className="mini-calendar-preview">
         <div className="mini-calendar-month">{monthLabel}</div>
         <div className="mini-calendar-grid">
           <div className="mini-calendar-days-header">
-            <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span>
+            <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span>
           </div>
           <div className="mini-calendar-days-row">
-            {sampleDays.map(({ day, isBooked }) => (
+            {sampleDays.slice(0, 5).map(({ day, isBooked }) => (
               <div key={day} className={`mini-calendar-cell ${isBooked ? 'booked' : 'available'}`}>
                 <span className="mini-day-num">{day}</span>
                 <span className={`mini-day-status ${isBooked ? 'booked-dot' : 'avail-check'}`}>{isBooked ? '●' : '✓'}</span>
