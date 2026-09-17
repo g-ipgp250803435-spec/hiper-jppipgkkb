@@ -92,9 +92,14 @@ export function generateAndPrintPdfReport(reportTitle: string, items: PdfReportI
         .item-card {
           border: 1px solid #e5e7eb;
           border-radius: 6px;
-          margin-bottom: 20px;
+          margin-bottom: 24px;
           page-break-inside: avoid;
+          break-inside: avoid;
           overflow: hidden;
+        }
+        .item-card:not(:last-child) {
+          page-break-after: always;
+          break-after: page;
         }
         .item-header {
           background: #f3f4f6;

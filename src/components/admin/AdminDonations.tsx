@@ -17,6 +17,7 @@ interface AdminDonationsProps {
   setDonations: React.Dispatch<React.SetStateAction<Donation[]>>
   setDonationSettings: React.Dispatch<React.SetStateAction<DonationSettings | null>>
   onUpdateDonation: (item: Donation) => Promise<void>
+  onDeleteDonation?: (id: string) => Promise<void>
   onAddCollection: (form: typeof initialCollection) => Promise<void>
   onAddDisbursement: (form: typeof initialDisbursement) => Promise<void>
   onSaveDonationSettings: (qrFile: File | null) => Promise<void>
@@ -38,6 +39,7 @@ export default function AdminDonations({
   setDonations,
   setDonationSettings,
   onUpdateDonation,
+  onDeleteDonation,
   onAddCollection,
   onAddDisbursement,
   onSaveDonationSettings,
@@ -218,12 +220,13 @@ export default function AdminDonations({
                     title: `Laporan Sumbangan Tabung Jumaat #${item.id.slice(0, 8)}`,
                     status: item.status,
                     details: [
-                      { label: 'Nama Penderma', value: item.donor_name || 'Tanpa Nama' },
+                    { label: 'Nama Penderma', value: item.donor_name || 'Tanpa Nama (Hamba Allah)' },
                       { label: 'Jumlah Sumbangan (RM)', value: formatMoney(item.amount) },
                       { label: 'Kaedah Pembayaran', value: item.payment_method.toUpperCase() },
                       { label: 'No. Rujukan', value: item.reference_no || '—' },
-                      { label: 'Mesej / Doa', value: item.message || '—' },
+                    { label: 'Mesej / Doa Penderma', value: item.message || '—' },
                       { label: 'Tarikh Sumbangan', value: formatDate(item.created_at, language) },
+                    { label: 'Dokumen Sokongan / Resit', value: item.proof_path ? 'Ada (Bukti Pembayaran Disertakan)' : 'Tiada (Tunai / Manual)' },
                     ],
                   }))
                   generateAndPrintPdfReport('Laporan Sumbangan Tabung Jumaat (Pukal)', pdfItems)
@@ -349,12 +352,13 @@ export default function AdminDonations({
                                 title: `Laporan Sumbangan Tabung Jumaat #${item.id.slice(0, 8)}`,
                                 status: item.status,
                                 details: [
-                                  { label: 'Nama Penderma', value: item.donor_name || 'Tanpa Nama' },
+                                { label: 'Nama Penderma', value: item.donor_name || 'Tanpa Nama (Hamba Allah)' },
                                   { label: 'Jumlah Sumbangan (RM)', value: formatMoney(item.amount) },
                                   { label: 'Kaedah Pembayaran', value: item.payment_method.toUpperCase() },
                                   { label: 'No. Rujukan', value: item.reference_no || '—' },
-                                  { label: 'Mesej / Doa', value: item.message || '—' },
+                                { label: 'Mesej / Doa Penderma', value: item.message || '—' },
                                   { label: 'Tarikh Sumbangan', value: formatDate(item.created_at, language) },
+                                { label: 'Dokumen Sokongan / Resit', value: item.proof_path ? 'Ada (Bukti Pembayaran Disertakan)' : 'Tiada (Tunai / Manual)' },
                                 ],
                               },
                             ]
@@ -364,6 +368,30 @@ export default function AdminDonations({
                           <Icon name="download" size={15} />
                           {t('Export PDF', 'Export PDF')}
                         </Button>
+                      <Button
+                        variant="ghost"
+                        className="compact danger"
+                        disabled={busy}
+                        onClick={() => {
+                          if (
+                            window.confirm(
+                              t(
+                                'Padam permohonan ini secara kekal?\n\nTindakan ini tidak boleh dibatalkan.',
+                                'Delete this application permanently?\n\nThis action cannot be undone.'
+                              )
+                            )
+                          ) {
+                            if (onDeleteDonation) {
+                              void onDeleteDonation(item.id)
+                            } else {
+                              void onDeleteRow('donations', item.id, t('rekod derma', 'donation record'))
+                            }
+                          }
+                        }}
+                      >
+                        <Icon name="trash" size={15} />
+                        {t('Padam', 'Delete')}
+                      </Button>
                       </div>
                     </td>
                   </tr>

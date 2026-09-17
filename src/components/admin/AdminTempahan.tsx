@@ -26,6 +26,7 @@ interface AdminTempahanProps {
       active: boolean
       image_url: string | null
     },
+    imageFile: File | null,
     editingId: string | null
   ) => Promise<void>
   onDeleteService: (id: string) => Promise<void>
@@ -60,6 +61,7 @@ export default function AdminTempahan({
   const [externalLink, setExternalLink] = useState('')
   const [active, setActive] = useState(true)
   const [imageUrl, setImageUrl] = useState('')
+  const [serviceImage, setServiceImage] = useState<File | null>(null)
 
   const editService = (service: BookingService) => {
     setEditingServiceId(service.id)
@@ -73,6 +75,7 @@ export default function AdminTempahan({
     setExternalLink(service.external_link || '')
     setActive(service.active)
     setImageUrl(service.image_url || '')
+    setServiceImage(null)
   }
 
   const resetServiceForm = () => {
@@ -87,6 +90,7 @@ export default function AdminTempahan({
     setExternalLink('')
     setActive(true)
     setImageUrl('')
+    setServiceImage(null)
   }
 
   const handleServiceSubmit = async (e: React.FormEvent) => {
@@ -106,6 +110,7 @@ export default function AdminTempahan({
         active,
         image_url: imageUrl.trim() || null,
       },
+      serviceImage,
       editingServiceId
     )
     resetServiceForm()
@@ -174,9 +179,37 @@ export default function AdminTempahan({
                 <input value={externalLink} onChange={(e) => setExternalLink(e.target.value)} placeholder="https://forms.google.com/..." />
               </Field>
 
-              <Field label={t('URL Gambar (Pilihan)', 'Image URL (Optional)')}>
-                <input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://..." />
-              </Field>
+              <div className="full-span">
+                <Field label={editingServiceId ? t('Upload / Ganti Gambar', 'Upload / Replace Image') : t('Upload Gambar', 'Upload Image')}>
+                  <input type="file" accept="image/*" onChange={(e) => setServiceImage(e.target.files?.[0] || null)} />
+                </Field>
+                {(imageUrl || serviceImage) && (
+                  <div className="admin-media-preview" style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    {serviceImage ? (
+                      <img src={URL.createObjectURL(serviceImage)} alt="Pratonton" style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '6px' }} />
+                    ) : imageUrl ? (
+                      <img src={imageUrl} alt="Semasa" style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '6px' }} />
+                    ) : null}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <span style={{ fontSize: '12px', color: 'var(--ink-soft)' }}>
+                        {serviceImage ? t('Gambar baharu dipilih.', 'New image selected.') : t('Gambar semasa terpapar.', 'Current image displayed.')}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="compact danger"
+                        onClick={() => {
+                          setServiceImage(null)
+                          setImageUrl('')
+                        }}
+                      >
+                        <Icon name="trash" size={14} />
+                        {t('Buang Gambar', 'Remove Image')}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
 
               <div className="full-span">
                 <Field label={t('Arahan / Nota Khas (BM)', 'Instructions (BM)')}>

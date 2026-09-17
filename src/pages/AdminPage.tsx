@@ -437,9 +437,14 @@ export default function AdminPage() {
       active: boolean
       image_url: string | null
     },
+    imageFile: File | null,
     editingId: string | null
   ) => {
     await runAction(async () => {
+      let finalImageUrl = form.image_url
+      if (imageFile) {
+        finalImageUrl = await uploadPublicFile(supabase, imageFile, 'tempahan')
+      }
       const payload = {
         title_bm: form.title_bm,
         title_en: form.title_en || null,
@@ -450,7 +455,7 @@ export default function AdminPage() {
         booking_type: form.booking_type,
         external_link: form.external_link || null,
         active: form.active,
-        image_url: form.image_url,
+        image_url: finalImageUrl,
       }
       const query = editingId
         ? supabase.from('booking_services').update(payload).eq('id', editingId)
@@ -837,6 +842,31 @@ export default function AdminPage() {
     }, 'Maklumat Tabung Jumaat dikemas kini.')
   }
 
+  const deleteApplicationRecord = async (table: string, id: string, label: string) => {
+    await runAction(async () => {
+      if (!isSupabaseConfigured) {
+        if (table === 'ikes_applications') setIkes((rows) => rows.filter((r) => r.id !== id))
+        else if (table === 'asset_applications') setAssetRequests((rows) => rows.filter((r) => r.id !== id))
+        else if (table === 'donations') setDonations((rows) => rows.filter((r) => r.id !== id))
+        else if (table === 'room_bookings') setRoomBookings((rows) => rows.filter((r) => r.id !== id))
+        return
+      }
+
+      // Try soft delete with deleted_at / deleted_by, fallback to hard delete
+      const softDeletePayload = { deleted_at: new Date().toISOString(), deleted_by: user?.id || null }
+      const { error: softError } = await supabase.from(table).update(softDeletePayload).eq('id', id)
+      if (softError) {
+        const { error: delError } = await supabase.from(table).delete().eq('id', id)
+        if (delError) throw delError
+      }
+
+      if (table === 'ikes_applications') setIkes((rows) => rows.filter((r) => r.id !== id))
+      else if (table === 'asset_applications') setAssetRequests((rows) => rows.filter((r) => r.id !== id))
+      else if (table === 'donations') setDonations((rows) => rows.filter((r) => r.id !== id))
+      else if (table === 'room_bookings') setRoomBookings((rows) => rows.filter((r) => r.id !== id))
+    }, `${label} dipadam.`)
+  }
+
   const deleteRow = async (table: string, id: string, label: string) => {
     if (!window.confirm(`Padam ${label}?`)) return
     await runAction(async () => {
@@ -1025,6 +1055,7 @@ export default function AdminPage() {
             supabaseClient={supabase}
             setIkes={setIkes}
             onUpdateIkes={updateIkes}
+            onDeleteIkes={(id) => deleteApplicationRecord('ikes_applications', id, t('permohonan iKES', 'iKES application'))}
           />
         )}
 
@@ -1057,7 +1088,7 @@ export default function AdminPage() {
             onSaveService={saveBookingService}
             onDeleteService={(id) => deleteRow('booking_services', id, t('perkhidmatan tempahan', 'booking service'))}
             onUpdateRoomBooking={updateRoomBooking}
-            onDeleteRoomBooking={(id) => deleteRow('room_bookings', id, t('tempahan bilik', 'room booking'))}
+            onDeleteRoomBooking={(id) => deleteApplicationRecord('room_bookings', id, t('tempahan bilik', 'room booking'))}
           />
         )}
 
@@ -1071,6 +1102,7 @@ export default function AdminPage() {
             busy={busy}
             setAssetRequests={setAssetRequests}
             onUpdateAssetRequest={updateAssetRequest}
+            onDeleteAssetRequest={(id) => deleteApplicationRecord('asset_applications', id, t('permohonan e-Aset', 'e-Asset request'))}
             onSaveAsset={saveAsset}
             onDeleteAsset={(id) => deleteRow('asset_items', id, t('aset', 'asset'))}
           />
@@ -1108,6 +1140,7 @@ export default function AdminPage() {
             setDonations={setDonations}
             setDonationSettings={setDonationSettings}
             onUpdateDonation={updateDonation}
+            onDeleteDonation={(id) => deleteApplicationRecord('donations', id, t('rekod derma', 'donation record'))}
             onAddCollection={addCollection}
             onAddDisbursement={addDisbursement}
             onSaveDonationSettings={saveDonationSettings}

@@ -65,6 +65,7 @@ export default function AdminRoomBookings({
                   { label: 'Masa Tempahan', value: item.start_time && item.end_time ? `${formatTime12Hour(item.start_time)} - ${formatTime12Hour(item.end_time)}` : 'Sepanjang Hari' },
                   { label: 'Tujuan Tempahan', value: item.purpose },
                   { label: 'Catatan Pemohon', value: item.remarks || '—' },
+                    { label: 'Dokumen Sokongan / Kebenaran', value: 'Kebenaran Pengurusan Bilik JPP' },
                   { label: 'Nota Admin', value: item.admin_notes || '—' },
                   { label: 'Tarikh Permohonan Dibuat', value: formatDate(item.created_at, language) },
                 ],
@@ -268,6 +269,7 @@ export default function AdminRoomBookings({
                                 { label: 'Masa Tempahan', value: item.start_time && item.end_time ? `${formatTime12Hour(item.start_time)} - ${formatTime12Hour(item.end_time)}` : 'Sepanjang Hari' },
                                 { label: 'Tujuan Tempahan', value: item.purpose },
                                 { label: 'Catatan Pemohon', value: item.remarks || '—' },
+                                { label: 'Dokumen Sokongan / Kebenaran', value: 'Kebenaran Pengurusan Bilik JPP' },
                                 { label: 'Nota Admin', value: item.admin_notes || '—' },
                                 { label: 'Tarikh Permohonan Dibuat', value: formatDate(item.created_at, language) },
                               ],
@@ -279,7 +281,23 @@ export default function AdminRoomBookings({
                         <Icon name="download" size={15} />
                         {t('Export PDF', 'Export PDF')}
                       </Button>
-                      <Button variant="ghost" className="compact danger" disabled={busy} onClick={() => void onDeleteRoomBooking(item.id)}>
+                      <Button
+                        variant="ghost"
+                        className="compact danger"
+                        disabled={busy}
+                        onClick={() => {
+                          if (
+                            window.confirm(
+                              t(
+                                'Padam permohonan ini secara kekal?\n\nTindakan ini tidak boleh dibatalkan.',
+                                'Delete this application permanently?\n\nThis action cannot be undone.'
+                              )
+                            )
+                          ) {
+                            void onDeleteRoomBooking(item.id)
+                          }
+                        }}
+                      >
                         <Icon name="trash" size={16} />
                         {t('Padam', 'Delete')}
                       </Button>
