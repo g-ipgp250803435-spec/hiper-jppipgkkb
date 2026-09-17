@@ -5,7 +5,7 @@ import { Icon } from '../components/Icons'
 import { useAuth } from '../contexts/AuthContext'
 import { useUi } from '../contexts/UiContext'
 import { isSupabaseConfigured } from '../lib/config'
-import { formatDate } from '../lib/helpers'
+import { formatDate, formatTime12Hour, timeToMinutes, checkTimeOverlap } from '../lib/helpers'
 import { supabase } from '../lib/supabase'
 import { notifyAdmins } from '../lib/v3/notificationService'
 import type { BookingService, RoomBooking } from '../lib/types'
@@ -67,6 +67,8 @@ const mockRoomBookings: RoomBooking[] = [
     id: 'rb-mock-1',
     user_id: 'mock-u-1',
     booking_date: new Date(Date.now() + 86400000 * 2).toISOString().split('T')[0],
+    start_time: '09:00',
+    end_time: '12:00',
     name: 'Muhammad Azim Bin Hakimi',
     bureau: 'Biro Keusahawanan',
     purpose: 'Mesyuarat Persiapan Minggu Keusahawanan',
@@ -80,6 +82,8 @@ const mockRoomBookings: RoomBooking[] = [
     id: 'rb-mock-2',
     user_id: 'mock-u-2',
     booking_date: new Date(Date.now() + 86400000 * 5).toISOString().split('T')[0],
+    start_time: '14:00',
+    end_time: '16:00',
     name: 'Tan Wei Jin',
     bureau: 'Biro Teknologi Maklumat dan Penerbitan',
     purpose: 'Bengkel Rekabentuk Poster & Publisiti',
@@ -108,6 +112,8 @@ export default function TempahanPage() {
   // Booking Form State
   const [applicantName, setApplicantName] = useState('')
   const [bureauName, setBureauName] = useState('')
+  const [startTime, setStartTime] = useState('09:00')
+  const [endTime, setEndTime] = useState('12:00')
   const [purpose, setPurpose] = useState('')
   const [remarks, setRemarks] = useState('')
 
@@ -181,21 +187,15 @@ export default function TempahanPage() {
     setSelectedDate(null)
   }
 
-  const getBookingForDate = (dateStr: string): RoomBooking | undefined => {
-    return roomBookings.find((b) => b.booking_date === dateStr && !['rejected', 'cancelled'].includes(b.status))
+  const todayStr = new Date().toISOString().split('T')[0]
+
+  const getBookingsForDate = (dateStr: string): RoomBooking[] => {
+    return roomBookings.filter((b) => b.booking_date === dateStr && !['rejected', 'cancelled'].includes(b.status))
   }
 
   const handleDateClick = (dateStr: string) => {
     setMessage(null)
-    const existing = getBookingForDate(dateStr)
-    if (existing) {
-      setMessage({
-        type: 'danger',
-        text: t('Maaf, Bilik JPP telah ditempah pada tarikh tersebut.', 'Sorry, JPP Room is already booked on that date.')
-      })
-      setSelectedDate(dateStr)
-      return
-    }
+    if (dateStr < todayStr) return
     setSelectedDate(dateStr)
   }
 
@@ -213,19 +213,46 @@ export default function TempahanPage() {
       return
     }
 
+    if (selectedDate < todayStr) {
+      setMessage({ type: 'danger', text: t('Tidak boleh membuat tempahan pada tarikh yang telah lalu.', 'Cannot make bookings on past dates.') })
+      return
+    }
+
+    if (!startTime || !endTime) {
+      setMessage({ type: 'danger', text: t('Sila nyatakan Masa Mula dan Masa Tamat tempahan.', 'Please specify booking start and end time.') })
+      return
+    }
+
+    const startMin = timeToMinutes(startTime)
+    const endMin = timeToMinutes(endTime)
+
+    if (endMin <= startMin) {
+      setMessage({ type: 'danger', text: t('Masa tamat mesti selepas masa mula.', 'End time must be after start time.') })
+      return
+    }
+
     if (!applicantName.trim() || !bureauName.trim() || !purpose.trim()) {
       setMessage({ type: 'danger', text: t('Sila lengkapkan semua medan wajib.', 'Please complete all required fields.') })
       return
     }
 
-    // Double Booking Prevention Check
-    const existingBooking = roomBookings.find(
-      (b) => b.booking_date === selectedDate && !['rejected', 'cancelled'].includes(b.status)
-    )
-    if (existingBooking) {
+    // Time Overlap Check
+    const overlappingBooking = roomBookings.find((b) => {
+      if (b.booking_date !== selectedDate) return false
+      if (['rejected', 'cancelled'].includes(b.status)) return false
+      return checkTimeOverlap(startTime, endTime, b.start_time, b.end_time)
+    })
+
+    if (overlappingBooking) {
+      const existingTimeStr = overlappingBooking.start_time && overlappingBooking.end_time
+        ? `${formatTime12Hour(overlappingBooking.start_time)} - ${formatTime12Hour(overlappingBooking.end_time)}`
+        : t('sepanjang hari', 'full day')
       setMessage({
         type: 'danger',
-        text: 'Maaf, Bilik JPP telah ditempah pada tarikh tersebut.'
+        text: t(
+          `Maaf, Bilik JPP telah ditempah pada masa/tarikh tersebut (${existingTimeStr}). Sila pilih masa atau tarikh lain.`,
+          `Sorry, JPP Room is already booked for that time/date (${existingTimeStr}). Please select another time or date.`
+        )
       })
       return
     }
@@ -237,6 +264,8 @@ export default function TempahanPage() {
         id: `rb-mock-${Date.now()}`,
         user_id: user.id,
         booking_date: selectedDate,
+        start_time: startTime,
+        end_time: endTime,
         name: applicantName.trim(),
         bureau: bureauName.trim(),
         purpose: purpose.trim(),
@@ -261,6 +290,8 @@ export default function TempahanPage() {
       const { data: newRec, error } = await supabase.from('room_bookings').insert({
         user_id: user.id,
         booking_date: selectedDate,
+        start_time: startTime,
+        end_time: endTime,
         name: applicantName.trim(),
         bureau: bureauName.trim(),
         purpose: purpose.trim(),
@@ -273,7 +304,7 @@ export default function TempahanPage() {
       // Send admin notification
       await notifyAdmins(
         `🔔 Permohonan Tempahan Bilik JPP Baharu`,
-        `Tempahan Bilik JPP untuk tarikh ${formatDate(selectedDate, language)} telah dihantar oleh ${applicantName.trim()} (${bureauName.trim()}).`,
+        `Tempahan Bilik JPP untuk tarikh ${formatDate(selectedDate, language)} (${formatTime12Hour(startTime)} - ${formatTime12Hour(endTime)}) telah dihantar oleh ${applicantName.trim()} (${bureauName.trim()}).`,
         'tempahan',
         newRec?.id || null
       )
@@ -305,35 +336,37 @@ export default function TempahanPage() {
   for (let day = 1; day <= daysInMonth; day++) {
     const dayDate = new Date(year, month, day)
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-    const booking = getBookingForDate(dateStr)
+    const dayBookings = getBookingsForDate(dateStr)
     const isSelected = selectedDate === dateStr
-    const isPast = dayDate < new Date(new Date().setHours(0,0,0,0))
+    const todayZero = new Date(new Date().setHours(0, 0, 0, 0))
+    const isPast = dayDate < todayZero
 
     let statusClass = 'available'
     let statusBadgeText = t('Sedia', 'Available')
 
-    if (booking) {
-      if (booking.status === 'pending') {
-        statusClass = 'pending'
-        statusBadgeText = t('Menunggu', 'Pending')
-      } else if (booking.status === 'approved') {
+    if (isPast) {
+      statusClass = 'past'
+      statusBadgeText = t('Tidak tersedia', 'Unavailable')
+    } else if (dayBookings.length > 0) {
+      const hasApproved = dayBookings.some((b) => b.status === 'approved')
+      const hasPending = dayBookings.some((b) => b.status === 'pending')
+      if (hasApproved) {
         statusClass = 'approved'
         statusBadgeText = t('Ditempah', 'Reserved')
-      } else if (booking.status === 'completed') {
-        statusClass = 'completed'
-        statusBadgeText = t('Selesai', 'Completed')
+      } else if (hasPending) {
+        statusClass = 'pending'
+        statusBadgeText = t('Menunggu', 'Pending')
       }
-    } else if (isPast) {
-      statusClass = 'past'
-      statusBadgeText = t('Lalu', 'Past')
     }
 
     calendarDays.push(
       <button
         type="button"
         key={`day-${day}`}
+        disabled={isPast}
         className={`calendar-day ${statusClass} ${isSelected ? 'selected' : ''}`}
-        onClick={() => handleDateClick(dateStr)}
+        onClick={() => !isPast && handleDateClick(dateStr)}
+        style={isPast ? { opacity: 0.45, cursor: 'not-allowed' } : undefined}
       >
         <span className="calendar-day-number">{day}</span>
         <span className={`calendar-status-dot status-dot-${statusClass}`} title={statusBadgeText}>
@@ -492,8 +525,20 @@ export default function TempahanPage() {
               {selectedDate && (
                 <Card title={t(`Butiran Tarikh: ${formatDate(selectedDate, language)}`, `Date Details: ${formatDate(selectedDate, language)}`)}>
                   {(() => {
-                    const booking = getBookingForDate(selectedDate)
-                    if (!booking) {
+                    if (selectedDate < todayStr) {
+                      return (
+                        <div style={{ color: 'var(--ink-muted)' }}>
+                          <Icon name="alert" size={20} />
+                          <strong> {t('Tidak tersedia', 'Not available')}</strong>
+                          <p style={{ margin: '8px 0 0', fontSize: '14px' }}>
+                            {t('Tarikh ini telah lalu dan tidak boleh ditempah.', 'This date has passed and cannot be booked.')}
+                          </p>
+                        </div>
+                      )
+                    }
+
+                    const dayBookings = getBookingsForDate(selectedDate)
+                    if (dayBookings.length === 0) {
                       return (
                         <div style={{ color: 'var(--success-color, #10b981)' }}>
                           <Icon name="check" size={20} />
@@ -501,15 +546,26 @@ export default function TempahanPage() {
                         </div>
                       )
                     }
+
                     return (
-                      <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                          <strong>{booking.name}</strong>
-                          <StatusBadge status={booking.status} />
-                        </div>
-                        <p style={{ margin: '4px 0', fontSize: '14px' }}><b>Biro:</b> {booking.bureau}</p>
-                        <p style={{ margin: '4px 0', fontSize: '14px' }}><b>Tujuan:</b> {booking.purpose}</p>
-                        {booking.remarks && <p style={{ margin: '4px 0', fontSize: '13px', color: 'var(--ink-muted)' }}><b>Catatan:</b> {booking.remarks}</p>}
+                      <div className="stack" style={{ gap: '12px' }}>
+                        {dayBookings.map((b) => (
+                          <div key={b.id} style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                              <strong style={{ fontSize: '15px' }}>{b.name}</strong>
+                              <StatusBadge status={b.status} />
+                            </div>
+                            <p style={{ margin: '4px 0', fontSize: '14px' }}>
+                              <b>{t('Tarikh:', 'Date:')}</b> {formatDate(b.booking_date, language)}
+                            </p>
+                            <p style={{ margin: '4px 0', fontSize: '14px' }}>
+                              <b>{t('Masa:', 'Time:')}</b> {b.start_time && b.end_time ? `${formatTime12Hour(b.start_time)} - ${formatTime12Hour(b.end_time)}` : 'Sepanjang hari'}
+                            </p>
+                            <p style={{ margin: '4px 0', fontSize: '14px' }}><b>{t('Biro:', 'Bureau:')}</b> {b.bureau}</p>
+                            <p style={{ margin: '4px 0', fontSize: '14px' }}><b>{t('Tujuan:', 'Purpose:')}</b> {b.purpose}</p>
+                            {b.remarks && <p style={{ margin: '4px 0', fontSize: '13px', color: 'var(--ink-muted)' }}><b>{t('Catatan:', 'Remarks:')}</b> {b.remarks}</p>}
+                          </div>
+                        ))}
                       </div>
                     )
                   })()}
@@ -535,7 +591,33 @@ export default function TempahanPage() {
                       <input
                         type="date"
                         value={selectedDate || ''}
-                        onChange={(e) => setSelectedDate(e.target.value)}
+                        min={todayStr}
+                        onChange={(e) => {
+                          if (e.target.value < todayStr) {
+                            setMessage({ type: 'danger', text: t('Tidak boleh memilih tarikh yang telah lalu.', 'Cannot select past dates.') })
+                            return
+                          }
+                          setSelectedDate(e.target.value)
+                        }}
+                        required
+                      />
+                    </Field>
+                  </div>
+
+                  <div className="full-span" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <Field label={t('Masa Mula', 'Start Time')} required>
+                      <input
+                        type="time"
+                        value={startTime}
+                        onChange={(e) => setStartTime(e.target.value)}
+                        required
+                      />
+                    </Field>
+                    <Field label={t('Masa Tamat', 'End Time')} required>
+                      <input
+                        type="time"
+                        value={endTime}
+                        onChange={(e) => setEndTime(e.target.value)}
                         required
                       />
                     </Field>

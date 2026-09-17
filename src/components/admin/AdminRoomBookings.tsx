@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Button, Card, EmptyState, Field, StatusBadge } from '../UI'
 import { Icon } from '../Icons'
-import { formatDate } from '../../lib/helpers'
+import { formatDate, formatTime12Hour } from '../../lib/helpers'
 import { generateAndPrintPdfReport, type PdfReportItem } from '../../lib/pdfExport'
 import type { RequestStatus, RoomBooking } from '../../lib/types'
 
@@ -62,6 +62,7 @@ export default function AdminRoomBookings({
                   { label: 'Nama Pemohon', value: item.name },
                   { label: 'Biro Angkat', value: item.bureau },
                   { label: 'Tarikh Tempahan Bilik', value: formatDate(item.booking_date, language) },
+                  { label: 'Masa Tempahan', value: item.start_time && item.end_time ? `${formatTime12Hour(item.start_time)} - ${formatTime12Hour(item.end_time)}` : 'Sepanjang Hari' },
                   { label: 'Tujuan Tempahan', value: item.purpose },
                   { label: 'Catatan Pemohon', value: item.remarks || '—' },
                   { label: 'Nota Admin', value: item.admin_notes || '—' },
@@ -176,6 +177,32 @@ export default function AdminRoomBookings({
                         />
                       </Field>
                     </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', marginBottom: '6px' }}>
+                      <Field label={t('Masa Mula', 'Start Time')}>
+                        <input
+                          type="time"
+                          value={item.start_time || ''}
+                          style={{ padding: '2px 4px', fontSize: '12px' }}
+                          onChange={(e) =>
+                            setRoomBookings((rows) =>
+                              rows.map((r) => (r.id === item.id ? { ...r, start_time: e.target.value } : r))
+                            )
+                          }
+                        />
+                      </Field>
+                      <Field label={t('Masa Tamat', 'End Time')}>
+                        <input
+                          type="time"
+                          value={item.end_time || ''}
+                          style={{ padding: '2px 4px', fontSize: '12px' }}
+                          onChange={(e) =>
+                            setRoomBookings((rows) =>
+                              rows.map((r) => (r.id === item.id ? { ...r, end_time: e.target.value } : r))
+                            )
+                          }
+                        />
+                      </Field>
+                    </div>
                     <strong style={{ fontSize: '15px' }}>{item.name}</strong>
                     <small style={{ display: 'block', color: 'var(--ink-muted)' }}>
                       {formatDate(item.created_at, language)}
@@ -238,6 +265,7 @@ export default function AdminRoomBookings({
                                 { label: 'Nama Pemohon', value: item.name },
                                 { label: 'Biro Angkat', value: item.bureau },
                                 { label: 'Tarikh Tempahan Bilik', value: formatDate(item.booking_date, language) },
+                                { label: 'Masa Tempahan', value: item.start_time && item.end_time ? `${formatTime12Hour(item.start_time)} - ${formatTime12Hour(item.end_time)}` : 'Sepanjang Hari' },
                                 { label: 'Tujuan Tempahan', value: item.purpose },
                                 { label: 'Catatan Pemohon', value: item.remarks || '—' },
                                 { label: 'Nota Admin', value: item.admin_notes || '—' },
