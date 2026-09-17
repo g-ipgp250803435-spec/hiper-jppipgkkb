@@ -9,7 +9,15 @@ import { isSupabaseConfigured } from '../lib/config'
 import { localise } from '../lib/siteSettings'
 import { supabase } from '../lib/supabase'
 import { notifyAdmins } from '../lib/v3/notificationService'
-import type { AssetItem } from '../lib/types'
+import type { AssetCategory, AssetItem } from '../lib/types'
+
+const defaultCategories: AssetCategory[] = [
+  { id: 'cat-1', name_bm: 'Elektronik', name_en: 'Electronics', display_order: 1 },
+  { id: 'cat-2', name_bm: 'Peralatan Program', name_en: 'Program Equipment', display_order: 2 },
+  { id: 'cat-3', name_bm: 'Perabot', name_en: 'Furniture', display_order: 3 },
+  { id: 'cat-4', name_bm: 'Audio Visual', name_en: 'Audio Visual', display_order: 4 },
+  { id: 'cat-5', name_bm: 'Lain-lain', name_en: 'Others', display_order: 5 },
+]
 
 const sampleAssets: AssetItem[] = [
   {
@@ -50,6 +58,9 @@ export default function AssetsPage() {
   const { user, profile, refreshProfile } = useAuth()
   const formRef = useRef<HTMLDivElement>(null)
   const [assets, setAssets] = useState<AssetItem[]>(sampleAssets)
+  const [categories, setCategories] = useState<AssetCategory[]>(defaultCategories)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState('all')
   const [loading, setLoading] = useState(isSupabaseConfigured)
   const [assetId, setAssetId] = useState('')
   const [name, setName] = useState('')
@@ -71,16 +82,26 @@ export default function AssetsPage() {
 
   useEffect(() => {
     if (!isSupabaseConfigured) return
-    const fetchAssets = async () => {
+    const fetchData = async () => {
       try {
-        const { data, error } = await supabase
-          .from('asset_items')
-          .select('*')
-          .eq('active', true)
-          .order('sort_order', { ascending: true })
-          .order('name_bm')
+        const [assetRes, catRes] = await Promise.all([
+          supabase
+            .from('asset_items')
+            .select('*')
+            .eq('active', true)
+            .order('sort_order', { ascending: true })
+            .order('name_bm'),
+          supabase
+            .from('asset_categories')
+            .select('*')
+            .order('display_order', { ascending: true })
+        ])
 
-        if (error) {
+        if (catRes.data && catRes.data.length > 0) {
+          setCategories(catRes.data as AssetCategory[])
+        }
+
+        if (assetRes.error) {
           try {
             const { data: fallbackData, error: fallbackError } = await supabase
               .from('asset_items')
@@ -104,7 +125,7 @@ export default function AssetsPage() {
           return
         }
 
-        const rows = (data as AssetItem[]) || []
+        const rows = (assetRes.data as AssetItem[]) || []
         setAssets(rows)
         setAssetId(rows[0]?.id || '')
       } catch (error) {
@@ -117,7 +138,7 @@ export default function AssetsPage() {
         setLoading(false)
       }
     }
-    void fetchAssets()
+    void fetchData()
   }, [])
 
   useEffect(() => {
@@ -197,6 +218,48 @@ export default function AssetsPage() {
     }
   }
 
+  // Combined Search and Category Filtering Logic
+  const filteredAssets = assets.filter((asset) => {
+    if (selectedCategory !== 'all') {
+      const assetCatBm = (asset.category_bm || '').toLowerCase()
+      const assetCatEn = (asset.category_en || '').toLowerCase()
+      const filterLower = selectedCategory.toLowerCase()
+      if (assetCatBm !== filterLower && assetCatEn !== filterLower) {
+        return false
+      }
+    }
+
+    if (searchQuery.trim() !== '') {
+      const query = searchQuery.toLowerCase().trim()
+      const nameBm = asset.name_bm?.toLowerCase() || ''
+      const nameEn = asset.name_en?.toLowerCase() || ''
+      const code = asset.asset_code?.toLowerCase() || ''
+      const descBm = asset.description_bm?.toLowerCase() || ''
+      const descEn = asset.description_en?.toLowerCase() || ''
+      const catBm = asset.category_bm?.toLowerCase() || ''
+      const catEn = asset.category_en?.toLowerCase() || ''
+
+      const matchesName = nameBm.includes(query) || nameEn.includes(query)
+      const matchesCode = code.includes(query)
+      const matchesDesc = descBm.includes(query) || descEn.includes(query)
+      const matchesCat = catBm.includes(query) || catEn.includes(query)
+
+      if (!matchesName && !matchesCode && !matchesDesc && !matchesCat) {
+        return false
+      }
+    }
+
+    return true
+  })
+
+  // Extract available unique category names from assets & categories list for filter dropdown
+  const categoryOptions = Array.from(
+    new Set([
+      ...categories.map((c) => (language === 'bm' ? c.name_bm : c.name_en || c.name_bm)),
+      ...assets.map((a) => (language === 'bm' ? a.category_bm || 'Lain-lain' : a.category_en || a.category_bm || 'Others')),
+    ])
+  ).filter(Boolean)
+
   return (
     <>
       <section className="section page-intro-section asset-intro-section">
@@ -211,14 +274,92 @@ export default function AssetsPage() {
 
       <section className="section asset-catalogue-section">
         <div className="container">
-          {loading ? <LoadingBlock /> : assets.length === 0 ? <EmptyState title={t('Tiada aset tersedia', 'No assets available')} /> : (
+          {/* Search & Category Filter Toolbar */}
+          <div className="easet-search-filter-bar">
+            <div className="easet-search-wrap">
+              <Icon name="search" size={18} className="easet-search-icon" />
+              <input
+                type="text"
+                className="easet-search-field"
+                placeholder={t('🔍 Cari aset...', '🔍 Search assets...')}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+
+            <div className="easet-filter-wrap">
+              <select
+                className="easet-category-select"
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+              >
+                <option value="all">{t('Semua kategori ▼', 'All categories ▼')}</option>
+                {categoryOptions.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+
+              {(searchQuery !== '' || selectedCategory !== 'all') && (
+                <Button
+                  variant="ghost"
+                  className="compact"
+                  onClick={() => {
+                    setSearchQuery('')
+                    setSelectedCategory('all')
+                  }}
+                >
+                  {t('Kosongkan', 'Clear')}
+                </Button>
+              )}
+            </div>
+
+            <span className="easet-results-count">
+              {t(
+                `Menunjukkan ${filteredAssets.length} daripada ${assets.length} aset`,
+                `Showing ${filteredAssets.length} of ${assets.length} assets`
+              )}
+            </span>
+          </div>
+
+          {loading ? (
+            <LoadingBlock />
+          ) : assets.length === 0 ? (
+            <EmptyState title={t('Tiada aset tersedia', 'No assets available')} />
+          ) : filteredAssets.length === 0 ? (
+            <EmptyState
+              title={t('Tiada aset sepadan', 'No matching assets')}
+              description={t(
+                'Tiada aset dijumpai berdasarkan carian atau kategori yang dipilih.',
+                'No assets found matching the current search or category filter.'
+              )}
+            />
+          ) : (
             <div className="premium-asset-grid">
-              {assets.map((asset) => {
+              {filteredAssets.map((asset, index) => {
                 const available = asset.stock_available > 0
+                const assetCodeFormatted = asset.asset_code || `AST-${asset.id.slice(0, 6).toUpperCase()}`
                 return (
                   <article className="premium-asset-card" key={asset.id}>
                     <div className="premium-asset-image">
-                      {asset.image_url ? <img src={asset.image_url} alt={language === 'bm' ? asset.name_bm : asset.name_en || asset.name_bm} /> : <span><Icon name="box" size={54} /></span>}
+                      {/* Enhanced Asset Code Badge Overlay */}
+                      <div className="asset-code-badge-overlay" title={t('Kod Aset', 'Asset Code')}>
+                        <Icon name="shield" size={12} />
+                        <span>{assetCodeFormatted}</span>
+                      </div>
+                      {/* Automatic Numbering Tag */}
+                      <div className="asset-number-tag" title={t(`Aset #${index + 1}`, `Asset #${index + 1}`)}>
+                        {index + 1}
+                      </div>
+
+                      {asset.image_url ? (
+                        <img src={asset.image_url} alt={language === 'bm' ? asset.name_bm : asset.name_en || asset.name_bm} />
+                      ) : (
+                        <span>
+                          <Icon name="box" size={54} />
+                        </span>
+                      )}
                     </div>
                     <div className="premium-asset-copy">
                       <div className="asset-card-meta">
@@ -228,7 +369,12 @@ export default function AssetsPage() {
                       <h2>{language === 'bm' ? asset.name_bm : asset.name_en || asset.name_bm}</h2>
                       <p>{language === 'bm' ? asset.description_bm : asset.description_en || asset.description_bm}</p>
                       <div className="asset-card-footer">
-                        <span>{asset.asset_code || `AST-${asset.id.slice(0, 6).toUpperCase()}`}</span>
+                        {/* Styled Asset Code Footer Box */}
+                        <div className="asset-code-box-footer">
+                          <small>{t('KOD ASET', 'ASSET CODE')}</small>
+                          <strong>{assetCodeFormatted}</strong>
+                        </div>
+
                         <button type="button" className="button-premium-easet compact-easet-btn" onClick={() => chooseAsset(asset.id)} disabled={!available}>
                           {available ? t('Mohon e-Aset', 'Apply for e-Asset') : t('Tidak tersedia', 'Unavailable')}
                           {available && <span className="premium-easet-arrow">→</span>}

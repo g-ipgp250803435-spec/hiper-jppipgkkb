@@ -2750,3 +2750,196 @@ tbody tr:hover { background: color-mix(in srgb, var(--gold-500) 3%, var(--surfac
   text-align: center;
   color: var(--ink-muted, #6b7280);
 }
+
+/* =========================================================
+   HiPER Phase 8B: e-Aset Search, Category Filter & Asset Presentation
+   ========================================================= */
+
+.easet-search-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 18px 22px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.easet-search-wrap {
+  position: relative;
+  flex: 1 1 320px;
+}
+
+.easet-search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--gold-700);
+  pointer-events: none;
+}
+
+.easet-search-field {
+  padding-left: 42px;
+  border-radius: 999px;
+  font-size: 0.94rem;
+}
+
+.easet-filter-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 0 0 auto;
+}
+
+.easet-category-select {
+  min-width: 180px;
+  border-radius: 999px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--ink);
+  background-color: var(--surface);
+  cursor: pointer;
+}
+
+.easet-results-count {
+  font-size: 0.84rem;
+  color: var(--ink-soft);
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+/* Enhanced Asset Code Badge / Box Presentation */
+.asset-code-badge-overlay {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: rgba(27, 3, 8, 0.88);
+  color: var(--gold-300);
+  border: 1px solid rgba(231, 207, 140, 0.4);
+  border-radius: 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.premium-asset-card:hover .asset-code-badge-overlay {
+  transform: scale(1.04);
+  border-color: var(--gold-500);
+  background: rgba(40, 5, 13, 0.95);
+}
+
+.asset-number-tag {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gold-500);
+  color: #ffffff;
+  font-weight: 850;
+  font-size: 0.78rem;
+  border-radius: 50%;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.asset-code-box-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 10px;
+  background: color-mix(in srgb, var(--canvas) 92%, var(--surface));
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.asset-code-box-footer small {
+  font-size: 0.65rem;
+  color: var(--gold-700);
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.asset-code-box-footer strong {
+  font-size: 0.88rem;
+  color: var(--ink);
+  letter-spacing: 0.06em;
+}
+
+/* Admin Catalogue Drag-and-Drop & Sorting Modes */
+.sorting-mode-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--surface-muted);
+  border-radius: 12px;
+  margin-bottom: 16px;
+  border: 1px solid var(--line);
+}
+
+.sorting-mode-options {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sorting-mode-btn {
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 750;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.sorting-mode-btn.active {
+  background: var(--maroon-800);
+  color: #ffffff;
+  border-color: var(--maroon-800);
+}
+
+.drag-handle-btn {
+  cursor: grab;
+  padding: 4px 8px;
+  color: var(--ink-soft);
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.drag-handle-btn:active {
+  cursor: grabbing;
+}
+
+.asset-index-num {
+  font-weight: 850;
+  color: var(--gold-700);
+  font-size: 0.95rem;
+  min-width: 24px;
+  display: inline-block;
+}

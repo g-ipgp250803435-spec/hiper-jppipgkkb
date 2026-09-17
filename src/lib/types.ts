@@ -260,6 +260,15 @@ export interface IkesApplication {
   updated_at: string
 }
 
+export interface AssetCategory {
+  id: string
+  name_bm: string
+  name_en: string | null
+  display_order: number
+  created_at?: string
+  updated_at?: string
+}
+
 export interface AssetItem {
   id: string
   asset_code: string | null
