@@ -400,6 +400,8 @@ export interface RoomBooking {
   id: string
   user_id: string | null
   booking_date: string
+  start_time?: string | null
+  end_time?: string | null
   name: string
   bureau: string
   purpose: string

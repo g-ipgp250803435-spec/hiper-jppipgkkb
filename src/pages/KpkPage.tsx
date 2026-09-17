@@ -40,6 +40,22 @@ export default function KpkPage() {
   const [purpose, setPurpose] = useState('')
   const [supportingDocument, setSupportingDocument] = useState<File | null>(null)
 
+  const MAX_DOC_SIZE = 20 * 1024 * 1024 // 20MB
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null
+    if (file && file.size > MAX_DOC_SIZE) {
+      setMessage({
+        type: 'danger',
+        text: t('Saiz fail dokumen sokongan melebihi had maksimum 20MB.', 'Supporting document size exceeds maximum limit of 20MB.')
+      })
+      e.target.value = ''
+      setSupportingDocument(null)
+      return
+    }
+    setSupportingDocument(file)
+  }
+
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'danger'; text: string } | null>(null)
 
@@ -61,12 +77,9 @@ export default function KpkPage() {
 
         if (!error && data && data.length > 0) {
           setBureaus(data as KpkBureau[])
-          setBureauId(data[0].id)
-        } else {
-          setBureauId(defaultBureaus[0].id)
         }
-      } catch {
-        setBureauId(defaultBureaus[0].id)
+      } catch (err) {
+        console.warn('Failed to fetch KPK bureaus:', err)
       }
     }
     void fetchBureaus()
@@ -83,6 +96,11 @@ export default function KpkPage() {
 
     if (!clubName.trim() || !applicantName.trim() || !phone.trim() || !departmentUnit.trim() || !purpose.trim()) {
       setMessage({ type: 'danger', text: t('Sila lengkapkan semua medan wajib.', 'Please complete all required fields.') })
+      return
+    }
+
+    if (!bureauId) {
+      setMessage({ type: 'danger', text: t('Sila pilih Biro Angkat.', 'Please select an endorsing bureau.') })
       return
     }
 
@@ -227,6 +245,7 @@ export default function KpkPage() {
 
                 <Field label={t('Biro Angkat', 'Endorsing Bureau')} required>
                   <select value={bureauId} onChange={(e) => setBureauId(e.target.value)} required>
+                    <option value="">{t('Pilih biro', 'Select bureau')}</option>
                     {bureaus.map((b) => (
                       <option key={b.id} value={b.id}>{b.name}</option>
                     ))}
@@ -256,12 +275,12 @@ export default function KpkPage() {
                 <div className="full-span">
                   <Field
                     label={t('Dokumen Sokongan (Pilihan)', 'Supporting Document (Optional)')}
-                    hint={t('Kertas kerja, sebut harga atau surat sokongan (PDF, JPG, PNG, maks 5MB).', 'Proposal, quotation or supporting letter (PDF, JPG, PNG, max 5MB).')}
+                    hint={t('Kertas kerja, sebut harga atau surat sokongan (PDF, Imej, Dokumen Office, maks 20MB).', 'Proposal, quotation or supporting letter (PDF, Images, Office documents, max 20MB).')}
                   >
                     <input
                       type="file"
-                      accept=".pdf,image/jpeg,image/png"
-                      onChange={(e) => setSupportingDocument(e.target.files?.[0] || null)}
+                      accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,image/*"
+                      onChange={handleFileChange}
                     />
                   </Field>
                 </div>

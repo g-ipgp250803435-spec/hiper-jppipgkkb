@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { PageHeader, Card, EmptyState, LoadingBlock, Notice } from '../components/UI'
+import { PageHeader, Card, EmptyState, LoadingBlock, Notice, Button } from '../components/UI'
 import { Icon } from '../components/Icons'
 import { RichTextContent } from '../components/RichText'
 import { useUi } from '../contexts/UiContext'
@@ -8,7 +8,7 @@ import { supabase } from '../lib/supabase'
 import { isSupabaseConfigured } from '../lib/config'
 import { localise } from '../lib/siteSettings'
 import type { Announcement } from '../lib/types'
-import { formatDate } from '../lib/helpers'
+import { formatDate, convertHtmlToWhatsAppText } from '../lib/helpers'
 
 const sample: Announcement[] = [
   {
@@ -59,6 +59,25 @@ export default function AnnouncementsPage() {
     }
     void fetchAnnouncements()
   }, [])
+
+  const handleWhatsAppShare = (item: Announcement) => {
+    const title = language === 'bm' ? item.title_bm : item.title_en || item.title_bm
+    const htmlContent = language === 'bm' ? item.content_bm : item.content_en || item.content_bm
+    const plainText = convertHtmlToWhatsAppText(htmlContent)
+    const dateFormatted = formatDate(item.created_at, language)
+    const pageUrl = window.location.href
+
+    const messageParts = [
+      `*${title.trim()}*`,
+      plainText,
+      `📌 Tarikh:\n${dateFormatted}`,
+      `🔗 Lihat maklumat lanjut:\n${pageUrl}`,
+    ]
+
+    const fullText = messageParts.filter(Boolean).join('\n\n')
+    const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(fullText)}`
+    window.open(waUrl, '_blank', 'noopener,noreferrer')
+  }
 
   const sortedItems = useMemo(() => {
     const now = new Date().getTime()
@@ -131,6 +150,17 @@ export default function AnnouncementsPage() {
                     <h2>{language === 'bm' ? item.title_bm : item.title_en || item.title_bm}</h2>
                     <div className="announcement-content">
                       <RichTextContent html={language === 'bm' ? item.content_bm : item.content_en || item.content_bm} />
+                    </div>
+                    <div className="announcement-actions" style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid var(--border-color, #eaeaea)' }}>
+                      <Button
+                        variant="secondary"
+                        className="compact"
+                        onClick={() => handleWhatsAppShare(item)}
+                        style={{ color: '#25D366', borderColor: '#25D366', fontWeight: 600 }}
+                      >
+                        <Icon name="whatsapp" size={18} />
+                        {t('Kongsi ke WhatsApp', 'Share to WhatsApp')}
+                      </Button>
                     </div>
                   </div>
                 </Card>
