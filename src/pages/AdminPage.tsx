@@ -51,6 +51,7 @@ export default function AdminPage() {
   const [donations, setDonations] = useState<Donation[]>([])
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
   const [catalogue, setCatalogue] = useState<AssetItem[]>([])
+  const [assetCategories, setAssetCategories] = useState<import('../lib/types').AssetCategory[]>([])
   const [members, setMembers] = useState<OrganizationMember[]>([])
   const [disbursements, setDisbursements] = useState<FundDisbursement[]>([])
   const [donationSettings, setDonationSettings] = useState<DonationSettings | null>(null)
@@ -155,8 +156,8 @@ export default function AdminPage() {
         {
           id: 'mock-item-1',
           asset_code: 'AST-001',
-          category_bm: 'Audio',
-          category_en: 'Audio',
+          category_bm: 'Audio Visual',
+          category_en: 'Audio Visual',
           sort_order: 1,
           name_bm: 'Sistem PA Mudah Alih',
           name_en: 'Portable PA System',
@@ -167,6 +168,13 @@ export default function AdminPage() {
           active: true,
           image_url: null,
         },
+      ])
+      setAssetCategories([
+        { id: 'cat-1', name_bm: 'Elektronik', name_en: 'Electronics', display_order: 1 },
+        { id: 'cat-2', name_bm: 'Peralatan Program', name_en: 'Program Equipment', display_order: 2 },
+        { id: 'cat-3', name_bm: 'Perabot', name_en: 'Furniture', display_order: 3 },
+        { id: 'cat-4', name_bm: 'Audio Visual', name_en: 'Audio Visual', display_order: 4 },
+        { id: 'cat-5', name_bm: 'Lain-lain', name_en: 'Others', display_order: 5 },
       ])
       setMembers([
         {
@@ -280,6 +288,7 @@ export default function AdminPage() {
         supabase.from('room_bookings').select('*').order('booking_date', { ascending: false }),
         supabase.from('cms_pages').select('*').order('navigation_order', { ascending: true }),
         supabase.from('cms_page_blocks').select('*').order('display_order', { ascending: true }),
+        supabase.from('asset_categories').select('*').order('display_order', { ascending: true }),
       ])
       const firstError = results.find((result) => result.error)?.error
       if (firstError) setNotice({ type: 'danger', text: firstError.message })
@@ -298,6 +307,13 @@ export default function AdminPage() {
       setRoomBookings((results[12].data as RoomBooking[]) || [])
       setCmsPages((results[13].data as import('../lib/types').CmsPage[]) || [])
       setCmsBlocks((results[14].data as import('../lib/types').CmsPageBlock[]) || [])
+      setAssetCategories((results[15].data as import('../lib/types').AssetCategory[]) || [
+        { id: 'cat-1', name_bm: 'Elektronik', name_en: 'Electronics', display_order: 1 },
+        { id: 'cat-2', name_bm: 'Peralatan Program', name_en: 'Program Equipment', display_order: 2 },
+        { id: 'cat-3', name_bm: 'Perabot', name_en: 'Furniture', display_order: 3 },
+        { id: 'cat-4', name_bm: 'Audio Visual', name_en: 'Audio Visual', display_order: 4 },
+        { id: 'cat-5', name_bm: 'Lain-lain', name_en: 'Others', display_order: 5 },
+      ])
     } catch (err) {
       setNotice({
         type: 'danger',
@@ -550,7 +566,7 @@ export default function AdminPage() {
         asset_code: form.asset_code || null,
         category_bm: form.category_bm || null,
         category_en: form.category_en || null,
-        sort_order: Number(form.sort_order),
+        sort_order: Number(form.sort_order || 1),
         name_bm: form.name_bm,
         name_en: form.name_en || null,
         description_bm: form.description_bm || null,
@@ -567,6 +583,63 @@ export default function AdminPage() {
       if (error) throw error
       resetForm()
     }, editingId ? 'Aset dikemas kini.' : 'Aset ditambah.')
+  }
+
+  const saveAssetCategory = async (
+    form: { name_bm: string; name_en: string },
+    editingId: string | null,
+    resetForm: () => void
+  ) => {
+    await runAction(async () => {
+      const payload = {
+        name_bm: form.name_bm,
+        name_en: form.name_en || null,
+      }
+      if (!isSupabaseConfigured) {
+        if (editingId) {
+          setAssetCategories((prev) => prev.map((c) => (c.id === editingId ? { ...c, ...payload } : c)))
+        } else {
+          setAssetCategories((prev) => [
+            ...prev,
+            { id: `cat-${Date.now()}`, ...payload, display_order: prev.length + 1 },
+          ])
+        }
+        resetForm()
+        return
+      }
+
+      const query = editingId
+        ? supabase.from('asset_categories').update(payload).eq('id', editingId)
+        : supabase.from('asset_categories').insert({ ...payload, display_order: assetCategories.length + 1 })
+      const { error } = await query
+      if (error) throw error
+      resetForm()
+    }, editingId ? 'Kategori aset dikemas kini.' : 'Kategori aset ditambah.')
+  }
+
+  const deleteAssetCategory = async (id: string) => {
+    if (!window.confirm('Padam kategori aset ini?')) return
+    await runAction(async () => {
+      if (!isSupabaseConfigured) {
+        setAssetCategories((prev) => prev.filter((c) => c.id !== id))
+        return
+      }
+      const { error } = await supabase.from('asset_categories').delete().eq('id', id)
+      if (error) throw error
+      setAssetCategories((prev) => prev.filter((c) => c.id !== id))
+    }, 'Kategori aset dipadam.')
+  }
+
+  const reorderAssets = async (reorderedList: AssetItem[]) => {
+    setCatalogue(reorderedList)
+    if (!isSupabaseConfigured) return
+    await runAction(async () => {
+      for (let i = 0; i < reorderedList.length; i++) {
+        const item = reorderedList[i]
+        const { error } = await supabase.from('asset_items').update({ sort_order: i + 1 }).eq('id', item.id)
+        if (error) throw error
+      }
+    }, 'Susunan paparan aset dikemas kini.')
   }
 
   const saveMember = async (
@@ -1010,11 +1083,15 @@ export default function AdminPage() {
             mode="catalogue"
             assetRequests={assetRequests}
             catalogue={catalogue}
+            categories={assetCategories}
             busy={busy}
             setAssetRequests={setAssetRequests}
             onUpdateAssetRequest={updateAssetRequest}
             onSaveAsset={saveAsset}
             onDeleteAsset={(id) => deleteRow('asset_items', id, t('aset', 'asset'))}
+            onSaveCategory={saveAssetCategory}
+            onDeleteCategory={deleteAssetCategory}
+            onReorderCatalogue={reorderAssets}
           />
         )}
 
