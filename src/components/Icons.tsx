@@ -6,6 +6,7 @@ export type IconName =
   | 'sun'
   | 'moon'
   | 'chevron-right'
+  | 'chevron-left'
   | 'heart'
   | 'box'
   | 'fund'
@@ -57,6 +58,7 @@ const paths: Record<IconName, ReactNode> = {
   sun: <><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.42-1.41M17.66 6.34l1.41-1.41" /></>,
   moon: <><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z" /></>,
   'chevron-right': <><path d="m9 18 6-6-6-6" /></>,
+  'chevron-left': <><path d="m15 18-6-6 6-6" /></>,
   heart: <><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z" /></>,
   box: <><path d="m21 8-9-5-9 5 9 5 9-5Z" /><path d="m3 8 9 5 9-5M3 8v8l9 5 9-5V8M12 13v8" /></>,
   fund: <><circle cx="12" cy="12" r="9" /><path d="M16 8.5c-.8-.8-2-1.2-4-1.2-2.2 0-3.5 1-3.5 2.4 0 3.6 7.1 1.6 7.1 5 0 1.4-1.4 2.5-3.8 2.5-1.8 0-3.2-.5-4.1-1.4M12 5v14" /></>,

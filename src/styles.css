@@ -2943,3 +2943,217 @@ tbody tr:hover { background: color-mix(in srgb, var(--gold-500) 3%, var(--surfac
   min-width: 24px;
   display: inline-block;
 }
+
+/* =========================================================
+   Compact Announcement Cards & Detail View Styling
+   ========================================================= */
+
+.announcement-compact-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+  align-items: stretch;
+}
+
+.announcement-compact-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
+  position: relative;
+}
+
+.announcement-compact-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--gold-300);
+  box-shadow: var(--shadow-md);
+}
+
+.announcement-compact-card.pinned-danger {
+  border-left: 4px solid #dc2626;
+}
+
+.announcement-compact-card.pinned-primary {
+  border-left: 4px solid var(--gold-500);
+}
+
+.announcement-compact-poster {
+  width: 100%;
+  height: 160px;
+  overflow: hidden;
+  background: var(--surface-muted);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.announcement-compact-poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--transition);
+}
+
+.announcement-compact-card:hover .announcement-compact-poster img {
+  transform: scale(1.03);
+}
+
+.announcement-compact-poster.placeholder {
+  color: var(--ink-soft);
+  opacity: 0.5;
+}
+
+.announcement-compact-content {
+  padding: 16px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.announcement-compact-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+
+.announcement-compact-meta .announcement-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.announcement-compact-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--ink);
+  margin: 0 0 14px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.announcement-compact-footer {
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.read-more-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--gold-600);
+}
+
+.wa-share-mini-btn {
+  background: transparent;
+  border: 1px solid rgba(37, 211, 102, 0.4);
+  color: #25D366;
+  border-radius: 6px;
+  padding: 4px 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s;
+}
+
+.wa-share-mini-btn:hover {
+  background: #25D366;
+  color: #ffffff;
+}
+
+/* Announcement Detail View */
+.announcement-detail-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.announcement-detail-card {
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+.announcement-detail-poster {
+  width: 100%;
+  max-height: 420px;
+  overflow: hidden;
+  background: var(--surface-muted);
+}
+
+.announcement-detail-poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.announcement-detail-header {
+  padding: 24px 28px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.announcement-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.announcement-detail-title {
+  font-size: clamp(1.4rem, 3.5vw, 1.85rem);
+  line-height: 1.3;
+  margin: 0;
+  color: var(--ink);
+}
+
+.announcement-detail-body {
+  padding: 28px;
+  font-size: 1rem;
+  line-height: 1.8;
+  color: var(--ink-soft);
+  overflow-wrap: anywhere;
+}
+
+.announcement-detail-footer {
+  padding: 18px 28px 24px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: flex-end;
+}
+
+@media (max-width: 600px) {
+  .announcement-compact-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .announcement-detail-header {
+    padding: 18px 20px 14px;
+  }
+
+  .announcement-detail-body {
+    padding: 20px;
+  }
+
+  .announcement-detail-footer {
+    padding: 16px 20px 20px;
+  }
+}

@@ -515,6 +515,7 @@ export default function AdminPage() {
       published: boolean
       pinned: boolean
       pin_type: string
+      announcement_date: string
       expiry_at: string
       poster_url: string | null
     },
@@ -533,6 +534,9 @@ export default function AdminPage() {
         published: form.published,
         pinned: form.pin_type !== 'none',
         pin_type: form.pin_type,
+        announcement_date: form.announcement_date
+          ? new Date(`${form.announcement_date}T00:00:00`).toISOString()
+          : new Date().toISOString(),
         expiry_at: form.expiry_at ? new Date(`${form.expiry_at}T23:59:59`).toISOString() : null,
         poster_url: posterUrl,
       }

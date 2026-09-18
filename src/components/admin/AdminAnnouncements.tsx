@@ -27,6 +27,7 @@ const initialAnnouncement = {
   published: true,
   pinned: false,
   pin_type: 'none' as AnnouncementPinType,
+  announcement_date: new Date().toISOString().slice(0, 10),
   expiry_at: '',
   poster_url: null as string | null,
 }
@@ -58,6 +59,9 @@ export default function AdminAnnouncements({
       published: item.published,
       pinned: item.pinned,
       pin_type: item.pin_type || (item.pinned ? 'penting' : 'none'),
+      announcement_date: item.announcement_date
+        ? item.announcement_date.slice(0, 10)
+        : (item.created_at ? item.created_at.slice(0, 10) : new Date().toISOString().slice(0, 10)),
       expiry_at: item.expiry_at ? item.expiry_at.slice(0, 10) : '',
       poster_url: item.poster_url,
     })
@@ -95,6 +99,14 @@ export default function AdminAnnouncements({
               <RichTextEditor value={announcementForm.content_en} onChange={(value) => setAnnouncementForm({ ...announcementForm, content_en: value })} ariaLabel="English announcement content" />
             </Field>
           </div>
+          <Field label={t('Tarikh Pengumuman', 'Announcement Date')} required>
+            <input
+              type="date"
+              value={announcementForm.announcement_date}
+              onChange={(e) => setAnnouncementForm({ ...announcementForm, announcement_date: e.target.value })}
+              required
+            />
+          </Field>
           <Field label={t('Status Pin & Keutamaan', 'Pin & Priority Status')}>
             <select
               value={announcementForm.pin_type}
@@ -165,7 +177,7 @@ export default function AdminAnnouncements({
                     {item.pin_type === 'terkini' && <span className="badge badge-primary" style={{ fontSize: '10px' }}>TERKINI</span>}
                   </div>
                   <small>
-                    {item.published ? t('Diterbitkan', 'Published') : t('Draf', 'Draft')} · {formatDate(item.created_at, language)}
+                    {item.published ? t('Diterbitkan', 'Published') : t('Draf', 'Draft')} · {formatDate(item.announcement_date || item.created_at, language)}
                   </small>
                   <p className="management-excerpt">{richTextToPlainText(language === 'bm' ? item.content_bm : item.content_en || item.content_bm)}</p>
                 </div>
