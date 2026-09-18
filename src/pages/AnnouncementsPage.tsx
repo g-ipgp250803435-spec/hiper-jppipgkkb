@@ -66,12 +66,6 @@ export default function AnnouncementsPage() {
     const plainText = convertHtmlToWhatsAppText(htmlContent)
     const dateFormatted = formatDate(item.created_at, language)
     const pageUrl = window.location.href
-
-    const messageParts = [
-      `*${title.trim()}*`,
-      plainText,
-      `📌 Tarikh:\n${dateFormatted}`,
-      `🔗 Lihat maklumat lanjut:\n${pageUrl}`,
     ]
 
     const fullText = messageParts.filter(Boolean).join('\n\n')
