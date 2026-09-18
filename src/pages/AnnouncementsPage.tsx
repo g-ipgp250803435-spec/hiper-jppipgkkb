@@ -67,6 +67,13 @@ export default function AnnouncementsPage() {
     const dateFormatted = formatDate(item.created_at, language)
     const pageUrl = window.location.href
 
+    const messageParts = [
+      `*${title.trim()}*`,
+      plainText,
+      `📌 Tarikh:\n${dateFormatted}`,
+      `🔗 Lihat maklumat lanjut:\n${pageUrl}`,
+    ]
+    
     const fullText = messageParts.filter(Boolean).join('\n\n')
     const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(fullText)}`
     window.open(waUrl, '_blank', 'noopener,noreferrer')
