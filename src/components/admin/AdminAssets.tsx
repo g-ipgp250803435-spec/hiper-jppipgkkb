@@ -15,6 +15,7 @@ interface AdminAssetsProps {
   busy: boolean
   setAssetRequests: React.Dispatch<React.SetStateAction<AssetApplication[]>>
   onUpdateAssetRequest: (item: AssetApplication) => Promise<void>
+  onDeleteAssetRequest?: (id: string) => Promise<void>
   onSaveAsset: (
     form: typeof initialAsset,
     imageFile: File | null,
@@ -61,6 +62,7 @@ export default function AdminAssets({
   busy,
   setAssetRequests,
   onUpdateAssetRequest,
+  onDeleteAssetRequest,
   onSaveAsset,
   onDeleteAsset,
   onSaveCategory,
@@ -490,13 +492,15 @@ export default function AdminAssets({
                   status: item.status,
                   details: [
                     { label: 'Nama Pemohon', value: item.applicant_name },
-                    { label: 'Jabatan / Unit', value: item.department_unit || item.class_name },
+                    { label: 'Jabatan / Unit / Kelas', value: item.department_unit || item.class_name },
                     { label: 'No. Telefon', value: item.phone },
                     { label: 'Aset Dipinjam', value: `${item.asset_items?.name_bm || 'Aset'} (x${item.quantity})` },
+                    { label: 'Tarikh Permohonan', value: formatDate(item.created_at, language) },
                     { label: 'Tarikh Pinjam', value: formatDate(item.borrow_date, language) },
                     { label: 'Tarikh Pulang', value: formatDate(item.return_date, language) },
+                    { label: 'Status Pemulangan', value: item.returned_at ? formatDate(item.returned_at, language) : 'Belum dipulangkan' },
                     { label: 'Tujuan Pinjaman', value: item.purpose },
-                    { label: 'Persetujuan Aku Janji', value: item.aku_janji_agreed ? 'Bersetuju' : 'Tidak' },
+                    { label: 'Dokumen / Aku Janji', value: item.aku_janji_agreed ? 'Aku Janji Diterima & Bersetuju' : 'Belum Bersetuju' },
                     { label: 'Nota Admin', value: item.admin_notes || '—' },
                   ],
                 }))
@@ -674,13 +678,15 @@ export default function AdminAssets({
                               status: item.status,
                               details: [
                                 { label: 'Nama Pemohon', value: item.applicant_name },
-                                { label: 'Jabatan / Unit', value: item.department_unit || item.class_name },
+                                { label: 'Jabatan / Unit / Kelas', value: item.department_unit || item.class_name },
                                 { label: 'No. Telefon', value: item.phone },
                                 { label: 'Aset Dipinjam', value: `${item.asset_items?.name_bm || 'Aset'} (x${item.quantity})` },
+                                { label: 'Tarikh Permohonan', value: formatDate(item.created_at, language) },
                                 { label: 'Tarikh Pinjam', value: formatDate(item.borrow_date, language) },
                                 { label: 'Tarikh Pulang', value: formatDate(item.return_date, language) },
+                                { label: 'Status Pemulangan', value: item.returned_at ? formatDate(item.returned_at, language) : 'Belum dipulangkan' },
                                 { label: 'Tujuan Pinjaman', value: item.purpose },
-                                { label: 'Persetujuan Aku Janji', value: item.aku_janji_agreed ? 'Bersetuju' : 'Tidak' },
+                                { label: 'Dokumen / Aku Janji', value: item.aku_janji_agreed ? 'Aku Janji Diterima & Bersetuju' : 'Belum Bersetuju' },
                                 { label: 'Nota Admin', value: item.admin_notes || '—' },
                               ],
                             },
@@ -690,6 +696,26 @@ export default function AdminAssets({
                       >
                         <Icon name="download" size={15} />
                         {t('Export PDF', 'Export PDF')}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        className="compact danger"
+                        disabled={busy}
+                        onClick={() => {
+                          if (
+                            window.confirm(
+                              t(
+                                'Padam permohonan ini secara kekal?\n\nTindakan ini tidak boleh dibatalkan.',
+                                'Delete this application permanently?\n\nThis action cannot be undone.'
+                              )
+                            )
+                          ) {
+                            void onDeleteAssetRequest?.(item.id)
+                          }
+                        }}
+                      >
+                        <Icon name="trash" size={15} />
+                        {t('Padam', 'Delete')}
                       </Button>
                     </div>
                   </td>

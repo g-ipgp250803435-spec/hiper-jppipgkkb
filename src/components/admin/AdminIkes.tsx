@@ -13,6 +13,7 @@ interface AdminIkesProps {
   supabaseClient: any
   setIkes: React.Dispatch<React.SetStateAction<IkesApplication[]>>
   onUpdateIkes: (item: IkesApplication) => Promise<void>
+  onDeleteIkes?: (id: string) => Promise<void>
 }
 
 export default function AdminIkes({
@@ -23,6 +24,7 @@ export default function AdminIkes({
   supabaseClient,
   setIkes,
   onUpdateIkes,
+  onDeleteIkes,
 }: AdminIkesProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
@@ -66,6 +68,9 @@ export default function AdminIkes({
                     { label: 'Jumlah (RM)', value: formatMoney(item.amount) },
                     { label: 'Sebab Permohonan', value: item.reason },
                     { label: 'Tarikh Permohonan', value: formatDate(item.created_at, language) },
+                    { label: 'Tarikh Akhir Bayaran Balik', value: item.repayment_due_at ? formatDate(item.repayment_due_at, language) : '—' },
+                    { label: 'Tarikh Dibayar Balik', value: item.repaid_at ? formatDate(item.repaid_at, language) : '—' },
+                    { label: 'Dokumen Sokongan / Tiket', value: item.ticket_path ? 'Ada (Disertakan)' : 'Tiada' },
                     { label: 'Nota Admin', value: item.admin_notes || '—' },
                   ],
                 }))
@@ -245,6 +250,9 @@ export default function AdminIkes({
                                 { label: 'Jumlah (RM)', value: formatMoney(item.amount) },
                                 { label: 'Sebab Permohonan', value: item.reason },
                                 { label: 'Tarikh Permohonan', value: formatDate(item.created_at, language) },
+                                { label: 'Tarikh Akhir Bayaran Balik', value: item.repayment_due_at ? formatDate(item.repayment_due_at, language) : '—' },
+                                { label: 'Tarikh Dibayar Balik', value: item.repaid_at ? formatDate(item.repaid_at, language) : '—' },
+                                { label: 'Dokumen Sokongan / Tiket', value: item.ticket_path ? 'Ada (Disertakan)' : 'Tiada' },
                                 { label: 'Nota Admin', value: item.admin_notes || '—' },
                               ],
                             },
@@ -254,6 +262,26 @@ export default function AdminIkes({
                       >
                         <Icon name="download" size={15} />
                         {t('Export PDF', 'Export PDF')}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        className="compact danger"
+                        disabled={busy}
+                        onClick={() => {
+                          if (
+                            window.confirm(
+                              t(
+                                'Padam permohonan ini secara kekal?\n\nTindakan ini tidak boleh dibatalkan.',
+                                'Delete this application permanently?\n\nThis action cannot be undone.'
+                              )
+                            )
+                          ) {
+                            void onDeleteIkes?.(item.id)
+                          }
+                        }}
+                      >
+                        <Icon name="trash" size={15} />
+                        {t('Padam', 'Delete')}
                       </Button>
                     </div>
                   </td>
