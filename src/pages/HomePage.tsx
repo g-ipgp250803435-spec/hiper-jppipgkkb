@@ -20,6 +20,8 @@ const sampleAnnouncements: Announcement[] = [
     poster_url: '/placeholder-poster.svg',
     published: true,
     pinned: true,
+    pin_type: 'penting',
+    announcement_date: new Date().toISOString(),
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   },
@@ -193,15 +195,32 @@ export default function HomePage() {
           .from('announcements')
           .select('*')
           .eq('published', true)
-          .order('pinned', { ascending: false })
-          .order('created_at', { ascending: false })
-          .limit(3)
+          .order('announcement_date', { ascending: false })
 
         if (error) {
           console.warn('HiPER announcements could not be loaded:', error.message)
           setAnnouncements([])
         } else {
-          setAnnouncements((data as Announcement[]) || [])
+          const now = new Date().getTime()
+          const active = ((data as Announcement[]) || []).filter((item) => {
+            if (!item.expiry_at) return true
+            return new Date(item.expiry_at).getTime() >= now
+          })
+          const sorted = active.sort((a, b) => {
+            const getPriorityScore = (item: Announcement) => {
+              if (item.pin_type === 'penting') return 3
+              if (item.pin_type === 'terkini') return 2
+              if (item.pinned) return 1
+              return 0
+            }
+            const scoreA = getPriorityScore(a)
+            const scoreB = getPriorityScore(b)
+            if (scoreA !== scoreB) return scoreB - scoreA
+            const dateA = new Date(a.announcement_date || a.created_at).getTime()
+            const dateB = new Date(b.announcement_date || b.created_at).getTime()
+            return dateB - dateA
+          })
+          setAnnouncements(sorted.slice(0, 3))
         }
       } catch (err) {
         console.warn('HiPER homepage data request failed:', err)
@@ -281,19 +300,26 @@ export default function HomePage() {
             <Card><p>{t('Belum ada pengumuman diterbitkan.', 'No announcements have been published yet.')}</p></Card>
           ) : (
             <div className="premium-announcement-grid">
-              {announcements.map((item) => (
-                <Link to="/pengumuman" key={item.id} className="premium-announcement-card">
-                  <div className="premium-announcement-poster">
-                    <img src={item.poster_url || '/placeholder-poster.svg'} alt={language === 'bm' ? item.title_bm : item.title_en || item.title_bm} />
-                    {item.pinned && <span><Icon name="pin" size={13} /> {t('Penting', 'Pinned')}</span>}
-                  </div>
-                  <div className="premium-announcement-copy">
-                    <span><Icon name="calendar" size={14} /> {formatDate(item.created_at, language)}</span>
-                    <h2>{language === 'bm' ? item.title_bm : item.title_en || item.title_bm}</h2>
-                    <b>{t('Baca pengumuman', 'Read announcement')} <Icon name="chevron-right" size={16} /></b>
-                  </div>
-                </Link>
-              ))}
+              {announcements.map((item) => {
+                const isPenting = item.pin_type === 'penting'
+                const isTerkini = item.pin_type === 'terkini' || (!item.pin_type && item.pinned)
+                const displayDate = item.announcement_date || item.created_at
+
+                return (
+                  <Link to={`/pengumuman/${item.id}`} key={item.id} className="premium-announcement-card">
+                    <div className="premium-announcement-poster">
+                      <img src={item.poster_url || '/placeholder-poster.svg'} alt={language === 'bm' ? item.title_bm : item.title_en || item.title_bm} />
+                      {isPenting && <span><Icon name="pin" size={13} /> PENTING</span>}
+                      {!isPenting && isTerkini && <span><Icon name="pin" size={13} /> TERKINI</span>}
+                    </div>
+                    <div className="premium-announcement-copy">
+                      <span><Icon name="calendar" size={14} /> {formatDate(displayDate, language)}</span>
+                      <h2>{language === 'bm' ? item.title_bm : item.title_en || item.title_bm}</h2>
+                      <b>{t('Baca pengumuman', 'Read announcement')} <Icon name="chevron-right" size={16} /></b>
+                    </div>
+                  </Link>
+                )
+              })}
             </div>
           )}
         </div>
