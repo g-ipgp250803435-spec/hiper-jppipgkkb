@@ -281,7 +281,7 @@ export default function AssetsPage() {
               <input
                 type="text"
                 className="easet-search-field"
-                placeholder={t('🔍 Cari aset...', '🔍 Search assets...')}
+                placeholder={t('Cari aset...', 'Search assets...')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -293,7 +293,7 @@ export default function AssetsPage() {
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
               >
-                <option value="all">{t('Semua kategori ▼', 'All categories ▼')}</option>
+                <option value="all">{t('Semua kategori', 'All categories')}</option>
                 {categoryOptions.map((cat) => (
                   <option key={cat} value={cat}>
                     {cat}
