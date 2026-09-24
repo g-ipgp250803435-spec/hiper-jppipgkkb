@@ -1,7 +1,8 @@
 import { useEffect, useRef, type MouseEvent } from 'react'
 import { Icon } from './Icons'
+import { sanitizeUrl } from '../lib/helpers'
 
-const allowedTags = new Set(['P', 'BR', 'STRONG', 'B', 'EM', 'I', 'UL', 'OL', 'LI'])
+const allowedTags = new Set(['P', 'BR', 'STRONG', 'B', 'EM', 'I', 'UL', 'OL', 'LI', 'A'])
 
 function sanitiseNode(node: Node) {
   Array.from(node.childNodes).forEach((child) => sanitiseNode(child))
@@ -20,7 +21,18 @@ function sanitiseNode(node: Node) {
     return
   }
 
-  Array.from(node.attributes).forEach((attribute) => node.removeAttribute(attribute.name))
+  if (node.tagName === 'A') {
+    const href = node.getAttribute('href')
+    const safeHref = sanitizeUrl(href)
+    Array.from(node.attributes).forEach((attribute) => node.removeAttribute(attribute.name))
+    node.setAttribute('href', safeHref)
+    node.setAttribute('rel', 'noopener noreferrer')
+    if (safeHref.startsWith('http://') || safeHref.startsWith('https://')) {
+      node.setAttribute('target', '_blank')
+    }
+  } else {
+    Array.from(node.attributes).forEach((attribute) => node.removeAttribute(attribute.name))
+  }
 }
 
 export function sanitiseRichHtml(value: string | null | undefined) {

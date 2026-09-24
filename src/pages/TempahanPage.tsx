@@ -137,16 +137,23 @@ export default function TempahanPage() {
   const loadData = async () => {
     if (!isSupabaseConfigured) return
     try {
-      const [svcRes, roomRes] = await Promise.all([
+      const [svcRes, rpcRes] = await Promise.all([
         supabase.from('booking_services').select('*').eq('active', true).order('created_at', { ascending: true }),
-        supabase.from('room_bookings').select('*').order('booking_date', { ascending: true }),
+        supabase.rpc('get_public_room_availability'),
       ])
 
       if (svcRes.data && svcRes.data.length > 0) {
         setServices(svcRes.data as BookingService[])
       }
-      if (roomRes.data) {
-        setRoomBookings(roomRes.data as RoomBooking[])
+
+      if (rpcRes.data) {
+        setRoomBookings(rpcRes.data as RoomBooking[])
+      } else {
+        const { data: fallbackData } = await supabase
+          .from('room_bookings')
+          .select('id, booking_date, start_time, end_time, bureau, status')
+          .order('booking_date', { ascending: true })
+        if (fallbackData) setRoomBookings(fallbackData as RoomBooking[])
       }
     } catch (err) {
       console.warn('Failed to fetch tempahan data:', err)
@@ -287,35 +294,66 @@ export default function TempahanPage() {
     }
 
     try {
-      const { data: newRec, error } = await supabase.from('room_bookings').insert({
-        user_id: user.id,
-        booking_date: selectedDate,
-        start_time: startTime,
-        end_time: endTime,
-        name: applicantName.trim(),
-        bureau: bureauName.trim(),
-        purpose: purpose.trim(),
-        remarks: remarks.trim() || null,
-        status: 'pending',
-      }).select().single()
-
-      if (error) throw error
-
-      // Send admin notification
-      await notifyAdmins(
-        `🔔 Permohonan Tempahan Bilik JPP Baharu`,
-        `Tempahan Bilik JPP untuk tarikh ${formatDate(selectedDate, language)} (${formatTime12Hour(startTime)} - ${formatTime12Hour(endTime)}) telah dihantar oleh ${applicantName.trim()} (${bureauName.trim()}).`,
-        'tempahan',
-        newRec?.id || null
-      )
-
-      setMessage({
-        type: 'success',
-        text: t('Permohonan tempahan Bilik JPP berjaya dihantar dan sedang menunggu kelulusan admin.', 'JPP Room booking request submitted and pending admin approval.')
+      const { data: rpcRes, error: rpcErr } = await supabase.rpc('create_room_booking', {
+        p_booking_date: selectedDate,
+        p_start_time: startTime,
+        p_end_time: endTime,
+        p_name: applicantName.trim(),
+        p_bureau: bureauName.trim(),
+        p_purpose: purpose.trim(),
+        p_remarks: remarks.trim() || null,
       })
-      setPurpose('')
-      setRemarks('')
-      await loadData()
+
+      let success = false
+      let newRecId: string | null = null
+
+      if (!rpcErr && rpcRes) {
+        if (!rpcRes.success) {
+          setMessage({ type: 'danger', text: rpcRes.error || t('Slot bilik tidak tersedia.', 'Room slot unavailable.') })
+          return
+        }
+        success = true
+        newRecId = rpcRes.data?.id || null
+      } else {
+        // Fallback if RPC function is not yet deployed
+        const { data: newRec, error: insErr } = await supabase.from('room_bookings').insert({
+          user_id: user.id,
+          booking_date: selectedDate,
+          start_time: startTime,
+          end_time: endTime,
+          name: applicantName.trim(),
+          bureau: bureauName.trim(),
+          purpose: purpose.trim(),
+          remarks: remarks.trim() || null,
+          status: 'pending',
+        }).select().single()
+
+        if (insErr) throw insErr
+        success = true
+        newRecId = newRec?.id || null
+      }
+
+      if (success) {
+        // Send admin notification safely (catch error so submission won't fail)
+        try {
+          await notifyAdmins(
+            `🔔 Permohonan Tempahan Bilik JPP Baharu`,
+            `Tempahan Bilik JPP untuk tarikh ${formatDate(selectedDate, language)} (${formatTime12Hour(startTime)} - ${formatTime12Hour(endTime)}) telah dihantar oleh ${applicantName.trim()} (${bureauName.trim()}).`,
+            'tempahan',
+            newRecId
+          )
+        } catch (notifErr) {
+          console.warn('Notification delivery error:', notifErr)
+        }
+
+        setMessage({
+          type: 'success',
+          text: t('Permohonan tempahan Bilik JPP berjaya dihantar dan sedang menunggu kelulusan admin.', 'JPP Room booking request submitted and pending admin approval.')
+        })
+        setPurpose('')
+        setRemarks('')
+        await loadData()
+      }
     } catch (err) {
       setMessage({
         type: 'danger',
@@ -552,7 +590,7 @@ export default function TempahanPage() {
                         {dayBookings.map((b) => (
                           <div key={b.id} style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                              <strong style={{ fontSize: '15px' }}>{b.name}</strong>
+                              <strong style={{ fontSize: '15px' }}>{b.bureau}</strong>
                               <StatusBadge status={b.status} />
                             </div>
                             <p style={{ margin: '4px 0', fontSize: '14px' }}>
@@ -561,9 +599,11 @@ export default function TempahanPage() {
                             <p style={{ margin: '4px 0', fontSize: '14px' }}>
                               <b>{t('Masa:', 'Time:')}</b> {b.start_time && b.end_time ? `${formatTime12Hour(b.start_time)} - ${formatTime12Hour(b.end_time)}` : 'Sepanjang hari'}
                             </p>
-                            <p style={{ margin: '4px 0', fontSize: '14px' }}><b>{t('Biro:', 'Bureau:')}</b> {b.bureau}</p>
-                            <p style={{ margin: '4px 0', fontSize: '14px' }}><b>{t('Tujuan:', 'Purpose:')}</b> {b.purpose}</p>
-                            {b.remarks && <p style={{ margin: '4px 0', fontSize: '13px', color: 'var(--ink-muted)' }}><b>{t('Catatan:', 'Remarks:')}</b> {b.remarks}</p>}
+                            {b.user_id && user && b.user_id === user.id && (
+                              <p style={{ margin: '4px 0', fontSize: '13px', color: 'var(--gold-primary)', fontWeight: 600 }}>
+                                ✓ {t('Tempahan anda', 'Your booking')}
+                              </p>
+                            )}
                           </div>
                         ))}
                       </div>

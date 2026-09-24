@@ -122,6 +122,9 @@ export function Layout({ children }: { children: ReactNode }) {
 
   return (
     <div className="app-shell">
+      <a href="#main-content" className="skip-link">
+        {t('Lompat ke kandungan utama', 'Skip to main content')}
+      </a>
       {settings.announcementBar.enabled && (
         <div className="announcement-strip">
           <div className="container announcement-strip-inner">
@@ -265,7 +268,7 @@ export function Layout({ children }: { children: ReactNode }) {
         </div>
       )}
 
-      <main>{children}</main>
+      <main id="main-content" tabIndex={-1}>{children}</main>
 
       <section className="footer-band">
         <div className="container footer-band-inner">
