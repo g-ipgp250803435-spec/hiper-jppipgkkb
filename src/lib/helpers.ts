@@ -18,6 +18,7 @@ export const formatDate = (value: string | null | undefined, language: Language 
     day: '2-digit',
     month: 'short',
     year: 'numeric',
+    timeZone: 'Asia/Kuala_Lumpur',
   }).format(date)
 }
 
@@ -31,6 +32,7 @@ export const formatDateTime = (value: string | null | undefined, language: Langu
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
+    timeZone: 'Asia/Kuala_Lumpur',
   }).format(date)
 }
 
@@ -70,12 +72,43 @@ export const safeFileName = (name: string) =>
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '')
 
-const PUBLIC_MEDIA_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml', 'image/x-icon', 'image/vnd.microsoft.icon'])
-const PRIVATE_FILE_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp', 'application/pdf'])
+export const sanitizeUrl = (url: string | null | undefined): string => {
+  if (!url) return '#'
+  const trimmed = url.trim()
+  const lower = trimmed.toLowerCase()
+  if (
+    lower.startsWith('javascript:') ||
+    lower.startsWith('data:') ||
+    lower.startsWith('vbscript:')
+  ) {
+    return '#'
+  }
+  return trimmed
+}
+
+const PUBLIC_MEDIA_TYPES = new Set([
+  'image/png',
+  'image/jpeg',
+  'image/webp',
+  'image/svg+xml',
+  'image/x-icon',
+  'image/vnd.microsoft.icon',
+])
+
+const PRIVATE_FILE_TYPES = new Set([
+  'image/png',
+  'image/jpeg',
+  'image/webp',
+  'application/pdf',
+])
 
 function validateUpload(file: File, allowedTypes: Set<string>, maxBytes: number, label: string) {
-  if (!allowedTypes.has(file.type)) throw new Error(`${label}: jenis fail tidak dibenarkan.`)
-  if (file.size <= 0 || file.size > maxBytes) throw new Error(`${label}: saiz fail melebihi had ${Math.round(maxBytes / 1024 / 1024)}MB.`)
+  if (!allowedTypes.has(file.type)) {
+    throw new Error(`${label}: jenis fail tidak dibenarkan. Hanya imej PNG/JPG/WEBP atau dokumen PDF disokong.`)
+  }
+  if (file.size <= 0 || file.size > maxBytes) {
+    throw new Error(`${label}: saiz fail melebihi had ${Math.round(maxBytes / 1024 / 1024)}MB.`)
+  }
 }
 
 function safeExtension(file: File) {
@@ -105,11 +138,9 @@ export const uploadPrivateFile = async (
   userId: string,
   file: File,
   folder: string,
-  maxBytes = 20 * 1024 * 1024
+  maxBytes = 10 * 1024 * 1024
 ) => {
-  if (file.size <= 0 || file.size > maxBytes) {
-    throw new Error(`Dokumen permohonan: saiz fail melebihi had ${Math.round(maxBytes / 1024 / 1024)}MB.`)
-  }
+  validateUpload(file, PRIVATE_FILE_TYPES, maxBytes, 'Dokumen permohonan')
   const extension = safeExtension(file)
   const path = `${userId}/${folder}/${Date.now()}-${crypto.randomUUID()}.${extension}`
   const { error } = await supabaseClient.storage.from('application-files').upload(path, file, {

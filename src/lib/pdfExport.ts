@@ -6,6 +6,15 @@ export interface PdfReportItem {
   date?: string
 }
 
+export function escapeHtml(value: unknown): string {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;')
+}
+
 export function generateAndPrintPdfReport(reportTitle: string, items: PdfReportItem[]) {
   const printWindow = window.open('', '_blank', 'width=900,height=800')
   if (!printWindow) {
@@ -19,14 +28,17 @@ export function generateAndPrintPdfReport(reportTitle: string, items: PdfReportI
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
+    timeZone: 'Asia/Kuala_Lumpur',
   })
+
+  const safeReportTitle = escapeHtml(reportTitle)
 
   const htmlContent = `
     <!DOCTYPE html>
     <html lang="ms">
     <head>
       <meta charset="UTF-8">
-      <title>${reportTitle}</title>
+      <title>${safeReportTitle}</title>
       <style>
         @page {
           size: A4;
@@ -168,24 +180,28 @@ export function generateAndPrintPdfReport(reportTitle: string, items: PdfReportI
         </div>
         <div class="header-doc-type">
           <span>DOKUMEN RASMI</span><br>
-          <small>${generatedDate}</small>
+          <small>${escapeHtml(generatedDate)}</small>
         </div>
       </div>
 
       <div class="report-title-box">
-        <h1>${reportTitle}</h1>
-        <p>Jumlah rekod: ${items.length} | Tarikh Cetakan: ${generatedDate}</p>
+        <h1>${safeReportTitle}</h1>
+        <p>Jumlah rekod: ${items.length} | Tarikh Cetakan: ${escapeHtml(generatedDate)}</p>
       </div>
 
       ${items
-        .map(
-          (item) => `
+        .map((item) => {
+          const safeTitle = escapeHtml(item.title)
+          const safeStatus = item.status ? escapeHtml(item.status) : ''
+          const statusClass = item.status ? escapeHtml(item.status.toLowerCase()) : ''
+
+          return `
         <div class="item-card">
           <div class="item-header">
-            <h2 class="item-title">${item.title}</h2>
+            <h2 class="item-title">${safeTitle}</h2>
             ${
-              item.status
-                ? `<span class="status-badge status-${item.status.toLowerCase()}">${item.status}</span>`
+              safeStatus
+                ? `<span class="status-badge status-${statusClass}">${safeStatus}</span>`
                 : ''
             }
           </div>
@@ -195,8 +211,8 @@ export function generateAndPrintPdfReport(reportTitle: string, items: PdfReportI
                 .map(
                   (d) => `
                 <tr>
-                  <td class="label-col">${d.label}</td>
-                  <td class="value-col">${d.value !== null && d.value !== undefined ? String(d.value) : '—'}</td>
+                  <td class="label-col">${escapeHtml(d.label)}</td>
+                  <td class="value-col">${d.value !== null && d.value !== undefined ? escapeHtml(d.value) : '—'}</td>
                 </tr>
               `
                 )
@@ -205,7 +221,7 @@ export function generateAndPrintPdfReport(reportTitle: string, items: PdfReportI
           </table>
         </div>
       `
-        )
+        })
         .join('')}
 
       <div class="footer">

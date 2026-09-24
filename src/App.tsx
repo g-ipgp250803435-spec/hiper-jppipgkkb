@@ -1,4 +1,5 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { useEffect } from 'react'
+import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { Layout } from './components/Layout'
 import { AdminRoute, ProtectedRoute } from './components/ProtectedRoute'
 import HomePage from './pages/HomePage'
@@ -16,6 +17,46 @@ import AdminPage from './pages/AdminPage'
 import DynamicPage from './pages/DynamicPage'
 import { Card } from './components/UI'
 import { useUi } from './contexts/UiContext'
+
+function RouteMetaManager() {
+  const location = useLocation()
+
+  useEffect(() => {
+    const routeTitles: Record<string, string> = {
+      '/': 'HiPER | Hab Perbendaharaan Digital PBAK JPP IPGKKB',
+      '/login': 'Log Masuk DELIMa | HiPER',
+      '/ikes': 'iKES Care & Go-Home | HiPER',
+      '/kpk': 'KPK+ Pinjaman Kecemasan | HiPER',
+      '/tempahan': 'Tempahan Perkhidmatan | HiPER',
+      '/tempahan/bilik-jpp': 'Kalendar & Tempahan Bilik JPP | HiPER',
+      '/e-aset': 'Katalog e-Aset | HiPER',
+      '/tabung-jumaat': 'Tabung Jumaat & Sumbangan | HiPER',
+      '/pengumuman': 'Pengumuman Rasmi | HiPER',
+      '/kenali-pejabat': 'Kenali Pejabat Bendahari | HiPER',
+      '/organisasi': 'Carta Organisasi PBAK JPP | HiPER',
+      '/portal': 'Portal Saya | HiPER',
+      '/admin': 'Dashboard Pentadbir | HiPER',
+    }
+
+    const title = routeTitles[location.pathname] || 'HiPER | PBAK JPP IPGKKB'
+    document.title = title
+
+    let robotsMeta = document.querySelector<HTMLMetaElement>('meta[name="robots"]')
+    if (!robotsMeta) {
+      robotsMeta = document.createElement('meta')
+      robotsMeta.name = 'robots'
+      document.head.appendChild(robotsMeta)
+    }
+
+    if (location.pathname.startsWith('/admin') || location.pathname.startsWith('/portal')) {
+      robotsMeta.content = 'noindex, nofollow'
+    } else {
+      robotsMeta.content = 'index, follow'
+    }
+  }, [location])
+
+  return null
+}
 
 function NotFoundPage() {
   const { t } = useUi()
@@ -37,6 +78,7 @@ function NotFoundPage() {
 export default function App() {
   return (
     <BrowserRouter>
+      <RouteMetaManager />
       <Layout>
         <Routes>
           <Route path="/" element={<HomePage />} />

@@ -818,20 +818,33 @@ export default function AdminPage() {
         return
       }
 
-      // Delete existing blocks for this page
-      const { error: delError } = await supabase.from('cms_page_blocks').delete().eq('page_id', pageId)
-      if (delError) throw delError
+      // Atomic transactional RPC for saving CMS page blocks
+      const payload = blocksList.map((b, idx) => ({
+        block_type: b.block_type,
+        content: b.content,
+        display_order: idx + 1,
+      }))
 
-      // Insert new blocks
-      if (blocksList.length > 0) {
-        const payload = blocksList.map((b, idx) => ({
-          page_id: pageId,
-          block_type: b.block_type,
-          content: b.content,
-          display_order: idx + 1,
-        }))
-        const { error: insError } = await supabase.from('cms_page_blocks').insert(payload)
-        if (insError) throw insError
+      const { error: rpcError } = await supabase.rpc('save_cms_page_blocks_transactional', {
+        p_page_id: pageId,
+        p_blocks: payload,
+      })
+
+      if (rpcError) {
+        // Fallback if RPC function is not yet deployed on live backend
+        const { error: delError } = await supabase.from('cms_page_blocks').delete().eq('page_id', pageId)
+        if (delError) throw delError
+
+        if (blocksList.length > 0) {
+          const insertPayload = blocksList.map((b, idx) => ({
+            page_id: pageId,
+            block_type: b.block_type,
+            content: b.content,
+            display_order: idx + 1,
+          }))
+          const { error: insError } = await supabase.from('cms_page_blocks').insert(insertPayload)
+          if (insError) throw insError
+        }
       }
     }, 'Blok kandungan disimpan.')
   }

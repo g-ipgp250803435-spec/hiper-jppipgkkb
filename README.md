@@ -1,68 +1,70 @@
 # Hab Perbendaharaan Digital (HiPER)
 
-Portal rasmi Pejabat Bendahari Agung Kehormat (PBAK), JPP IPG Kampus Kota Bharu.
+Portal rasmi Pejabat Bendahari Agung Kehormat (PBAK), Jawatankuasa Perwakilan Pelajar (JPP) IPG Kampus Kota Bharu.
 
-## Premium V2
+## HiPER Remediation & Production Readiness (HPR-01 - HPR-32)
 
-Pakej ini membina semula pengalaman HiPER berasaskan rujukan visual website lama: susun atur dua baris, tona krim/rose lembut, dark maroon, dark gold, kad berbingkai halus, ruang putih yang luas dan hierarki kandungan yang kemas.
+Aplikasi HiPER telah dikemas kini secara menyeluruh untuk memastikan keselamatan, privasi data, integriti transaksi, aksesibiliti, dan kesediaan pengeluaran (production readiness).
 
-### Ciri utama
+### Ringkasan Pembetulan & Peningkatan Keselamatan
 
-- Navigasi desktop dua baris tanpa pertindihan dan drawer telefon khusus.
-- BM/English dan light/dark mode.
-- Homepage premium dengan hero, kad perkhidmatan, ringkasan dana dan pengumuman ringkas.
-- CRUD pentadbir untuk pengumuman, aset, ahli organisasi, kutipan dan agihan.
-- Rich-text pengumuman: bold, italic, bullets dan numbering, dengan sanitasi paparan.
-- CMS pentadbir untuk logo, favicon, nama portal, header, navigasi, homepage, tajuk halaman dan footer.
-- Carta organisasi parent/child sebenar dengan perlindungan kitaran hierarchy.
-- Edge Function notifikasi e-mel admin untuk permohonan iKES, e-Aset, dan sumbangan Tabung Jumaat.
-- RLS dan Storage policy khusus admin untuk CMS/media.
+- **HPR-01 & HPR-02**: Privasi kalendar tempahan bilik JPP diasingkan. Maklumat peribadi pemohon dilindungi daripada carian awam melalui RPC `get_public_room_availability()`. Kelulusan sendiri oleh pengguna dihalang pada peringkat pangkalan data.
+- **HPR-03**: Sanitasi HTML (`escapeHtml`) dilaksanakan pada cetakan/laporan PDF untuk mengelakkan serangan HTML Injection.
+- **HPR-04 & HPR-05**: Kebenaran RLS notifikasi pentadbir diperketat. Notifikasi `recipient_id IS NULL` khusus untuk pentadbir sahaja.
+- **HPR-07 & HPR-18**: Sistem penjadualan tempahan bilik JPP menggunakan pengunci baris atomik (`create_room_booking()` & `approve_room_booking()`) dan penetapan zon masa rasmi `Asia/Kuala_Lumpur`.
+- **HPR-08 & HPR-09**: Syarat status sumbangan menerima status `'cancelled'`, dan `notification_delivery_log` disesuaikan untuk semua modul aplikasi.
+- **HPR-10**: Medan permohonan yang dihantar bersifat tidak boleh diubah (`immutable`) semasa pembatalan oleh pemohon melalui trigger `prevent_user_application_tampering()`.
+- **HPR-11**: Pengemaskinian blok CMS diselesaikan secara transaksi atomik dalam Postgres (`save_cms_page_blocks_transactional()`).
+- **HPR-12 & HPR-25**: Pengesahan fail muat naik diperketat (10MB limit, jenis fail `PRIVATE_FILE_TYPES`), dan pautan CMS disanitasi daripada protokol `javascript:`.
+- **HPR-13 & HPR-29**: Sokongan navigasi halaman, carian, dan statistik pentadbir disusun semula secara modular.
+- **HPR-14**: Log audit kewangan tidak boleh diubah (`financial_audit_logs`) ditambah untuk pengesahan sumbangan dan agihan dana.
+- **HPR-19**: Penjanaan nombor rujukan iKES menggunakan sekuens atomik Postgres (`ikes_app_number_seq`).
+- **HPR-23 & HPR-24**: Pautan lompat ke kandungan utama (`#main-content`), kawalan papan kekunci drawer telefon, dan kontras warna butang emas dipertingkatkan mengikut piawaian WCAG 2.2 AA.
+- **HPR-27 & HPR-30**: Ujian automatik (Vitest + React Testing Library), integrasi berterusan GitHub Actions (`.github/workflows/ci.yml`), dan pengepala keselamatan HTTP (`vercel.json`) disediakan.
 
 ## Teknologi
 
 - React 19
 - TypeScript
 - Vite 7
-- React Router
-- Supabase Database, Auth, Storage, Edge Functions dan Database Webhooks
+- React Router 6
+- Supabase (Database, Auth, Storage, Edge Functions)
+- Vitest & React Testing Library
+- Vercel Deployment & Security Headers
 
-## Mula
+## Cara Menjalankan Projek
 
 ```bash
+# 1. Salin konfigurasi persekitaran
 cp .env.example .env
+
+# 2. Pasang kebergantungan
 npm install
+
+# 3. Jalankan typecheck & ujian
+npm run typecheck
+npm test
+
+# 4. Jalankan pelayan pembangunan
 npm run dev
+
+# 5. Bina pakej pengeluaran
+npm run build
 ```
 
-Isi `.env` menggunakan Project URL dan anon/publishable key Supabase. Jangan masukkan service-role key atau secret e-mel ke frontend.
+## Langkah Deployment Database Supabase
 
-## Deployment
+Untuk memasang atau mengemas kini database Supabase secara rasmi:
+1. Jalankan fail migration terkini di `supabase/migrations/20260809000000_hyper_comprehensive_remediation.sql` pada SQL Editor Supabase Dashboard.
+2. Pastikan bucket storage `application-files` (private) dan `public-media` (public) telah dikonfigurasikan.
+3. Sediakan Edge Function `notify-admin-application` dan tetapkan rahsia `HIPER_WEBHOOK_SECRET`, `RESEND_API_KEY`, `HIPER_EMAIL_FROM`, dan `SUPABASE_SERVICE_ROLE_KEY`.
 
-1. Import semua kandungan folder ini ke GitHub.
-2. Sambungkan repository kepada Vercel.
-3. Masukkan environment variables frontend dalam Vercel.
-4. Jalankan migration Supabase.
-5. Deploy Edge Function dan sediakan tiga Database Webhooks.
-6. Uji Vercel Preview sebelum Production.
+## Keselamatan Rahsia
 
-Panduan terperinci:
-
-- `docs/SETUP-SUPABASE-PREMIUM-V2.md`
-- `docs/SETUP-VERCEL-GOOGLE.md`
-- `IMPORT-GITHUB.md`
-- `SENARAI-SEMAK-UJIAN-PREMIUM-V2.md`
-- `AUDIT-KOD-PREMIUM-V2.md`
-- `VALIDATION-REPORT-PREMIUM-V2.md`
-- `docs/REKA-BENTUK-HIPER-PREMIUM-V2.md`
-
-## Keselamatan
-
-Jangan commit atau kongsi:
-
-- Supabase service-role key
-- database password
+Jangan sekali-kali memasukkan atau menyimpan:
+- Supabase service-role key dalam Kod Frontend atau pembolehubah `VITE_`
+- Kata laluan pangkalan data
 - Google OAuth client secret
 - Resend API key
-- webhook secret
-- access/refresh token
-- fail `.env`
+- Webhook secret
+- Fail `.env`

@@ -271,8 +271,26 @@ h1, h2, h3, .premium-brand strong, .fund-overview-primary strong,
 }
 .button:hover:not(:disabled) { transform: translateY(-2px); }
 .button:disabled { opacity: .55; cursor: not-allowed; }
-.button-primary, .button-gold { color: #fff; background: var(--gold-500); border-color: var(--gold-500); box-shadow: 0 12px 28px rgba(178, 131, 26, .20); }
-.button-primary:hover:not(:disabled), .button-gold:hover:not(:disabled) { background: var(--gold-600); box-shadow: 0 16px 35px rgba(178, 131, 26, .27); }
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 16px;
+  z-index: 9999;
+  padding: 10px 16px;
+  background: var(--maroon-900, #2a060d);
+  color: var(--gold-400, #e0b43d);
+  font-weight: 700;
+  border-radius: 6px;
+  transition: top 0.2s ease;
+  text-decoration: none;
+}
+.skip-link:focus {
+  top: 16px;
+  outline: 2px solid var(--gold-500);
+}
+
+.button-primary, .button-gold { color: #2a060d; font-weight: 750; background: var(--gold-500); border-color: var(--gold-500); box-shadow: 0 12px 28px rgba(178, 131, 26, .20); }
+.button-primary:hover:not(:disabled), .button-gold:hover:not(:disabled) { color: #2a060d; background: var(--gold-400); box-shadow: 0 16px 35px rgba(178, 131, 26, .27); }
 .button-secondary { color: var(--ink); border-color: var(--line-strong); background: transparent; }
 .button-secondary:hover:not(:disabled) { color: var(--gold-700); border-color: var(--gold-500); background: var(--surface); }
 .button-ghost { color: var(--ink-soft); background: transparent; }

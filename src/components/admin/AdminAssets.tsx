@@ -83,6 +83,8 @@ export default function AdminAssets({
   // Category Management State
   const [categoryForm, setCategoryForm] = useState(initialCategoryForm)
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const pageSize = 10
 
   const filteredAssetRequests = useMemo(() => {
     return assetRequests.filter((item) => {
@@ -101,6 +103,12 @@ export default function AdminAssets({
       return true
     })
   }, [assetRequests, searchQuery, statusFilter])
+
+  const totalPages = Math.ceil(filteredAssetRequests.length / pageSize) || 1
+  const paginatedAssetRequests = useMemo(() => {
+    const start = (currentPage - 1) * pageSize
+    return filteredAssetRequests.slice(start, start + pageSize)
+  }, [filteredAssetRequests, currentPage, pageSize])
 
   // Ordered Catalogue based on sortingMode
   const orderedCatalogue = useMemo(() => {
@@ -565,29 +573,30 @@ export default function AdminAssets({
           description={t('Tiada rekod sepadan dengan carian atau penapis.', 'No records match the current search or filter.')}
         />
       ) : (
-        <div className="responsive-table">
-          <table>
-            <thead>
-              <tr>
-                <th style={{ width: '36px' }}>
-                  <input
-                    type="checkbox"
-                    checked={filteredAssetRequests.length > 0 && selectedIds.length === filteredAssetRequests.length}
-                    onChange={(e) => {
-                      if (e.target.checked) setSelectedIds(filteredAssetRequests.map((a) => a.id))
-                      else setSelectedIds([])
-                    }}
-                  />
-                </th>
-                <th>{t('Pemohon', 'Applicant')}</th>
-                <th>{t('Aset & tempoh', 'Asset & period')}</th>
-                <th>{t('Status', 'Status')}</th>
-                <th>{t('Nota', 'Notes')}</th>
-                <th>{t('Tindakan', 'Action')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredAssetRequests.map((item) => (
+        <>
+          <div className="responsive-table">
+            <table>
+              <thead>
+                <tr>
+                  <th style={{ width: '36px' }}>
+                    <input
+                      type="checkbox"
+                      checked={filteredAssetRequests.length > 0 && selectedIds.length === filteredAssetRequests.length}
+                      onChange={(e) => {
+                        if (e.target.checked) setSelectedIds(filteredAssetRequests.map((a) => a.id))
+                        else setSelectedIds([])
+                      }}
+                    />
+                  </th>
+                  <th>{t('Pemohon', 'Applicant')}</th>
+                  <th>{t('Aset & tempoh', 'Asset & period')}</th>
+                  <th>{t('Status', 'Status')}</th>
+                  <th>{t('Nota', 'Notes')}</th>
+                  <th>{t('Tindakan', 'Action')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedAssetRequests.map((item) => (
                 <tr key={item.id}>
                   <td>
                     <input
@@ -724,6 +733,31 @@ export default function AdminAssets({
             </tbody>
           </table>
         </div>
+
+        {totalPages > 1 && (
+          <div className="pagination-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', padding: '8px 0', borderTop: '1px solid var(--line)' }}>
+            <Button
+              variant="ghost"
+              className="compact"
+              disabled={currentPage <= 1}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            >
+              <Icon name="chevron-right" size={16} style={{ transform: 'rotate(180deg)' }} /> {t('Sebelum', 'Prev')}
+            </Button>
+            <span style={{ fontSize: '13px', color: 'var(--ink-soft)' }}>
+              {t(`Halaman ${currentPage} daripada ${totalPages}`, `Page ${currentPage} of ${totalPages}`)}
+            </span>
+            <Button
+              variant="ghost"
+              className="compact"
+              disabled={currentPage >= totalPages}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            >
+              {t('Seterusnya', 'Next')} <Icon name="chevron-right" size={16} />
+            </Button>
+          </div>
+        )}
+        </>
       )}
     </Card>
   )
