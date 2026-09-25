@@ -304,60 +304,67 @@ export default function TempahanPage() {
         p_remarks: remarks.trim() || null,
       })
 
-      let success = false
-      let newRecId: string | null = null
-
-      if (!rpcErr && rpcRes) {
-        if (!rpcRes.success) {
-          setMessage({ type: 'danger', text: rpcRes.error || t('Slot bilik tidak tersedia.', 'Room slot unavailable.') })
-          return
-        }
-        success = true
-        newRecId = rpcRes.data?.id || null
-      } else {
-        // Fallback if RPC function is not yet deployed
-        const { data: newRec, error: insErr } = await supabase.from('room_bookings').insert({
-          user_id: user.id,
-          booking_date: selectedDate,
-          start_time: startTime,
-          end_time: endTime,
-          name: applicantName.trim(),
-          bureau: bureauName.trim(),
-          purpose: purpose.trim(),
-          remarks: remarks.trim() || null,
-          status: 'pending',
-        }).select().single()
-
-        if (insErr) throw insErr
-        success = true
-        newRecId = newRec?.id || null
-      }
-
-      if (success) {
-        // Send admin notification safely (catch error so submission won't fail)
-        try {
-          await notifyAdmins(
-            `🔔 Permohonan Tempahan Bilik JPP Baharu`,
-            `Tempahan Bilik JPP untuk tarikh ${formatDate(selectedDate, language)} (${formatTime12Hour(startTime)} - ${formatTime12Hour(endTime)}) telah dihantar oleh ${applicantName.trim()} (${bureauName.trim()}).`,
-            'tempahan',
-            newRecId
-          )
-        } catch (notifErr) {
-          console.warn('Notification delivery error:', notifErr)
-        }
-
+      if (rpcErr) {
+        console.error('Room booking RPC error:', rpcErr)
         setMessage({
-          type: 'success',
-          text: t('Permohonan tempahan Bilik JPP berjaya dihantar dan sedang menunggu kelulusan admin.', 'JPP Room booking request submitted and pending admin approval.')
+          type: 'danger',
+          text: t(
+            'Permohonan tidak dapat dihantar kerana perkhidmatan tempahan tidak tersedia buat sementara waktu. Sila cuba lagi.',
+            'The booking request could not be submitted because the booking service is temporarily unavailable. Please try again.'
+          ),
         })
-        setPurpose('')
-        setRemarks('')
-        await loadData()
+        return
       }
+
+      if (!rpcRes) {
+        console.error('Room booking RPC returned empty response')
+        setMessage({
+          type: 'danger',
+          text: t(
+            'Permohonan tidak dapat dihantar kerana perkhidmatan tempahan tidak tersedia buat sementara waktu. Sila cuba lagi.',
+            'The booking request could not be submitted because the booking service is temporarily unavailable. Please try again.'
+          ),
+        })
+        return
+      }
+
+      if (!rpcRes.success) {
+        setMessage({
+          type: 'danger',
+          text: rpcRes.error || t('Slot bilik tidak tersedia.', 'Room slot unavailable.'),
+        })
+        return
+      }
+
+      const newRecId = rpcRes.data?.id || null
+
+      // Send admin notification safely (catch error so submission won't fail)
+      try {
+        await notifyAdmins(
+          `🔔 Permohonan Tempahan Bilik JPP Baharu`,
+          `Tempahan Bilik JPP untuk tarikh ${formatDate(selectedDate, language)} (${formatTime12Hour(startTime)} - ${formatTime12Hour(endTime)}) telah dihantar oleh ${applicantName.trim()} (${bureauName.trim()}).`,
+          'tempahan',
+          newRecId
+        )
+      } catch (notifErr) {
+        console.warn('Notification delivery error:', notifErr)
+      }
+
+      setMessage({
+        type: 'success',
+        text: t('Permohonan tempahan Bilik JPP berjaya dihantar dan sedang menunggu kelulusan admin.', 'JPP Room booking request submitted and pending admin approval.')
+      })
+      setPurpose('')
+      setRemarks('')
+      await loadData()
     } catch (err) {
+      console.error('Unhandled error submitting room booking:', err)
       setMessage({
         type: 'danger',
-        text: err instanceof Error ? err.message : t('Gagal menghantar tempahan.', 'Failed to submit booking.')
+        text: t(
+          'Permohonan tidak dapat dihantar kerana perkhidmatan tempahan tidak tersedia buat sementara waktu. Sila cuba lagi.',
+          'The booking request could not be submitted because the booking service is temporarily unavailable. Please try again.'
+        ),
       })
     } finally {
       setBusy(false)
