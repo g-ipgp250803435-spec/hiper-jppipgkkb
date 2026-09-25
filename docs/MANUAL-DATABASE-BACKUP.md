@@ -41,7 +41,7 @@ Follow these simple steps whenever a manual backup of the production database is
 
 9. **Verify Artifact Contents**
    Extract the downloaded `.zip` archive and confirm it contains all five required files:
-   - `roles.sql` (Database roles, users, and grants)
+   - `roles.sql` (PostgreSQL roles and grants)
    - `schema.sql` (DDL schema structure and table definitions)
    - `data.sql` (Table record data dump)
    - `BACKUP-MANIFEST.txt` (Backup run metadata and timestamps)
