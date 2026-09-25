@@ -1,0 +1,111 @@
+name: Manual Production Database Backup
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    name: Create Logical Supabase Database Dump
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: 1.231.0
+
+      - name: Link Supabase Project
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: |
+          if [ -z "$SUPABASE_ACCESS_TOKEN" ] || [ -z "$SUPABASE_PROJECT_REF" ]; then
+            echo "Error: Required secrets SUPABASE_ACCESS_TOKEN or SUPABASE_PROJECT_REF are missing."
+            exit 1
+          fi
+          supabase link --project-ref "$SUPABASE_PROJECT_REF"
+
+      - name: Execute Database Dumps
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          mkdir -p backup-output
+          echo "Dumping database roles..."
+          supabase db dump --linked --role-only -f backup-output/roles.sql
+
+          echo "Dumping database schema..."
+          supabase db dump --linked -f backup-output/schema.sql
+
+          echo "Dumping database data..."
+          supabase db dump --linked --data-only --use-copy -f backup-output/data.sql
+
+      - name: Verify Dump Output Files
+        run: |
+          if [ ! -f "backup-output/roles.sql" ]; then
+            echo "Error: backup-output/roles.sql was not generated."
+            exit 1
+          fi
+
+          if [ ! -s "backup-output/schema.sql" ]; then
+            echo "Error: backup-output/schema.sql is missing or empty."
+            exit 1
+          fi
+
+          if [ ! -f "backup-output/data.sql" ]; then
+            echo "Error: backup-output/data.sql was not generated."
+            exit 1
+          fi
+
+          echo "All required SQL dump files exist and schema is non-empty."
+
+      - name: Generate Backup Manifest
+        run: |
+          MANIFEST="backup-output/BACKUP-MANIFEST.txt"
+          TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+          cat <<EOF > "$MANIFEST"
+          ======================================================================
+          HiPER Production Database Backup Manifest
+          ======================================================================
+          Timestamp (UTC) : $TIMESTAMP
+          Repository      : ${{ github.repository }}
+          Commit SHA      : ${{ github.sha }}
+          Workflow Run ID : ${{ github.run_id }}
+          Dump Type       : Logical Supabase CLI Dump (--linked)
+
+          Generated Files:
+            - roles.sql           (Database roles and grants)
+            - schema.sql          (DDL statements and structure)
+            - data.sql            (Table data insert/copy statements)
+            - BACKUP-MANIFEST.txt (This metadata manifest)
+            - SHA256SUMS.txt      (File integrity checksums)
+
+          IMPORTANT SCOPE & LIMITATIONS:
+            1. Supabase-managed schemas (such as 'auth', 'storage', or extension
+               managed schemas) may be excluded from standard CLI dumps.
+            2. Files/assets stored in Supabase Storage buckets are NOT included
+               in this database SQL dump.
+            3. Any restoration MUST first be thoroughly tested against an isolated
+               development or staging database project before touching production.
+          ======================================================================
+          EOF
+
+      - name: Generate Integrity Checksums
+        run: |
+          cd backup-output
+          sha256sum roles.sql schema.sql data.sql BACKUP-MANIFEST.txt > SHA256SUMS.txt
+          echo "Generated SHA256SUMS.txt successfully."
+
+      - name: Upload Backup Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hiper-db-backup-${{ github.run_id }}
+          path: backup-output/
+          retention-days: 7
+          if-no-files-found: error
