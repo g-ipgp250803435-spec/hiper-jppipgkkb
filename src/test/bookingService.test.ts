@@ -1,63 +1,49 @@
 import { describe, it, expect } from 'vitest'
+import { processRoomBookingRpcResponse, type RoomBookingRpcResult } from '../lib/bookingService'
+import tempahanPageCode from '../pages/TempahanPage.tsx?raw'
 
-interface RpcResult {
-  success: boolean
-  error?: string
-  data?: any
-}
+const mockT = (bm: string, en: string) => bm
 
-// Function simulating the RPC response handling logic implemented in TempahanPage.tsx
-export function handleRoomBookingRpcResponse(
-  rpcErr: any,
-  rpcRes: RpcResult | null | undefined
-): { status: 'success' | 'business_error' | 'transport_error'; message: string; data?: any } {
-  if (rpcErr || !rpcRes) {
-    return {
-      status: 'transport_error',
-      message: 'Permohonan tidak dapat dihantar kerana perkhidmatan tempahan tidak tersedia buat sementara waktu. Sila cuba lagi.',
-    }
-  }
-
-  if (!rpcRes.success) {
-    return {
-      status: 'business_error',
-      message: rpcRes.error || 'Slot bilik tidak tersedia.',
-    }
-  }
-
-  return {
-    status: 'success',
-    message: 'Permohonan tempahan Bilik JPP berjaya dihantar dan sedang menunggu kelulusan admin.',
-    data: rpcRes.data,
-  }
-}
-
-describe('Room Booking RPC Response Handling', () => {
-  it('handles successful RPC result correctly', () => {
-    const rpcRes: RpcResult = {
+describe('Room Booking RPC Response Handling (processRoomBookingRpcResponse)', () => {
+  it('handles successful RPC response correctly', () => {
+    const rpcRes: RoomBookingRpcResult = {
       success: true,
       data: { id: 'rb-123', status: 'pending' },
     }
-    const result = handleRoomBookingRpcResponse(null, rpcRes)
-    expect(result.status).toBe('success')
-    expect(result.data?.id).toBe('rb-123')
+    const outcome = processRoomBookingRpcResponse(null, rpcRes, mockT)
+    expect(outcome.ok).toBe(true)
+    expect(outcome.data?.id).toBe('rb-123')
+    expect(outcome.errorMessage).toBeUndefined()
   })
 
   it('handles business rule rejection (success: false) correctly', () => {
-    const rpcRes: RpcResult = {
+    const rpcRes: RoomBookingRpcResult = {
       success: false,
       error: 'Maaf, Bilik JPP telah ditempah pada masa/tarikh tersebut.',
     }
-    const result = handleRoomBookingRpcResponse(null, rpcRes)
-    expect(result.status).toBe('business_error')
-    expect(result.message).toBe('Maaf, Bilik JPP telah ditempah pada masa/tarikh tersebut.')
+    const outcome = processRoomBookingRpcResponse(null, rpcRes, mockT)
+    expect(outcome.ok).toBe(false)
+    expect(outcome.errorMessage).toBe('Maaf, Bilik JPP telah ditempah pada masa/tarikh tersebut.')
   })
 
-  it('handles transport/RPC error by returning safe temporary service error without table insert', () => {
-    const rpcErr = new Error('RPC function not found or network failed')
-    const result = handleRoomBookingRpcResponse(rpcErr, null)
-    expect(result.status).toBe('transport_error')
-    expect(result.message).toContain('perkhidmatan tempahan tidak tersedia buat sementara waktu')
+  it('handles RPC transport error correctly by failing closed with safe message', () => {
+    const rpcErr = new Error('Database connection failed')
+    const outcome = processRoomBookingRpcResponse(rpcErr, null, mockT)
+    expect(outcome.ok).toBe(false)
+    expect(outcome.errorMessage).toContain('perkhidmatan tempahan tidak tersedia buat sementara waktu')
   })
 
+  it('handles null/undefined RPC response correctly by failing closed', () => {
+    const outcomeNull = processRoomBookingRpcResponse(null, null, mockT)
+    expect(outcomeNull.ok).toBe(false)
+    expect(outcomeNull.errorMessage).toContain('perkhidmatan tempahan tidak tersedia buat sementara waktu')
+
+    const outcomeUndefined = processRoomBookingRpcResponse(null, undefined, mockT)
+    expect(outcomeUndefined.ok).toBe(false)
+    expect(outcomeUndefined.errorMessage).toContain('perkhidmatan tempahan tidak tersedia buat sementara waktu')
+  })
+
+  it('safeguards that TempahanPage.tsx contains no direct room_bookings insert fallback', () => {
+    expect(tempahanPageCode).not.toContain(".from('room_bookings').insert")
+  })
 })

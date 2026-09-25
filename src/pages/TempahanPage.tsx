@@ -8,6 +8,7 @@ import { isSupabaseConfigured } from '../lib/config'
 import { formatDate, formatTime12Hour, timeToMinutes, checkTimeOverlap } from '../lib/helpers'
 import { supabase } from '../lib/supabase'
 import { notifyAdmins } from '../lib/v3/notificationService'
+import { processRoomBookingRpcResponse } from '../lib/bookingService'
 import type { BookingService, RoomBooking } from '../lib/types'
 
 const defaultServices: BookingService[] = [
@@ -304,39 +305,17 @@ export default function TempahanPage() {
         p_remarks: remarks.trim() || null,
       })
 
-      if (rpcErr) {
-        console.error('Room booking RPC error:', rpcErr)
+      const outcome = processRoomBookingRpcResponse(rpcErr, rpcRes, t)
+
+      if (!outcome.ok) {
         setMessage({
           type: 'danger',
-          text: t(
-            'Permohonan tidak dapat dihantar kerana perkhidmatan tempahan tidak tersedia buat sementara waktu. Sila cuba lagi.',
-            'The booking request could not be submitted because the booking service is temporarily unavailable. Please try again.'
-          ),
+          text: outcome.errorMessage || t('Gagal menghantar tempahan.', 'Failed to submit booking.'),
         })
         return
       }
 
-      if (!rpcRes) {
-        console.error('Room booking RPC returned empty response')
-        setMessage({
-          type: 'danger',
-          text: t(
-            'Permohonan tidak dapat dihantar kerana perkhidmatan tempahan tidak tersedia buat sementara waktu. Sila cuba lagi.',
-            'The booking request could not be submitted because the booking service is temporarily unavailable. Please try again.'
-          ),
-        })
-        return
-      }
-
-      if (!rpcRes.success) {
-        setMessage({
-          type: 'danger',
-          text: rpcRes.error || t('Slot bilik tidak tersedia.', 'Room slot unavailable.'),
-        })
-        return
-      }
-
-      const newRecId = rpcRes.data?.id || null
+      const newRecId = outcome.data?.id || null
 
       // Send admin notification safely (catch error so submission won't fail)
       try {
