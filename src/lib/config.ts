@@ -19,4 +19,23 @@ export const config = {
     .filter(Boolean),
 }
 
-export const isSupabaseConfigured = Boolean(config.supabaseUrl && config.supabaseAnonKey)
+const isValidHttpUrl = (value: string) => {
+  try {
+    const parsed = new URL(value)
+    return parsed.protocol === 'https:' || parsed.protocol === 'http:'
+  } catch {
+    return false
+  }
+}
+
+const looksLikePlaceholder = (value: string) =>
+  /your[_-]|placeholder|example/i.test(value)
+
+export const isSupabaseConfigured = Boolean(
+  config.supabaseUrl &&
+  config.supabaseAnonKey &&
+  isValidHttpUrl(config.supabaseUrl) &&
+  !looksLikePlaceholder(config.supabaseUrl) &&
+  !looksLikePlaceholder(config.supabaseAnonKey) &&
+  config.supabaseAnonKey.length >= 20,
+)

@@ -12,7 +12,7 @@ import AdminAnnouncements from '../components/admin/AdminAnnouncements'
 import AdminOrganization from '../components/admin/AdminOrganization'
 import AdminNotificationDropdown from '../components/admin/AdminNotificationDropdown'
 import AdminCMS from '../components/admin/AdminCMS'
-import { notifyUser } from '../lib/v3/notificationService'
+import { notifyAllUsers, notifyUser } from '../lib/v3/notificationService'
 import { useAuth } from '../contexts/AuthContext'
 import { useUi } from '../contexts/UiContext'
 import { isSupabaseConfigured } from '../lib/config'
@@ -782,12 +782,11 @@ export default function AdminPage() {
       if (error) throw error
 
       if (notifySubscribers && form.status === 'published') {
-        await notifyUser(
-          'all',
+        await notifyAllUsers(
           'Halaman Baharu Diterbitkan',
           `Maklumat baharu telah diterbitkan: ${form.title_bm}`,
           'cms_page',
-          form.slug
+          null,
         )
       }
     }, form.id ? 'Halaman CMS dikemas kini.' : 'Halaman CMS dicipta.')

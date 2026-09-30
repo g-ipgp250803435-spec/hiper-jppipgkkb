@@ -74,23 +74,43 @@ export const safeFileName = (name: string) =>
 
 export const sanitizeUrl = (url: string | null | undefined): string => {
   if (!url) return '#'
+
   const trimmed = url.trim()
-  const lower = trimmed.toLowerCase()
-  if (
-    lower.startsWith('javascript:') ||
-    lower.startsWith('data:') ||
-    lower.startsWith('vbscript:')
-  ) {
-    return '#'
+  if (!trimmed) return '#'
+
+  // Keep app-local paths, anchors and query links local. Protocol-relative URLs
+  // (//example.com) are intentionally rejected so CMS content cannot silently
+  // switch visitors to another origin.
+  if (trimmed.startsWith('/') && !trimmed.startsWith('//')) return trimmed
+  if (trimmed.startsWith('#') || trimmed.startsWith('?')) return trimmed
+
+  try {
+    const parsed = new URL(trimmed)
+    return ['http:', 'https:', 'mailto:', 'tel:'].includes(parsed.protocol) ? trimmed : '#'
+  } catch {
+    // A relative URL without a leading slash is safe as long as it has no
+    // scheme-like prefix (for example "javascript:").
+    return /^[a-z][a-z0-9+.-]*:/i.test(trimmed) ? '#' : trimmed
   }
-  return trimmed
+}
+
+export const sanitizeImageUrl = (url: string | null | undefined): string => {
+  const safe = sanitizeUrl(url)
+  if (safe === '#') return ''
+  if (safe.startsWith('/') && !safe.startsWith('//')) return safe
+
+  try {
+    const parsed = new URL(safe)
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? safe : ''
+  } catch {
+    return ''
+  }
 }
 
 const PUBLIC_MEDIA_TYPES = new Set([
   'image/png',
   'image/jpeg',
   'image/webp',
-  'image/svg+xml',
   'image/x-icon',
   'image/vnd.microsoft.icon',
 ])
@@ -138,7 +158,7 @@ export const uploadPrivateFile = async (
   userId: string,
   file: File,
   folder: string,
-  maxBytes = 10 * 1024 * 1024
+  maxBytes = 5 * 1024 * 1024
 ) => {
   validateUpload(file, PRIVATE_FILE_TYPES, maxBytes, 'Dokumen permohonan')
   const extension = safeExtension(file)

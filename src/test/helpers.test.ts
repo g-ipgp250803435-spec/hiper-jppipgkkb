@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { sanitizeUrl, checkTimeOverlap, formatTime12Hour, timeToMinutes } from '../lib/helpers'
+import { sanitizeImageUrl, sanitizeUrl, checkTimeOverlap, formatTime12Hour, timeToMinutes } from '../lib/helpers'
 
 describe('Helper Utilities (HPR-18, HPR-25)', () => {
   describe('sanitizeUrl', () => {
@@ -16,6 +16,24 @@ describe('Helper Utilities (HPR-18, HPR-25)', () => {
     it('allows valid https and internal URLs', () => {
       expect(sanitizeUrl('https://example.com')).toBe('https://example.com')
       expect(sanitizeUrl('/e-aset')).toBe('/e-aset')
+    })
+
+
+    it('rejects protocol-relative and unknown-scheme URLs', () => {
+      expect(sanitizeUrl('//evil.example/path')).toBe('#')
+      expect(sanitizeUrl('file:///etc/passwd')).toBe('#')
+    })
+
+    it('allows common safe external schemes', () => {
+      expect(sanitizeUrl('mailto:test@example.com')).toBe('mailto:test@example.com')
+      expect(sanitizeUrl('tel:+60123456789')).toBe('tel:+60123456789')
+    })
+
+    it('only allows http(s) and app-local image URLs', () => {
+      expect(sanitizeImageUrl('/hiper-logo.png')).toBe('/hiper-logo.png')
+      expect(sanitizeImageUrl('https://example.com/logo.png')).toBe('https://example.com/logo.png')
+      expect(sanitizeImageUrl('mailto:test@example.com')).toBe('')
+      expect(sanitizeImageUrl('data:image/svg+xml,<svg/>')).toBe('')
     })
   })
 

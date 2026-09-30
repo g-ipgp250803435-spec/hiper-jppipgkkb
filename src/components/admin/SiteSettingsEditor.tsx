@@ -120,10 +120,10 @@ export function SiteSettingsEditor() {
           <LocalisedFields label={t('Tagline', 'Tagline')} value={draft.branding.tagline} onChange={(value) => setDraft({ ...draft, branding: { ...draft.branding, tagline: value } })} />
           <LocalisedFields label={t('Penerangan SEO', 'SEO description')} value={draft.branding.metaDescription} multiline onChange={(value) => setDraft({ ...draft, branding: { ...draft.branding, metaDescription: value } })} />
           <Field label={t('Logo baharu', 'New logo')} hint={t('PNG, JPG, WebP atau SVG. Logo semasa dikekalkan jika tiada fail dipilih.', 'PNG, JPG, WebP or SVG. Current logo is retained if no file is selected.')}>
-            <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" onChange={(event) => setLogoFile(event.target.files?.[0] || null)} />
+            <input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => setLogoFile(event.target.files?.[0] || null)} />
           </Field>
           <Field label={t('Favicon baharu', 'New favicon')}>
-            <input type="file" accept="image/png,image/x-icon,image/svg+xml" onChange={(event) => setFaviconFile(event.target.files?.[0] || null)} />
+            <input type="file" accept="image/png,image/jpeg,image/webp,image/x-icon,image/vnd.microsoft.icon" onChange={(event) => setFaviconFile(event.target.files?.[0] || null)} />
           </Field>
           <div className="cms-brand-previews full-span">
             <div><span>{t('Logo semasa', 'Current logo')}</span><img src={draft.branding.logoUrl || '/hiper-logo.png'} alt="" /></div>

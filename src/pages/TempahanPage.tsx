@@ -5,7 +5,7 @@ import { Icon } from '../components/Icons'
 import { useAuth } from '../contexts/AuthContext'
 import { useUi } from '../contexts/UiContext'
 import { isSupabaseConfigured } from '../lib/config'
-import { formatDate, formatTime12Hour, timeToMinutes, checkTimeOverlap } from '../lib/helpers'
+import { checkTimeOverlap, formatDate, formatTime12Hour, sanitizeImageUrl, sanitizeUrl, timeToMinutes } from '../lib/helpers'
 import { supabase } from '../lib/supabase'
 import { notifyAdmins } from '../lib/v3/notificationService'
 import { processRoomBookingRpcResponse } from '../lib/bookingService'
@@ -429,7 +429,7 @@ export default function TempahanPage() {
                   <div>
                     <div className="service-card-image-wrap" style={{ height: '160px', width: '100%', background: 'var(--maroon-dark)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--gold-primary)', marginBottom: '16px', overflow: 'hidden' }}>
                       {svc.image_url ? (
-                        <img src={svc.image_url} alt={svc.title_bm} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <img src={sanitizeImageUrl(svc.image_url)} alt={svc.title_bm} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       ) : (
                         <Icon name={svc.booking_type === 'room_booking' ? 'calendar' : svc.booking_type === 'apparel' ? 'box' : 'user'} size={48} />
                       )}
@@ -448,7 +448,7 @@ export default function TempahanPage() {
                         {t('Buat Tempahan', 'Make Booking')}
                       </Link>
                     ) : svc.external_link ? (
-                      <a href={svc.external_link} target="_blank" rel="noopener noreferrer" className="button button-primary" style={{ width: '100%', justifyContent: 'center' }}>
+                      <a href={sanitizeUrl(svc.external_link)} target="_blank" rel="noopener noreferrer" className="button button-primary" style={{ width: '100%', justifyContent: 'center' }}>
                         <Icon name="external-link" size={18} />
                         {t('Buat Tempahan', 'Make Booking')}
                       </a>

@@ -1,17 +1,17 @@
 export interface RoomBookingRpcResult {
   success: boolean
   error?: string
-  data?: any
+  data?: Record<string, unknown>
 }
 
 export interface ProcessedBookingRpcOutcome {
   ok: boolean
   errorMessage?: string
-  data?: any
+  data?: Record<string, unknown>
 }
 
 export function processRoomBookingRpcResponse(
-  rpcErr: any,
+  rpcErr: unknown,
   rpcRes: RoomBookingRpcResult | null | undefined,
   t: (bm: string, en: string) => string
 ): ProcessedBookingRpcOutcome {

@@ -6,6 +6,7 @@ import { useUi } from '../contexts/UiContext'
 import { useAuth } from '../contexts/AuthContext'
 import { isSupabaseConfigured } from '../lib/config'
 import { supabase } from '../lib/supabase'
+import { sanitizeImageUrl, sanitizeUrl } from '../lib/helpers'
 import type {
   CmsPage,
   CmsPageBlock,
@@ -253,7 +254,7 @@ export default function DynamicPage() {
               return (
                 <div key={block.id} style={{ textAlign: align, margin: '10px 0' }}>
                   <img
-                    src={c.image_url}
+                    src={sanitizeImageUrl(c.image_url)}
                     alt={caption || ''}
                     style={{
                       maxWidth: widthMap[size],
@@ -278,7 +279,7 @@ export default function DynamicPage() {
               return (
                 <div key={block.id} style={{ margin: '12px 0' }}>
                   <a
-                    href={c.url}
+                    href={sanitizeUrl(c.url)}
                     target={c.open_new_tab ? '_blank' : '_self'}
                     rel={c.open_new_tab ? 'noreferrer' : undefined}
                     className={`button ${variantClass}`}
@@ -299,7 +300,7 @@ export default function DynamicPage() {
               return (
                 <Card key={block.id} className="cms-block-card">
                   <a
-                    href={c.url}
+                    href={sanitizeUrl(c.url)}
                     target="_blank"
                     rel="noreferrer"
                     style={{ textDecoration: 'none', color: 'inherit', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
@@ -326,7 +327,7 @@ export default function DynamicPage() {
                     const caption = language === 'bm' ? img.caption_bm : img.caption_en || img.caption_bm
                     return (
                       <div key={img.id} style={{ borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--line)', background: 'var(--surface)' }}>
-                        <img src={img.image_url} alt={caption || ''} style={{ width: '100%', height: '180px', objectFit: 'cover' }} />
+                        <img src={sanitizeImageUrl(img.image_url)} alt={caption || ''} style={{ width: '100%', height: '180px', objectFit: 'cover' }} />
                         {caption && <div style={{ padding: '8px 12px', fontSize: '0.82rem', color: 'var(--ink-soft)' }}>{caption}</div>}
                       </div>
                     )

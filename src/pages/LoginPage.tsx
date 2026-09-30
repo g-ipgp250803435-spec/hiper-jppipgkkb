@@ -10,7 +10,7 @@ import {
   Card,
   Notice,
 } from '../components/UI'
-import { config } from '../lib/config'
+import { config, isSupabaseConfigured } from '../lib/config'
 import { localise } from '../lib/siteSettings'
 
 export default function LoginPage() {
@@ -102,6 +102,15 @@ export default function LoginPage() {
             </strong>
           </p>
 
+          {!isSupabaseConfigured && (
+            <Notice type="warning">
+              {t(
+                'Portal belum disambungkan ke Supabase. Tetapkan VITE_SUPABASE_URL dan VITE_SUPABASE_ANON_KEY di Vercel sebelum menerbitkan fungsi log masuk.',
+                'The portal is not connected to Supabase yet. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in Vercel before publishing sign-in features.',
+              )}
+            </Notice>
+          )}
+
           {authError && (
             <Notice type="danger">
               {authError}
@@ -112,7 +121,7 @@ export default function LoginPage() {
             onClick={() => {
               void signInWithGoogle()
             }}
-            disabled={loading}
+            disabled={loading || !isSupabaseConfigured}
             className="google-button"
           >
             <span className="google-mark">
