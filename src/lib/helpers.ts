@@ -78,10 +78,13 @@ export const sanitizeUrl = (url: string | null | undefined): string => {
   const trimmed = url.trim()
   if (!trimmed) return '#'
 
-  // Keep app-local paths, anchors and query links local. Protocol-relative URLs
-  // (//example.com) are intentionally rejected so CMS content cannot silently
-  // switch visitors to another origin.
-  if (trimmed.startsWith('/') && !trimmed.startsWith('//')) return trimmed
+  // Reject network-path references before handling ordinary relative URLs.
+  // Browsers can treat both //example.com and backslash variants as an external
+  // origin in URL/navigation contexts, so CMS content must never pass them through.
+  if (/^[\\/]{2}/.test(trimmed)) return '#'
+
+  // Keep app-local paths, anchors and query links local.
+  if (trimmed.startsWith('/')) return trimmed
   if (trimmed.startsWith('#') || trimmed.startsWith('?')) return trimmed
 
   try {

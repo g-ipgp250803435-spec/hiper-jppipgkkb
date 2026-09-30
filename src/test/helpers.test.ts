@@ -19,8 +19,9 @@ describe('Helper Utilities (HPR-18, HPR-25)', () => {
     })
 
 
-    it('rejects protocol-relative and unknown-scheme URLs', () => {
+    it('rejects protocol-relative, backslash network-path and unknown-scheme URLs', () => {
       expect(sanitizeUrl('//evil.example/path')).toBe('#')
+      expect(sanitizeUrl('\\\\evil.example\\path')).toBe('#')
       expect(sanitizeUrl('file:///etc/passwd')).toBe('#')
     })
 

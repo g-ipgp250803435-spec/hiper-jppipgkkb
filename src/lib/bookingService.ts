@@ -1,17 +1,13 @@
-export interface RoomBookingRpcData extends Record<string, unknown> {
-  id?: string | null
-}
-
 export interface RoomBookingRpcResult {
   success: boolean
   error?: string
-  data?: RoomBookingRpcData
+  data?: Record<string, unknown>
 }
 
 export interface ProcessedBookingRpcOutcome {
   ok: boolean
   errorMessage?: string
-  data?: RoomBookingRpcData
+  data?: Record<string, unknown>
 }
 
 export function processRoomBookingRpcResponse(
