@@ -8,6 +8,19 @@ type WebhookPayload = {
   old_record?: Record<string, unknown> | null
 }
 
+type AdminRecipient = {
+  email: string | null
+  full_name: string | null
+}
+
+const SUPPORTED_TABLES = new Set([
+  'ikes_applications',
+  'asset_applications',
+  'kpk_applications',
+  'room_bookings',
+  'donations',
+])
+
 const jsonHeaders = { 'Content-Type': 'application/json; charset=utf-8' }
 
 function jsonResponse(body: Record<string, unknown>, status = 200) {
@@ -25,15 +38,50 @@ function escapeHtml(value: unknown) {
 
 function formatMoney(value: unknown) {
   const numberValue = Number(value || 0)
-  return new Intl.NumberFormat('ms-MY', { style: 'currency', currency: 'MYR' }).format(numberValue)
+  return Number.isFinite(numberValue)
+    ? new Intl.NumberFormat('ms-MY', { style: 'currency', currency: 'MYR' }).format(numberValue)
+    : String(value ?? '—')
 }
 
-function formatDate(value: unknown) {
+function formatDateTime(value: unknown) {
   if (!value) return '—'
   const date = new Date(String(value))
   return Number.isNaN(date.getTime())
     ? String(value)
-    : new Intl.DateTimeFormat('ms-MY', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Kuala_Lumpur' }).format(date)
+    : new Intl.DateTimeFormat('ms-MY', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+        timeZone: 'Asia/Kuala_Lumpur',
+      }).format(date)
+}
+
+function formatDateOnly(value: unknown) {
+  if (!value) return '—'
+  const raw = String(value)
+  const date = new Date(`${raw}T00:00:00+08:00`)
+  return Number.isNaN(date.getTime())
+    ? raw
+    : new Intl.DateTimeFormat('ms-MY', {
+        dateStyle: 'medium',
+        timeZone: 'Asia/Kuala_Lumpur',
+      }).format(date)
+}
+
+function formatTime(value: unknown) {
+  const raw = String(value ?? '').trim()
+  if (!raw) return '—'
+  return raw.length >= 5 ? raw.slice(0, 5) : raw
+}
+
+function normalizeSiteUrl(value: string) {
+  return value.trim().replace(/\/+$/, '')
+}
+
+function collectFallbackRecipients(value: string | undefined) {
+  return (value || '')
+    .split(',')
+    .map((email) => email.trim().toLowerCase())
+    .filter((email) => email.includes('@'))
 }
 
 Deno.serve(async (request) => {
@@ -43,13 +91,18 @@ Deno.serve(async (request) => {
   if (!webhookSecret) return jsonResponse({ error: 'Server webhook secret is not configured' }, 500)
 
   const providedSecret = request.headers.get('x-hiper-webhook-secret')
-  if (!providedSecret || providedSecret !== webhookSecret) return jsonResponse({ error: 'Unauthorized' }, 401)
+  if (!providedSecret || providedSecret !== webhookSecret) {
+    return jsonResponse({ error: 'Unauthorized' }, 401)
+  }
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
   const resendApiKey = Deno.env.get('RESEND_API_KEY')
   const fromEmail = Deno.env.get('HIPER_EMAIL_FROM')
-  const siteUrl = Deno.env.get('HIPER_SITE_URL') || 'https://hiper-jppipgkkb.vercel.app'
+  const fallbackRecipients = collectFallbackRecipients(Deno.env.get('HIPER_ADMIN_EMAILS'))
+  const siteUrl = normalizeSiteUrl(
+    Deno.env.get('HIPER_SITE_URL') || 'https://hiper-jppipgkkb.vercel.app',
+  )
 
   if (!supabaseUrl || !serviceRoleKey || !resendApiKey || !fromEmail) {
     return jsonResponse({ error: 'Required function secrets are not configured' }, 500)
@@ -64,10 +117,12 @@ Deno.serve(async (request) => {
 
   const sourceTable = payload.table
   const record = payload.record
+
   if (payload.type !== 'INSERT' || payload.schema !== 'public' || !record) {
     return jsonResponse({ skipped: true, reason: 'Only public INSERT webhooks are processed' })
   }
-  if (sourceTable !== 'ikes_applications' && sourceTable !== 'asset_applications' && sourceTable !== 'donations') {
+
+  if (!sourceTable || !SUPPORTED_TABLES.has(sourceTable)) {
     return jsonResponse({ error: 'Unsupported webhook table' }, 400)
   }
 
@@ -80,13 +135,15 @@ Deno.serve(async (request) => {
 
   const { data: priorDelivery } = await adminClient
     .from('notification_delivery_log')
-    .select('id')
+    .select('id, status')
     .eq('source_table', sourceTable)
     .eq('record_id', recordId)
     .eq('status', 'sent')
     .maybeSingle()
 
-  if (priorDelivery) return jsonResponse({ skipped: true, reason: 'Notification already sent' })
+  if (priorDelivery) {
+    return jsonResponse({ skipped: true, reason: 'Notification already sent' })
+  }
 
   const { data: settingsRow } = await adminClient
     .from('site_settings')
@@ -96,6 +153,7 @@ Deno.serve(async (request) => {
 
   const siteSettings = (settingsRow?.settings || {}) as Record<string, unknown>
   const notificationSettings = (siteSettings.notifications || {}) as Record<string, unknown>
+
   if (notificationSettings.enabled === false) {
     await adminClient.from('notification_delivery_log').insert({
       source_table: sourceTable,
@@ -115,7 +173,12 @@ Deno.serve(async (request) => {
 
   if (adminError) return jsonResponse({ error: adminError.message }, 500)
 
-  const recipients = Array.from(new Set((admins || []).map((admin) => String(admin.email || '').trim().toLowerCase()).filter(Boolean)))
+  const profileRecipients = ((admins || []) as AdminRecipient[])
+    .map((admin) => String(admin.email || '').trim().toLowerCase())
+    .filter((email) => email.includes('@'))
+
+  const recipients = Array.from(new Set([...profileRecipients, ...fallbackRecipients]))
+
   if (recipients.length === 0) {
     await adminClient.from('notification_delivery_log').insert({
       source_table: sourceTable,
@@ -131,35 +194,78 @@ Deno.serve(async (request) => {
   let detailsHtml = ''
 
   if (sourceTable === 'ikes_applications') {
-    applicationLabel = record.ikes_type === 'go_home' ? 'Permohonan iKES Go-Home baharu' : 'Permohonan iKES Care baharu'
+    applicationLabel = record.ikes_type === 'go_home'
+      ? 'Permohonan iKES Go-Home baharu'
+      : 'Permohonan iKES Care baharu'
+
     detailsHtml = `
       <tr><td>Nama pemohon</td><td><strong>${escapeHtml(record.applicant_name)}</strong></td></tr>
-      <tr><td>Kelas</td><td>${escapeHtml(record.class_name)}</td></tr>
+      <tr><td>Kelas / Unit</td><td>${escapeHtml(record.class_name)}</td></tr>
       <tr><td>Jenis</td><td>${escapeHtml(record.ikes_type)}</td></tr>
       <tr><td>Amaun</td><td>${escapeHtml(formatMoney(record.amount))}</td></tr>
-      <tr><td>Diterima</td><td>${escapeHtml(formatDate(record.created_at))}</td></tr>`
+      <tr><td>Diterima</td><td>${escapeHtml(formatDateTime(record.created_at))}</td></tr>`
   } else if (sourceTable === 'asset_applications') {
     let assetName = 'Aset'
     if (record.asset_id) {
-      const { data: asset } = await adminClient.from('asset_items').select('name_bm, asset_code').eq('id', record.asset_id).maybeSingle()
-      if (asset) assetName = `${asset.asset_code ? `${asset.asset_code} · ` : ''}${asset.name_bm}`
+      const { data: asset } = await adminClient
+        .from('asset_items')
+        .select('name_bm, asset_code')
+        .eq('id', record.asset_id)
+        .maybeSingle()
+
+      if (asset) {
+        assetName = `${asset.asset_code ? `${asset.asset_code} · ` : ''}${asset.name_bm || 'Aset'}`
+      }
     }
+
     applicationLabel = 'Permohonan e-Aset baharu'
     detailsHtml = `
       <tr><td>Nama pemohon</td><td><strong>${escapeHtml(record.applicant_name)}</strong></td></tr>
-      <tr><td>Kelas</td><td>${escapeHtml(record.class_name)}</td></tr>
+      <tr><td>Kelas / Unit</td><td>${escapeHtml(record.department_unit || record.class_name)}</td></tr>
       <tr><td>Aset</td><td>${escapeHtml(assetName)}</td></tr>
       <tr><td>Kuantiti</td><td>${escapeHtml(record.quantity)}</td></tr>
-      <tr><td>Tarikh pinjam</td><td>${escapeHtml(formatDate(record.borrow_date))}</td></tr>
-      <tr><td>Tarikh pulang</td><td>${escapeHtml(formatDate(record.return_date))}</td></tr>
-      <tr><td>Diterima</td><td>${escapeHtml(formatDate(record.created_at))}</td></tr>`
+      <tr><td>Tarikh pinjam</td><td>${escapeHtml(formatDateOnly(record.borrow_date))}</td></tr>
+      <tr><td>Tarikh pulang</td><td>${escapeHtml(formatDateOnly(record.return_date))}</td></tr>
+      <tr><td>Diterima</td><td>${escapeHtml(formatDateTime(record.created_at))}</td></tr>`
+  } else if (sourceTable === 'kpk_applications') {
+    let bureauName = '—'
+    if (record.bureau_id) {
+      const { data: bureau } = await adminClient
+        .from('kpk_bureaus')
+        .select('name')
+        .eq('id', record.bureau_id)
+        .maybeSingle()
+      if (bureau?.name) bureauName = bureau.name
+    }
+
+    applicationLabel = 'Permohonan KPK+ baharu'
+    detailsHtml = `
+      <tr><td>Nama pemohon</td><td><strong>${escapeHtml(record.applicant_name)}</strong></td></tr>
+      <tr><td>Kelab / Organisasi</td><td>${escapeHtml(record.club_name)}</td></tr>
+      <tr><td>Jabatan / Unit</td><td>${escapeHtml(record.department_unit)}</td></tr>
+      <tr><td>Biro angkat</td><td>${escapeHtml(bureauName)}</td></tr>
+      <tr><td>Amaun pinjaman</td><td>${escapeHtml(formatMoney(record.loan_amount))}</td></tr>
+      <tr><td>Tujuan</td><td>${escapeHtml(record.purpose)}</td></tr>
+      <tr><td>Diterima</td><td>${escapeHtml(formatDateTime(record.created_at))}</td></tr>`
+  } else if (sourceTable === 'room_bookings') {
+    applicationLabel = 'Permohonan Tempahan Bilik JPP baharu'
+    detailsHtml = `
+      <tr><td>Nama pemohon</td><td><strong>${escapeHtml(record.name)}</strong></td></tr>
+      <tr><td>Biro / Unit</td><td>${escapeHtml(record.bureau)}</td></tr>
+      <tr><td>Tarikh</td><td>${escapeHtml(formatDateOnly(record.booking_date))}</td></tr>
+      <tr><td>Masa</td><td>${escapeHtml(formatTime(record.start_time))} – ${escapeHtml(formatTime(record.end_time))}</td></tr>
+      <tr><td>Tujuan</td><td>${escapeHtml(record.purpose)}</td></tr>
+      ${record.remarks ? `<tr><td>Catatan</td><td>${escapeHtml(record.remarks)}</td></tr>` : ''}
+      <tr><td>Diterima</td><td>${escapeHtml(formatDateTime(record.created_at))}</td></tr>`
   } else if (sourceTable === 'donations') {
     let donorName = String(record.donor_name || '').trim()
     if (!donorName && record.user_id) {
-      const { data: profile } = await adminClient.from('profiles').select('full_name').eq('id', record.user_id).maybeSingle()
-      if (profile?.full_name) {
-        donorName = `${profile.full_name} (Sumbangan tanpa nama penderma)`
-      }
+      const { data: profile } = await adminClient
+        .from('profiles')
+        .select('full_name')
+        .eq('id', record.user_id)
+        .maybeSingle()
+      if (profile?.full_name) donorName = `${profile.full_name} (Sumbangan tanpa nama penderma)`
     }
     if (!donorName) donorName = 'Tanpa Nama'
 
@@ -169,7 +275,7 @@ Deno.serve(async (request) => {
       cash: 'Tunai',
     }
     const rawMethod = String(record.payment_method || '')
-    const paymentMethodLabel = paymentMethodMap[rawMethod] || rawMethod.toUpperCase()
+    const paymentMethodLabel = paymentMethodMap[rawMethod] || rawMethod.toUpperCase() || '—'
 
     applicationLabel = 'Sumbangan Tabung Jumaat baharu'
     detailsHtml = `
@@ -178,15 +284,40 @@ Deno.serve(async (request) => {
       <tr><td>Kaedah bayaran</td><td>${escapeHtml(paymentMethodLabel)}</td></tr>
       ${record.reference_no ? `<tr><td>No. rujukan</td><td>${escapeHtml(record.reference_no)}</td></tr>` : ''}
       ${record.message ? `<tr><td>Pesanan</td><td>${escapeHtml(record.message)}</td></tr>` : ''}
-      <tr><td>Diterima</td><td>${escapeHtml(formatDate(record.created_at))}</td></tr>`
+      <tr><td>Diterima</td><td>${escapeHtml(formatDateTime(record.created_at))}</td></tr>`
   }
 
-  const subjectPrefix = String(notificationSettings.subjectPrefix || '[HiPER]')
-  const html = `<!doctype html><html lang="ms"><body style="margin:0;background:#f5efe9;font-family:Arial,sans-serif;color:#2b181b"><div style="max-width:680px;margin:0 auto;padding:32px 18px"><div style="background:#2a060d;color:#fff;padding:24px 28px;border-radius:18px 18px 0 0"><div style="font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#d6aa3b">Hab Perbendaharaan Digital</div><h1 style="font-size:25px;margin:10px 0 0">${escapeHtml(applicationLabel)}</h1></div><div style="background:#fff;padding:28px;border:1px solid #eadfd8;border-top:0;border-radius:0 0 18px 18px"><p>Satu rekod baharu memerlukan perhatian pentadbir.</p><table style="width:100%;border-collapse:collapse">${detailsHtml}</table><p style="margin:28px 0 0"><a href="${escapeHtml(siteUrl)}/admin" style="display:inline-block;background:#c89b2b;color:#2a060d;text-decoration:none;font-weight:700;padding:13px 20px;border-radius:999px">Buka Dashboard Pentadbir</a></p><p style="font-size:12px;color:#78686b;margin-top:24px">E-mel automatik HiPER. Maklumat terperinci dan dokumen sulit hanya boleh dilihat selepas log masuk.</p></div></div></body></html>`
+  const subjectPrefix = String(notificationSettings.subjectPrefix || '[HiPER]').trim() || '[HiPER]'
+  const adminUrl = `${siteUrl}/admin`
+
+  const html = `<!doctype html>
+<html lang="ms">
+<body style="margin:0;background:#f5efe9;font-family:Arial,sans-serif;color:#2b181b">
+  <div style="max-width:680px;margin:0 auto;padding:32px 18px">
+    <div style="background:#2a060d;color:#fff;padding:24px 28px;border-radius:18px 18px 0 0">
+      <div style="font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#d6aa3b">Hab Perbendaharaan Digital</div>
+      <h1 style="font-size:25px;margin:10px 0 0">${escapeHtml(applicationLabel)}</h1>
+    </div>
+    <div style="background:#fff;padding:28px;border:1px solid #eadfd8;border-top:0;border-radius:0 0 18px 18px">
+      <p>Satu rekod baharu memerlukan perhatian pentadbir.</p>
+      <table style="width:100%;border-collapse:collapse">
+        <tbody>${detailsHtml}</tbody>
+      </table>
+      <p style="margin:28px 0 0">
+        <a href="${escapeHtml(adminUrl)}" style="display:inline-block;background:#c89b2b;color:#2a060d;text-decoration:none;font-weight:700;padding:13px 20px;border-radius:999px">Buka Dashboard Pentadbir</a>
+      </p>
+      <p style="font-size:12px;color:#78686b;margin-top:24px">E-mel automatik HiPER. Maklumat terperinci dan dokumen sulit hanya boleh dilihat selepas log masuk.</p>
+    </div>
+  </div>
+</body>
+</html>`
 
   const resendResponse = await fetch('https://api.resend.com/emails', {
     method: 'POST',
-    headers: { Authorization: `Bearer ${resendApiKey}`, 'Content-Type': 'application/json' },
+    headers: {
+      Authorization: `Bearer ${resendApiKey}`,
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify({
       from: fromEmail,
       to: [recipients[0]],
@@ -197,6 +328,7 @@ Deno.serve(async (request) => {
   })
 
   const resendBody = await resendResponse.json().catch(() => ({})) as Record<string, unknown>
+
   if (!resendResponse.ok) {
     const message = String(resendBody.message || `Resend returned ${resendResponse.status}`)
     await adminClient.from('notification_delivery_log').insert({
@@ -217,5 +349,10 @@ Deno.serve(async (request) => {
     provider_message_id: String(resendBody.id || ''),
   })
 
-  return jsonResponse({ sent: true, recipientCount: recipients.length, messageId: resendBody.id || null })
+  return jsonResponse({
+    sent: true,
+    sourceTable,
+    recipientCount: recipients.length,
+    messageId: resendBody.id || null,
+  })
 })
